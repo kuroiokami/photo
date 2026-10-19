@@ -11,7 +11,8 @@ public actor LocalPhotoFileAccess: PhotoFileAccess {
       throw CocoaError(
         .fileReadUnknown,
         userInfo: [
-          NSLocalizedDescriptionKey: "Choose a folder containing JPEG, PNG, or Sony ARW images."
+          NSLocalizedDescriptionKey:
+            "Choose a folder containing JPEG, PNG, Sony, Canon, or Olympus RAW images."
         ])
     }
     let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey]
@@ -20,7 +21,7 @@ public actor LocalPhotoFileAccess: PhotoFileAccess {
     var photos: [URL] = []
     for url in contents {
       try Task.checkCancellation()
-      guard ["jpg", "jpeg", "png", "arw"].contains(url.pathExtension.lowercased()) else { continue }
+      guard PhotoFormats.supports(url) else { continue }
       // A file can disappear during enumeration. Keep its place so its tile can
       // explain the read failure; never follow symbolic links out of the folder.
       if let attributes = try? url.resourceValues(forKeys: keys) {

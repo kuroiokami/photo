@@ -4,6 +4,18 @@ import PhotoCore
 
 public actor ImageMetadataReader: PhotoMetadataReading {
   public init() {}
+  public func embeddedXMP(for file: URL) throws -> Data? {
+    try Task.checkCancellation()
+    return autoreleasepool {
+      guard
+        let source = CGImageSourceCreateWithURL(
+          file as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+        let metadata = CGImageSourceCopyMetadataAtIndex(source, 0, nil),
+        let data = CGImageMetadataCreateXMPData(metadata, nil)
+      else { return nil }
+      return data as Data
+    }
+  }
   public func metadata(for file: URL) async throws -> PhotoMetadata {
     try Task.checkCancellation()
     return try autoreleasepool {
