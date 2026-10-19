@@ -47,7 +47,7 @@ There is no DMG, signed app bundle, installer, or release download yet.
 | Previous/next and arrow-key navigation | Implemented | Bounded selection behavior |
 | File, preview, and metadata boundaries | Interfaces only | Async Sendable read-only protocols; no real-file adapters |
 | Formatting, build, and automated tests | Locally verified | Shared check script; five tests |
-| GitHub Actions | Configured | First remote result pending initial push |
+| GitHub Actions | Verified | [Initial run passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for `e297d22` |
 | Real-folder browsing and asynchronous previews | Planned: Phase 2 | Includes error states, bounded work, and cancellation |
 | Ratings, flags, filtering, undo, persistence | Planned: Phase 3 | Metadata ownership and semantics need decisions |
 | Broader format support and performance validation | Planned: Phase 4 | No RAW/HEIC/color-management claims yet |
@@ -73,11 +73,11 @@ Latest local evidence, 2026-10-19: formatting, compilation, and all five Swift T
 
 The check script discovers the selected toolchain's installed Testing macro plugin when present; this handles a Command Line Tools plugin-discovery issue. The local toolchain also emitted linker search-path warnings for absent developer framework directories; builds and tests completed successfully.
 
-Record the first GitHub Actions run URL and result here once available. Do not equate a configured workflow with a passing remote run.
+Initial remote evidence, 2026-10-19: [Swift checks run 39257940587](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed on `main` for commit `e297d22`. Formatting, build, and tests completed successfully on the macOS runner. This records that specific code revision; later commits must be checked against their own runs.
 
 ## Next work and open decisions
 
-1. Complete interactive verification of the sample app and inspect the first remote CI run.
+1. Complete interactive verification of the sample app; keep subsequent CI results current.
 2. Confirm Phase 2's initial supported formats and representative folder/benchmark corpus.
 3. Agree on numerical responsiveness and memory targets before performance work.
 4. Implement read-only folder selection, enumeration, and asynchronous thumbnail/preview adapters, then connect them to the existing workspace.
@@ -99,4 +99,4 @@ Metadata persistence (catalog versus XMP), ratings/labels, license, and distribu
 - Established repository conventions, development milestones, and the native macOS architecture decision.
 - Added SwiftUI sample workspace, synthetic resources, service boundaries, local checks, and five tests.
 - Added GitHub Actions and this maintained project tracker with AI handoff instructions.
-- Local checks passed; interactive UI verification and first remote CI result remain pending.
+- Local checks and the initial remote GitHub Actions run passed. Published the foundation on `main` as `e297d22`; interactive UI verification remains pending.

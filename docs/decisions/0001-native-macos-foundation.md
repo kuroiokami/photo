@@ -21,7 +21,7 @@ A Tauri desktop application or browser application would enable other platforms 
 
 ## Consequences
 
-No external dependencies means no Package.resolved is generated; commit it if dependencies are introduced. SwiftPM launches a development executable rather than an installable app bundle. RAW support, metadata persistence, and numerical performance targets remain unconfirmed product decisions. CI is configured now but cannot be observed remotely until the repository is committed and pushed.
+No external dependencies means no Package.resolved is generated; commit it if dependencies are introduced. SwiftPM launches a development executable rather than an installable app bundle. RAW support, metadata persistence, and numerical performance targets remain unconfirmed product decisions. [Initial remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for foundation commit `e297d22`. Interactive window and keyboard verification remains pending.
 
 ## Validation
 

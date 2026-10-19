@@ -18,7 +18,7 @@ The initial repository foundation is in place; the full product brief has not be
 
 ## Phase 1 — Create a runnable foundation
 
-Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modules, bundled synthetic PNG fixtures, Swift Testing, built-in formatting, and a shared local/CI check script. See [decision 0001](decisions/0001-native-macos-foundation.md). Remote CI remains unverified until the changes are pushed.
+Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modules, bundled synthetic PNG fixtures, Swift Testing, built-in formatting, and a shared local/CI check script. See [decision 0001](decisions/0001-native-macos-foundation.md). [Initial remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for foundation commit `e297d22`; interactive UI verification remains pending.
 
 - Scaffold the chosen stack with one documented development command.
 - Add formatting, linting, and type checking where supported.
@@ -74,7 +74,7 @@ Use unit tests for metadata and state rules, integration tests for file operatio
 - [ ] Set numeric performance budgets and prepare benchmark fixtures.
 - [x] Select the stack and record the rationale.
 - [ ] Select a license.
-- [x] Scaffold the application and CI (remote run pending push).
+- [x] Scaffold the application and CI (initial remote run passed).
 - [ ] Implement the folder-to-preview vertical slice.
 
 Revisit this plan after each phase; defer additional features until the current exit criteria are met.
