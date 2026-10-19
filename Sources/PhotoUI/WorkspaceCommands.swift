@@ -30,10 +30,11 @@ public struct WorkspaceCommands: Commands {
   public var body: some Commands {
     CommandGroup(replacing: .undoRedo) {
       Button("Undo Decision") { actions?.workspace.undoDecision() }
-        .keyboardShortcut("z", modifiers: .command).disabled(actions?.workspace.canUndo != true)
+        .keyboardShortcut("z", modifiers: .command).disabled(
+          actions?.canDecide != true || actions?.workspace.canUndo != true)
       Button("Redo Decision") { actions?.workspace.redoDecision() }
         .keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
-          actions?.workspace.canRedo != true)
+          actions?.canDecide != true || actions?.workspace.canRedo != true)
     }
     CommandMenu("Navigate") {
       Group {

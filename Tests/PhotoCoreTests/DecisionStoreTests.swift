@@ -1,3 +1,4 @@
+import CSQLite
 import Foundation
 import PhotoCore
 import Testing
@@ -66,6 +67,31 @@ struct DecisionStoreTests {
       }
     }
   }
+  @Test func interruptedAcknowledgementRecoversWithoutRewritingXMP() async throws {
+    let dir = try folder()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let image = dir.appendingPathComponent("a.arw")
+    let database = dir.appendingPathComponent("db.sqlite")
+    try Data().write(to: image)
+    let store = DecisionStore(databaseURL: database)
+    _ = try await store.load(for: image)
+    let decision = CullingDecision(rating: 4, flag: .pick)
+    _ = try await store.save(decision, for: image)
+    let published = try Data(contentsOf: XMPSidecar.url(for: image))
+    // Simulate durable intent + published XMP with the final acknowledgement lost.
+    var db: OpaquePointer?
+    #expect(sqlite3_open(database.path, &db) == SQLITE_OK)
+    let sql =
+      #"UPDATE decisions SET payload = '{"decision":{"rating":4,"flag":1},"pending":true,"baseline":"absent"}'"#
+    let result = sqlite3_exec(db, sql, nil, nil, nil)
+    sqlite3_close(db)
+    #expect(result == SQLITE_OK)
+    let recovered = try await DecisionStore(databaseURL: database).load(for: image)
+    #expect(recovered.status == "Saved")
+    #expect(recovered.decision == decision)
+    #expect(try Data(contentsOf: XMPSidecar.url(for: image)) == published)
+  }
+
   @Test func readOnlyFailureKeepsDurableLocalDecision() async throws {
     let dir = try folder()
     defer {

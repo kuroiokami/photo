@@ -17,7 +17,7 @@ let package = Package(
       resources: [.process("Resources")]),
     .executableTarget(name: "PhotoApp", dependencies: ["PhotoUI", "PhotoCore"]),
     .executableTarget(name: "PhotoBench", dependencies: ["PhotoCore", "PhotoImaging"]),
-    .testTarget(name: "PhotoCoreTests", dependencies: ["PhotoCore"]),
+    .testTarget(name: "PhotoCoreTests", dependencies: ["PhotoCore", "CSQLite"]),
     .testTarget(name: "PhotoUITests", dependencies: ["PhotoUI", "PhotoCore", "PhotoImaging"]),
   ]
 )

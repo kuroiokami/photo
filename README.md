@@ -22,7 +22,7 @@ cd photo
 swift run Photo
 ```
 
-For a local development app bundle that can be opened from Finder and inspected by UI automation:
+Quit any running Photo development app before rebuilding its bundle. To build a local app that can be opened from Finder:
 
 ```sh
 sh scripts/build-app.sh
@@ -60,8 +60,8 @@ This release-mode benchmark measures folder/image loading, cached navigation, in
 
 ## Structure
 
-- **PhotoCore**: models, observable workspace state, cancellation-safe folder sessions, and read-only file enumeration.
-- **PhotoImaging**: ImageIO decoding, orientation handling, persistent serial thumbnail/preview lanes, and cost-bounded session caches.
+- **PhotoCore**: workspace/metadata/decision models, read-only file enumeration, actor-isolated SQLite and preserving XMP synchronization.
+- **PhotoImaging**: ImageIO property/embedded-preview reads, bounded thumbnail/fit caches and a separate on-demand Core Image detail worker.
 - **PhotoUI**: contact sheet, asynchronous image views, folder picker, menu commands, and bundled samples.
 - **PhotoApp**: process startup and window lifecycle.
 

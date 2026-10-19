@@ -164,6 +164,14 @@ public actor DecisionStore {
       let data = try sidecarData(image)
       let digest = XMPSidecar.digest(data)
       if let local, local.pending {
+        // Recover a crash after atomic XMP publication but before the SQLite
+        // acknowledgement. Matching decisions need no further sidecar write.
+        if let data, try XMPSidecar.read(data) == local.decision {
+          try write(
+            StoredDecision(decision: local.decision, pending: false, baseline: digest),
+            key: identity)
+          return DecisionEntry(decision: local.decision, status: "Saved")
+        }
         return DecisionEntry(
           decision: local.decision,
           status: local.baseline == digest ? "Saved locally · XMP pending" : "XMP conflict")
