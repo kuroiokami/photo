@@ -14,8 +14,11 @@ struct PhotoApplication {
 
 private final class PhotoDelegate: NSObject, NSApplicationDelegate {
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-    guard DecisionSaveQueue.shared.hasPending else { return .terminateNow }
+    guard DecisionSaveQueue.shared.hasPending || WorkflowOperationBarrier.shared.hasPending else {
+      return .terminateNow
+    }
     Task {
+      await WorkflowOperationBarrier.shared.flush()
       await DecisionSaveQueue.shared.flush()
       sender.reply(toApplicationShouldTerminate: true)
     }

@@ -1,0 +1,40 @@
+{
+  "archive": "https://raw.pixls.us/",
+  "license": "CC0-1.0",
+  "retrieved": "2026-10-19",
+  "notes": [
+    "Public archive SHA-256 verified before tests.",
+    "RAW image bytes are not committed; use an external disposable directory.",
+    "No application-level Lightroom exchange is claimed."
+  ],
+  "files": [
+    {
+      "camera": "Canon EOS R",
+      "url": "https://raw.pixls.us/getfile.php/4515/nice/Canon - EOS R - 3:2.CR3",
+      "license": "CC0-1.0",
+      "sha256": "89bd55532b0cceb5efa360e97827ba35c2076bce0de4675f3a4413a883dac880",
+      "bytes": 31606200
+    },
+    {
+      "camera": "Canon EOS Rebel SL1",
+      "url": "https://raw.pixls.us/getfile.php/1201/nice/Canon - EOS Rebel SL1 - RAW (3:2).CR2",
+      "license": "CC0-1.0",
+      "sha256": "56faa7db3947c32c5e6e31bc0db027ebf95163533e043bd8c4f18166a129692c",
+      "bytes": 22665686
+    },
+    {
+      "camera": "Olympus E-M1MarkII",
+      "url": "https://raw.pixls.us/getfile.php/1993/nice/Olympus - E-M1MarkII - 16bit (4:3).ORF",
+      "license": "CC0-1.0",
+      "sha256": "0b433019e5fa61548d7eb0eb7bb90894251542c056da72355202382696d0ceb8",
+      "bytes": 17260285
+    },
+    {
+      "camera": "OM System OM-1",
+      "url": "https://raw.pixls.us/getfile.php/5283/nice/OM System - OM-1 - 16bit (4:3).ORF",
+      "license": "CC0-1.0",
+      "sha256": "bf2eef6becc0851e48231617c3e2eac27a2cdb44c75b93035c561d837952c18b",
+      "bytes": 21820729
+    }
+  ]
+}

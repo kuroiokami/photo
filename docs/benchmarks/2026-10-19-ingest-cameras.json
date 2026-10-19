@@ -1,0 +1,163 @@
+{
+  "measured": "2026-10-19",
+  "baseline": "cb9bef2 plus ImageIO-only CR2/CR3/ORF support",
+  "notes": [
+    "Sequential single-process release measurements on the reference Mac; OS caches uncontrolled.",
+    "Camera corpus contains the four CC0 files described in docs/fixtures/public-raw-provenance.json.",
+    "No filenames, paths, EXIF values or image content in aggregate reports.",
+    "RAW properties/metadata and full-detail rendering still use Apple decoders.",
+    "The before/after thumbnail maximum is over four different cameras, not per-camera p95."
+  ],
+  "cameraImageIOOnly": {
+    "cachedPreviews": {
+      "count": 30,
+      "maximumMilliseconds": 0.024209,
+      "p50Milliseconds": 0.010042,
+      "p95Milliseconds": 0.013375
+    },
+    "concurrentSameImageMilliseconds": 76.187833,
+    "decodedFileCount": 4,
+    "enumeration": {
+      "count": 5,
+      "maximumMilliseconds": 3.740042,
+      "p50Milliseconds": 0.132666,
+      "p95Milliseconds": 3.740042
+    },
+    "fileCount": 4,
+    "finalResidentMiB": 208.609375,
+    "folderSwitching": {
+      "count": 10,
+      "maximumMilliseconds": 0.62625,
+      "p50Milliseconds": 0.198291,
+      "p95Milliseconds": 0.62625
+    },
+    "imageFailures": 0,
+    "logicalCPUCount": 18,
+    "maximumLongEdge": 6720,
+    "minimumLongEdge": 5184,
+    "notes": [
+      "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+      "At most 64 files decoded; hashes cover all enumerated files.",
+      "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+      "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+      "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 208.609375,
+    "physicalMemoryGiB": 128,
+    "previewCacheMiB": 52.08984375,
+    "previews": {
+      "count": 4,
+      "maximumMilliseconds": 78.625875,
+      "p50Milliseconds": 75.436458,
+      "p95Milliseconds": 78.625875
+    },
+    "rapidSelection": {
+      "count": 500,
+      "maximumMilliseconds": 0.044084,
+      "p50Milliseconds": 0.000916,
+      "p95Milliseconds": 0.00275
+    },
+    "schemaVersion": 1,
+    "thumbnailCacheMiB": 2.490234375,
+    "thumbnails": {
+      "count": 4,
+      "maximumMilliseconds": 5127.519708,
+      "p50Milliseconds": 196.680083,
+      "p95Milliseconds": 5127.519708
+    },
+    "totalSourceBytes": 93352900,
+    "virtualCollectionCount": 50000
+  },
+  "cameraDirectCR3Preview": {
+    "cachedPreviews": {
+      "count": 30,
+      "maximumMilliseconds": 0.020875,
+      "p50Milliseconds": 0.010667,
+      "p95Milliseconds": 0.017
+    },
+    "concurrentSameImageMilliseconds": 74.367708,
+    "decodedFileCount": 4,
+    "enumeration": {
+      "count": 5,
+      "maximumMilliseconds": 3.747792,
+      "p50Milliseconds": 0.092917,
+      "p95Milliseconds": 3.747792
+    },
+    "fileCount": 4,
+    "finalResidentMiB": 195.5625,
+    "folderSwitching": {
+      "count": 10,
+      "maximumMilliseconds": 0.552667,
+      "p50Milliseconds": 0.184792,
+      "p95Milliseconds": 0.552667
+    },
+    "imageFailures": 0,
+    "logicalCPUCount": 18,
+    "maximumLongEdge": 6720,
+    "minimumLongEdge": 5184,
+    "notes": [
+      "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+      "At most 64 files decoded; hashes cover all enumerated files.",
+      "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+      "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+      "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 195.5625,
+    "physicalMemoryGiB": 128,
+    "previewCacheMiB": 60.8441162109375,
+    "previews": {
+      "count": 4,
+      "maximumMilliseconds": 77.902,
+      "p50Milliseconds": 73.387209,
+      "p95Milliseconds": 77.902
+    },
+    "rapidSelection": {
+      "count": 500,
+      "maximumMilliseconds": 0.049041,
+      "p50Milliseconds": 0.000792,
+      "p95Milliseconds": 0.003416
+    },
+    "schemaVersion": 1,
+    "thumbnailCacheMiB": 2.490234375,
+    "thumbnails": {
+      "count": 4,
+      "maximumMilliseconds": 182.01725,
+      "p50Milliseconds": 35.929959,
+      "p95Milliseconds": 182.01725
+    },
+    "totalSourceBytes": 93352900,
+    "virtualCollectionCount": 50000
+  },
+  "workspace2000JPEGPNG": {
+    "decisionErrors": 0,
+    "enumerationMilliseconds": 71.262416,
+    "fileCount": 2000,
+    "firstPreviewDuringIndexingMilliseconds": 43.841125,
+    "firstPreviewSucceeded": true,
+    "initialDecisionLoadMilliseconds": 2027.570041,
+    "isoSortMilliseconds": 31.00225,
+    "logicalCPUCount": 18,
+    "mainActorSamples": 263,
+    "maximumMainActorGapMilliseconds": 42.165542,
+    "metadataFailures": 0,
+    "metadataIndexMilliseconds": 362.801917,
+    "notes": [
+      "Fresh temporary SQLite database; source folders and sidecars are never written.",
+      "Metadata and initial decision indexing run concurrently with the first preview.",
+      "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+      "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+      "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+      "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "ratingSortMilliseconds": 42.263,
+    "repeatDecisionLoadMilliseconds": 437.406333,
+    "schemaVersion": 1,
+    "selectedDecisionMilliseconds": 3.414916
+  }
+}

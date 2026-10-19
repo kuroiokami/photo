@@ -93,7 +93,7 @@ The user confirmed Sony ARW first and local decisions plus XMP, in this order. T
 2. **Decisions:** independent flags/stars, keyboard and visible controls, filters, rating ordering, one-step auto-advance, Undo/Redo, durable SQLite, preserving atomic XMP sync, visible errors/conflicts and replacement-file protection. Implemented; direct Lightroom interoperability is not yet verified.
 3. **Detail:** explicit Fit/physical-pixel 100%, focal double-click, pan and navigator, separate full-detail worker, on-demand Apple RAW rendering, 256 MiB decoded-image limit and reset on selection. Implemented; broader camera/hardware/OS coverage remains open.
 
-Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFORMANCE.md. Future work includes additional RAW formats, RAW+JPEG pairing, batch organization, focus/exposure tools, wider accessibility/platform validation, and release signing/distribution.
+Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFORMANCE.md. Additional RAW formats, RAW+JPEG pairing and batch organization are implemented in the accepted workflow follow-up below. Future work includes wider camera coverage, focus/exposure tools, accessibility/platform validation, and release signing/distribution.
 
 
 ## Reliability acceptance follow-up — 2026-10-19
@@ -107,3 +107,17 @@ Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFO
 - [ ] Verify application-level Lightroom round trips in an isolated catalog; the prior import UI attempt remains unverified.
 
 Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing, minimum-macOS/Intel and licensing limits remain open.
+
+## Accepted ingest/metadata/camera follow-up — 2026-10-19
+
+- [x] Case-insensitive Canon CR2/CR3/CRW and Olympus/OM System ORF recognition; embedded-only Fit and deliberate Apple RAW detail. Real CR2/CR3/ORF samples verified; real CRW remains acceptance work.
+- [x] Recursive two-destination ingest with streaming checksums, durable incremental/original-name evidence, collision protection and background culling; manual Reload for arrivals.
+- [x] Multi-selection and unique RAW+JPEG representation with independent per-file decision persistence and batch Undo.
+- [x] Reviewed token-based bulk naming, companions, collision checks, original-name journals, Undo and interrupted-operation recovery.
+- [x] Explicit layered IPTC presets, separate created/shown locations, keyword actions/hierarchies, pending local intent, preserving XMP and conflict handling.
+- [x] Optional verified non-reject handoff including XMP/ACR and metadata embedding only in derived JPEG/PNG copies; manual Lightroom Add instructions.
+- [x] Profile CR3 startup and bypass the measured slow ImageIO container path with a bounded embedded-JPEG reader; retain unknown-layout fallback.
+- [ ] Verify Lightroom application round trips, real CRW/broader camera modes, and removable/network storage interruption scenarios.
+- [ ] Add live arrivals, full keyword dictionary import/export/synonyms, automatic ingest metadata/naming presets, metadata Undo and clock correction if prioritized.
+
+Implemented is distinct from complete release acceptance: keep first-open latency, actual interoperability and minimum-platform coverage explicit in the tracker. Preserve existing image bytes, use disposable copies for all mutation tests, and update evidence with every delivery.
