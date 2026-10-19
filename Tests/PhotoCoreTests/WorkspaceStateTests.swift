@@ -1,3 +1,4 @@
+import Foundation
 import PhotoCore
 import Testing
 
@@ -30,4 +31,24 @@ struct WorkspaceStateTests {
     state.select("missing")
     #expect(state.selectedPhoto == nil)
   }
+  @Test func largeCollectionSelectionAndBoundsRemainConsistent() {
+    let photos = (0..<10_000).map {
+      PhotoItem(fileURL: URL(fileURLWithPath: "/benchmark/Photo\($0).jpg"))
+    }
+    let state = WorkspaceState(photos: photos)
+    state.select(photos[9_999].id)
+    #expect(state.selectedIndex == 9_999)
+    #expect(state.selectedPhoto == photos[9_999])
+    state.moveSelection(by: Int.max)
+    #expect(state.selectedIndex == 9_999)
+    state.moveSelection(by: Int.min)
+    #expect(state.selectedIndex == 0)
+    state.select(nil)
+    #expect(state.selectedIndex == nil)
+    #expect(state.selectedPhoto == nil)
+    state.select(photos[5_000].id)
+    #expect(state.selectedIndex == 5_000)
+    #expect(state.selectedID == photos[5_000].id)
+  }
+
 }

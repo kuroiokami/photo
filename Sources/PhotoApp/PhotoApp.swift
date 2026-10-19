@@ -16,6 +16,7 @@ private struct PhotoScene: App {
     WindowGroup("Photo") {
       WorkspaceView()
     }
-    .defaultSize(width: 1100, height: 760)
+    .defaultSize(width: 1280, height: 820)
+    .commands { WorkspaceCommands() }
   }
 }

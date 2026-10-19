@@ -1,12 +1,12 @@
 import Foundation
 
-// Read-only boundaries for the folder workflow in Phase 2. No live adapters yet.
 public protocol PhotoFileAccess: Sendable {
   func photos(in directory: URL) async throws -> [URL]
 }
 
 public protocol PhotoPreviewLoading: Sendable {
-  func previewData(for file: URL, maximumPixelSize: Int) async throws -> Data
+  associatedtype Preview: Sendable
+  func preview(for file: URL, maximumPixelSize: Int, sessionID: UUID?) async throws -> Preview
 }
 
 public struct PhotoMetadata: Equatable, Sendable {

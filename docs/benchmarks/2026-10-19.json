@@ -1,0 +1,518 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-19",
+  "baselineRevision": "3130efa",
+  "optimizedRevision": "Performance follow-up in PR #1; see commit introducing this report",
+  "method": "Three alternating before/after release-process runs for real-camera images; one pair for the synthetic 2000-file folder. No concurrent builds or UI interaction during timed runs.",
+  "realCameraRuns": {
+    "before": [
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.023791,
+          "p50Milliseconds": 0.009792,
+          "p95Milliseconds": 0.019833
+        },
+        "concurrentSameImageMilliseconds": 1612.813209,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 6.284625,
+          "p50Milliseconds": 0.300708,
+          "p95Milliseconds": 6.284625
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 483.9375,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.834834,
+          "p50Milliseconds": 0.421542,
+          "p95Milliseconds": 0.834834
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 531.1875,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 233.27325,
+          "p50Milliseconds": 214.124959,
+          "p95Milliseconds": 233.27325
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 9.390792,
+          "p50Milliseconds": 6.171834,
+          "p95Milliseconds": 7.35
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 108.175041,
+          "p50Milliseconds": 93.941125,
+          "p95Milliseconds": 108.175041
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      },
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.02025,
+          "p50Milliseconds": 0.010334,
+          "p95Milliseconds": 0.019375
+        },
+        "concurrentSameImageMilliseconds": 1628.960292,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 5.735666,
+          "p50Milliseconds": 0.277416,
+          "p95Milliseconds": 5.735666
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 483.84375,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.804084,
+          "p50Milliseconds": 0.419167,
+          "p95Milliseconds": 0.804084
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 531.125,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 233.309167,
+          "p50Milliseconds": 216.851667,
+          "p95Milliseconds": 233.309167
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 8.211125,
+          "p50Milliseconds": 6.196042,
+          "p95Milliseconds": 7.126
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 105.986375,
+          "p50Milliseconds": 94.665125,
+          "p95Milliseconds": 105.986375
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      },
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.022042,
+          "p50Milliseconds": 0.010583,
+          "p95Milliseconds": 0.020833
+        },
+        "concurrentSameImageMilliseconds": 1628.8045419999999,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 5.749292,
+          "p50Milliseconds": 0.290958,
+          "p95Milliseconds": 5.749292
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 485.953125,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.796417,
+          "p50Milliseconds": 0.433375,
+          "p95Milliseconds": 0.796417
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 533.265625,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 234.871666,
+          "p50Milliseconds": 221.580292,
+          "p95Milliseconds": 234.871666
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 7.989167,
+          "p50Milliseconds": 6.100458,
+          "p95Milliseconds": 6.992167
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 184.062958,
+          "p50Milliseconds": 93.68775,
+          "p95Milliseconds": 184.062958
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      }
+    ],
+    "after": [
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.021709,
+          "p50Milliseconds": 0.01125,
+          "p95Milliseconds": 0.020208
+        },
+        "concurrentSameImageMilliseconds": 203.113375,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 5.380833,
+          "p50Milliseconds": 0.250291,
+          "p95Milliseconds": 5.380833
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 373.984375,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.7475,
+          "p50Milliseconds": 0.387417,
+          "p95Milliseconds": 0.7475
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 418.109375,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 233.644417,
+          "p50Milliseconds": 213.89675,
+          "p95Milliseconds": 233.644417
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 0.019292,
+          "p50Milliseconds": 0.000458,
+          "p95Milliseconds": 0.00075
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 106.171375,
+          "p50Milliseconds": 94.395458,
+          "p95Milliseconds": 106.171375
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      },
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.024041,
+          "p50Milliseconds": 0.010416,
+          "p95Milliseconds": 0.019834
+        },
+        "concurrentSameImageMilliseconds": 203.395166,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 5.949208,
+          "p50Milliseconds": 0.261042,
+          "p95Milliseconds": 5.949208
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 374.4375,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.742666,
+          "p50Milliseconds": 0.421709,
+          "p95Milliseconds": 0.742666
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 418.5625,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 293.971042,
+          "p50Milliseconds": 219.591875,
+          "p95Milliseconds": 293.971042
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 0.020667,
+          "p50Milliseconds": 0.000417,
+          "p95Milliseconds": 0.000917
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 108.6915,
+          "p50Milliseconds": 94.738459,
+          "p95Milliseconds": 108.6915
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      },
+      {
+        "cachedPreviews": {
+          "count": 30,
+          "maximumMilliseconds": 0.020167,
+          "p50Milliseconds": 0.006042,
+          "p95Milliseconds": 0.019917
+        },
+        "concurrentSameImageMilliseconds": 200.923917,
+        "decodedFileCount": 17,
+        "enumeration": {
+          "count": 5,
+          "maximumMilliseconds": 5.471166,
+          "p50Milliseconds": 0.268208,
+          "p95Milliseconds": 5.471166
+        },
+        "fileCount": 17,
+        "finalResidentMiB": 374.53125,
+        "folderSwitching": {
+          "count": 10,
+          "maximumMilliseconds": 0.658875,
+          "p50Milliseconds": 0.420417,
+          "p95Milliseconds": 0.658875
+        },
+        "imageFailures": 0,
+        "logicalCPUCount": 18,
+        "maximumLongEdge": 8640,
+        "minimumLongEdge": 8640,
+        "notes": [
+          "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+          "At most 64 files decoded; hashes cover all enumerated files.",
+          "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+          "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+          "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "peakResidentMiB": 418.640625,
+        "physicalMemoryGiB": 128,
+        "previewCacheMiB": 50.0390625,
+        "previews": {
+          "count": 17,
+          "maximumMilliseconds": 240.673583,
+          "p50Milliseconds": 222.181833,
+          "p95Milliseconds": 240.673583
+        },
+        "rapidSelection": {
+          "count": 500,
+          "maximumMilliseconds": 0.073667,
+          "p50Milliseconds": 0.000542,
+          "p95Milliseconds": 0.001458
+        },
+        "schemaVersion": 1,
+        "thumbnailCacheMiB": 9.9609375,
+        "thumbnails": {
+          "count": 17,
+          "maximumMilliseconds": 106.056333,
+          "p50Milliseconds": 94.869791,
+          "p95Milliseconds": 106.056333
+        },
+        "totalSourceBytes": 181363581,
+        "virtualCollectionCount": 50000
+      }
+    ]
+  },
+  "syntheticMixedRuns": {
+    "before": {
+      "cachedPreviews": {
+        "count": 30,
+        "maximumMilliseconds": 0.024416,
+        "p50Milliseconds": 0.010959,
+        "p95Milliseconds": 0.022459
+      },
+      "concurrentSameImageMilliseconds": 74.762667,
+      "decodedFileCount": 64,
+      "enumeration": {
+        "count": 5,
+        "maximumMilliseconds": 84.877459,
+        "p50Milliseconds": 79.276917,
+        "p95Milliseconds": 84.877459
+      },
+      "fileCount": 2000,
+      "finalResidentMiB": 429.5,
+      "folderSwitching": {
+        "count": 10,
+        "maximumMilliseconds": 107.093292,
+        "p50Milliseconds": 101.608458,
+        "p95Milliseconds": 107.093292
+      },
+      "imageFailures": 0,
+      "logicalCPUCount": 18,
+      "maximumLongEdge": 2400,
+      "minimumLongEdge": 1536,
+      "notes": [
+        "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+        "At most 64 files decoded; hashes cover all enumerated files.",
+        "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+        "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+        "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "peakResidentMiB": 429.8125,
+      "physicalMemoryGiB": 128,
+      "previewCacheMiB": 57.7763671875,
+      "previews": {
+        "count": 64,
+        "maximumMilliseconds": 18.072291,
+        "p50Milliseconds": 10.107334,
+        "p95Milliseconds": 17.052833
+      },
+      "rapidSelection": {
+        "count": 500,
+        "maximumMilliseconds": 9.132875,
+        "p50Milliseconds": 6.344167,
+        "p95Milliseconds": 7.409958
+      },
+      "schemaVersion": 1,
+      "thumbnailCacheMiB": 23.4375,
+      "thumbnails": {
+        "count": 64,
+        "maximumMilliseconds": 18.663625,
+        "p50Milliseconds": 4.621958,
+        "p95Milliseconds": 18.172209
+      },
+      "totalSourceBytes": 904028587,
+      "virtualCollectionCount": 50000
+    },
+    "after": {
+      "cachedPreviews": {
+        "count": 30,
+        "maximumMilliseconds": 0.024083,
+        "p50Milliseconds": 0.012084,
+        "p95Milliseconds": 0.023
+      },
+      "concurrentSameImageMilliseconds": 9.799333,
+      "decodedFileCount": 64,
+      "enumeration": {
+        "count": 5,
+        "maximumMilliseconds": 88.332542,
+        "p50Milliseconds": 82.723916,
+        "p95Milliseconds": 88.332542
+      },
+      "fileCount": 2000,
+      "finalResidentMiB": 396.671875,
+      "folderSwitching": {
+        "count": 10,
+        "maximumMilliseconds": 125.292792,
+        "p50Milliseconds": 116.489708,
+        "p95Milliseconds": 125.292792
+      },
+      "imageFailures": 0,
+      "logicalCPUCount": 18,
+      "maximumLongEdge": 2400,
+      "minimumLongEdge": 1536,
+      "notes": [
+        "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+        "At most 64 files decoded; hashes cover all enumerated files.",
+        "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+        "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+        "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "peakResidentMiB": 396.671875,
+      "physicalMemoryGiB": 128,
+      "previewCacheMiB": 57.7763671875,
+      "previews": {
+        "count": 64,
+        "maximumMilliseconds": 16.975541,
+        "p50Milliseconds": 9.560584,
+        "p95Milliseconds": 16.1815
+      },
+      "rapidSelection": {
+        "count": 500,
+        "maximumMilliseconds": 0.035458,
+        "p50Milliseconds": 0.000583,
+        "p95Milliseconds": 0.001416
+      },
+      "schemaVersion": 1,
+      "thumbnailCacheMiB": 23.4375,
+      "thumbnails": {
+        "count": 64,
+        "maximumMilliseconds": 16.97875,
+        "p50Milliseconds": 4.373375,
+        "p95Milliseconds": 16.525584
+      },
+      "totalSourceBytes": 904028587,
+      "virtualCollectionCount": 50000
+    }
+  },
+  "nativeDebugAppAfter": {
+    "sample_count": 200,
+    "start_rss_mib": 216.875,
+    "peak_rss_mib": 312.3125,
+    "end_rss_mib": 296.09375,
+    "note": "Native debug app RSS sampled every 200 ms while browsing mixed real JPEG/PNG and large synthetic folders; not a matched process-lifetime comparison or frame-time measurement."
+  }
+}
