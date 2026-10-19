@@ -32,9 +32,9 @@ Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modu
 
 Implemented browsing slice: native folder picker and Command-O, shallow read-only JPEG/PNG enumeration, natural filename order, lazy contact sheet with a density slider, resizable preview, keyboard navigation, asynchronous ImageIO lanes, bounded caches, cancellation, and recoverable errors. See [decision 0002](decisions/0002-read-only-folder-browser.md).
 
-[Remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39261955925) for implementation commit `6904965`; [draft PR #1](https://github.com/kuroiokami/photo/pull/1) is open for review. Native folder, navigation, failure, and reload checks are recorded in the project tracker.
+[Final CI passed](https://github.com/kuroiokami/photo/actions/runs/39268234733) for the tuned implementation; [PR #1](https://github.com/kuroiokami/photo/pull/1) was merged into `main` as `24b7cff`. Native folder, navigation, failure, reload, and grid-reflow checks are recorded in the project tracker.
 
-Performance acceptance remains open: agree on a real-camera benchmark corpus and numerical targets before declaring the entire phase complete.
+The reference-machine browsing slice passed its recorded real-camera and mixed-folder targets; see [PERFORMANCE.md](PERFORMANCE.md) for paired results, original-byte verification, memory measurements, and reproducibility. Broader hardware/camera/network/removable-media validation remains future work.
 
 - Enumerate supported files without modifying their contents.
 - Generate previews asynchronously with cancellation and bounded concurrency.
@@ -75,11 +75,12 @@ Use unit tests for metadata and state rules, integration tests for file operatio
 
 - [ ] Agree on the product brief and first target platform.
 - [ ] Define supported formats and metadata ownership.
-- [ ] Set numeric performance budgets and prepare benchmark fixtures.
+- [x] Set reference-machine performance budgets and prepare real-camera/mixed benchmark fixtures.
 - [x] Select the stack and record the rationale.
 - [ ] Select a license.
 - [x] Scaffold the application and CI (initial remote run passed).
 - [x] Implement the read-only JPEG/PNG folder-to-preview vertical slice.
-- [ ] Establish and verify real-camera performance budgets before closing Phase 2.
+- [x] Verify reference-machine real-camera and mixed-folder performance for the browsing slice.
+- [ ] Broaden performance coverage across hardware, cameras, and storage media.
 
 Revisit this plan after each phase; defer additional features until the current exit criteria are met.

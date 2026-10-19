@@ -1,6 +1,6 @@
 # Browsing validation and performance
 
-Measured: 2026-10-19. Baseline: `3130efa`. Optimized code: the performance follow-up in PR #1. [Raw aggregate results](benchmarks/2026-10-19.json) contain no source names, paths, hashes, EXIF, or image content.
+Measured: 2026-10-19. Baseline: `3130efa`. Optimized code: the performance follow-up in [PR #1](https://github.com/kuroiokami/photo/pull/1), merged into `main` as `24b7cff` after [the final PR checks passed](https://github.com/kuroiokami/photo/actions/runs/39268234733). [Raw aggregate results](benchmarks/2026-10-19.json) contain no source names, paths, hashes, EXIF, or image content.
 
 ## Corpus and method
 

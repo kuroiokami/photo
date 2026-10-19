@@ -6,7 +6,7 @@ This is the current handoff for humans and AI contributors. Update it in the sam
 
 ## Current state
 
-Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. The browsing slice now has paired real-camera measurements, mixed-format/large-folder validation, and reference-machine targets recorded in [PERFORMANCE.md](docs/PERFORMANCE.md). Wider hardware/camera coverage remains open. The chunk is published in [draft PR #1](https://github.com/kuroiokami/photo/pull/1) on `codex/folder-browser`; it has not been merged into `main`.
+Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. The browsing slice now has paired real-camera measurements, mixed-format/large-folder validation, and reference-machine targets recorded in [PERFORMANCE.md](docs/PERFORMANCE.md). Wider hardware/camera coverage remains open. The validated chunk was merged into `main` through [PR #1](https://github.com/kuroiokami/photo/pull/1) as `24b7cff` on 2026-10-19. Local `main` is updated; the user’s pre-existing development-plan edit remains unstaged.
 
 ## Installation and first run
 
@@ -51,7 +51,7 @@ For a native local app bundle, run `sh scripts/build-app.sh`, then `open .build/
 | File and preview adapters | Implemented | Actor-based enumeration and ImageIO downsampling; EXIF orientation |
 | General metadata reader/persistence | Interfaces/planned | Original dimensions shown; no metadata writes |
 | Formatting, build, and automated tests | Locally verified | Shared script passed all 18 tests; extension test has eight argument cases |
-| GitHub Actions | Verified for Phase 2 code | [Folder-browser run passed](https://github.com/kuroiokami/photo/actions/runs/39261955925) for `6904965` |
+| GitHub Actions | Verified for tuned browser code | [Final PR checks passed](https://github.com/kuroiokami/photo/actions/runs/39268234733) for `d59f67e`; merged as `24b7cff` |
 | Real-folder browsing and asynchronous previews | Implemented | Separate serial decode lanes, LRU caches, session cancellation, retry |
 | Reference-machine performance targets | Verified | 17 real 50 MP JPEGs, 2,000 mixed JPEG/PNG files, 50,000-item selection stress; see performance report |
 | Ratings, flags, filtering, undo, persistence | Planned: Phase 3 | Metadata ownership and semantics need decisions |
@@ -88,11 +88,11 @@ The user reported that their real folder generally worked and authorized measure
 
 Median real-camera results across three alternating runs: concurrent identical previews 1628.8 → 203.1 ms, selection lookup p95 7.1260 → 0.0009 ms in a virtual 50,000-item collection, and sampled CLI peak RSS 531.2 → 418.6 MiB. All source hashes matched. The 2,000-file folder loaded below the local 250 ms target; individual cold 50 MP previews remained about 0.24 seconds. See [aggregate evidence and limits](docs/PERFORMANCE.md).
 
-The rebuilt native app loaded a temporary mixed folder containing copies of 17 real-camera JPEGs plus six generated PNGs with Unicode names and `.jpg`/`.jpeg`/uppercase/mixed-case variants. Rapid navigation, portrait preview, and selection retention on Reload passed. The native app also opened and scrolled the 2,000-file mixed corpus. Its sampled debug RSS ranged from 216.9 to 312.3 MiB, ending at 296.1 MiB; this is not a matched-lifetime comparison with the earlier native sample. UI testing found and fixed selected-tile visibility after preview/grid reflow. The final native check kept photo 2,000 visible after hiding/reopening the preview. Grid reflow now coalesces intermediate layouts and reveals the selected item after layout settles. Latest remote CI and PR merge status remain pending. Preserve the pre-existing local edit in `docs/DEVELOPMENT_PLAN.md`; it is unrelated to this change and must not be included in the commit.
+The rebuilt native app loaded a temporary mixed folder containing copies of 17 real-camera JPEGs plus six generated PNGs with Unicode names and `.jpg`/`.jpeg`/uppercase/mixed-case variants. Rapid navigation, portrait preview, and selection retention on Reload passed. The native app also opened and scrolled the 2,000-file mixed corpus. Its sampled debug RSS ranged from 216.9 to 312.3 MiB, ending at 296.1 MiB; this is not a matched-lifetime comparison with the earlier native sample. UI testing found and fixed selected-tile visibility after preview/grid reflow. The final native check kept photo 2,000 visible after hiding/reopening the preview. Grid reflow now coalesces intermediate layouts and reveals the selected item after layout settles. Both final PR checks passed for `d59f67e`: [push workflow](https://github.com/kuroiokami/photo/actions/runs/39268234733) and [pull-request workflow](https://github.com/kuroiokami/photo/actions/runs/39268244114). Review found no remaining blocking issues after the decoding, indexing, cancellation, and reflow fixes. [PR #1](https://github.com/kuroiokami/photo/pull/1) was squash-merged as `24b7cff` on 2026-10-19. Preserve the pre-existing local edit in `docs/DEVELOPMENT_PLAN.md`; it is unrelated to this change and must not be included in the commit.
 
 ## Next work and open decisions
 
-1. Finish final rebuilt-app validation and review/merge [PR #1](https://github.com/kuroiokami/photo/pull/1) after its updated checks pass. Keep the reference-machine benchmarks current as the corpus grows.
+1. Plan 1:1 preview zoom for sharpness checking, while keeping reference-machine benchmarks current as the corpus grows.
 2. Decide supported RAW/HEIC formats and the next preview/zoom capabilities.
 3. Confirm ratings/labels and catalog-versus-XMP ownership before Phase 3 persistence work.
 4. Broaden accessibility, large-folder, minimum-macOS, and Intel verification; design distribution signing/sandbox behavior before release.
@@ -115,7 +115,7 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 
 - Added repeatable release benchmarks, aggregate-only evidence, local regression targets, and original-byte hash verification.
 - Removed redundant concurrent decoding, bounded temporary decoder retention, reused workers across folder sessions, bypassed cached-preview debounce, and indexed selection off the main actor.
-- Passed all 18 tests, including eight extension/case variants, and verified native real/mixed/large-folder interactions. Fixed selected-thumbnail visibility when grid geometry changes. Remote checks and merge status are tracked above.
+- Passed all 18 tests and both final PR workflows; verified native real/mixed/large-folder interactions and the grid-reflow fix. Reviewed and merged PR #1 as `24b7cff`, then updated local `main` while preserving the unrelated development-plan edit.
 
 
 ### 2026-10-19 — Read-only folder browsing
@@ -123,7 +123,7 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 - Added shallow JPEG/PNG folder browsing, cancellation-safe folder sessions, natural sorting, EXIF-oriented downsampling, and separate bounded image caches.
 - Replaced the sample filmstrip with a Photo Mechanic-informed contact sheet, density slider, resizable preview, native menu actions, keyboard navigation, and recoverable errors.
 - Added a local development app bundle helper; local checks passed all 13 tests and the native interactions listed above were verified. Real-camera performance budgets remain open.
-- Published implementation commit `6904965` in [draft PR #1](https://github.com/kuroiokami/photo/pull/1); its [remote CI run](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed. This chunk is not merged into `main`.
+- Published implementation commit `6904965` in [draft PR #1](https://github.com/kuroiokami/photo/pull/1); its [remote CI run](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed. That initial draft was subsequently tuned, validated, and merged; see the performance follow-up above.
 
 
 ### 2026-10-19 — Initial foundation
