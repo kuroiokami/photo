@@ -18,7 +18,7 @@ The initial repository foundation is in place; the full product brief has not be
 
 ## Phase 1 — Create a runnable foundation
 
-Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modules, bundled synthetic PNG fixtures, Swift Testing, built-in formatting, and a shared local/CI check script. See [decision 0001](decisions/0001-native-macos-foundation.md). [Initial remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for foundation commit `e297d22`; interactive UI verification remains pending.
+Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modules, bundled synthetic PNG fixtures, Swift Testing, built-in formatting, and a shared local/CI check script. See [decision 0001](decisions/0001-native-macos-foundation.md). [Initial remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for foundation commit `e297d22`; initial UI verification was pending at that revision; native Phase 2 verification is recorded in the project tracker.
 
 - Scaffold the chosen stack with one documented development command.
 - Add formatting, linting, and type checking where supported.
@@ -30,7 +30,9 @@ Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modu
 
 ## Phase 2 — Deliver the first vertical slice
 
-Proposed workflow: open a folder, see thumbnails, select a photo, view a preview, and move between photos using the keyboard.
+Implemented browsing slice: native folder picker and Command-O, shallow read-only JPEG/PNG enumeration, natural filename order, lazy contact sheet with a density slider, resizable preview, keyboard navigation, asynchronous ImageIO lanes, bounded caches, cancellation, and recoverable errors. See [decision 0002](decisions/0002-read-only-folder-browser.md).
+
+Performance acceptance remains open: agree on a real-camera benchmark corpus and numerical targets before declaring the entire phase complete.
 
 - Enumerate supported files without modifying their contents.
 - Generate previews asynchronously with cancellation and bounded concurrency.
@@ -75,6 +77,7 @@ Use unit tests for metadata and state rules, integration tests for file operatio
 - [x] Select the stack and record the rationale.
 - [ ] Select a license.
 - [x] Scaffold the application and CI (initial remote run passed).
-- [ ] Implement the folder-to-preview vertical slice.
+- [x] Implement the read-only JPEG/PNG folder-to-preview vertical slice.
+- [ ] Establish and verify real-camera performance budgets before closing Phase 2.
 
 Revisit this plan after each phase; defer additional features until the current exit criteria are met.

@@ -7,9 +7,12 @@ let package = Package(
   products: [.executable(name: "Photo", targets: ["PhotoApp"])],
   targets: [
     .target(name: "PhotoCore"),
-    .target(name: "PhotoUI", dependencies: ["PhotoCore"], resources: [.process("Resources")]),
+    .target(name: "PhotoImaging", dependencies: ["PhotoCore"]),
+    .target(
+      name: "PhotoUI", dependencies: ["PhotoCore", "PhotoImaging"],
+      resources: [.process("Resources")]),
     .executableTarget(name: "PhotoApp", dependencies: ["PhotoUI"]),
     .testTarget(name: "PhotoCoreTests", dependencies: ["PhotoCore"]),
-    .testTarget(name: "PhotoUITests", dependencies: ["PhotoUI", "PhotoCore"]),
+    .testTarget(name: "PhotoUITests", dependencies: ["PhotoUI", "PhotoCore", "PhotoImaging"]),
   ]
 )
