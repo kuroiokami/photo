@@ -6,8 +6,10 @@ import UniformTypeIdentifiers
 
 private typealias WorkspaceStorage = SwiftUI.State<WorkspaceState>
 private typealias BoolStorage = SwiftUI.State<Bool>
+private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
+private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
 private struct GridLayout: Equatable {
@@ -20,9 +22,11 @@ public struct WorkspaceView: View {
   @WorkspaceStorage private var workspace: WorkspaceState
   @BoolStorage private var showPreview = true
   @BoolStorage private var choosingFolder = false
+  @ColumnStorage private var gridColumns = 1
   @SizeStorage private var thumbnailSize = 160
   @PipelineStorage private var thumbnails = ImagePipeline(byteLimit: 24 * 1024 * 1024)
   @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
+  @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
   @BoolStorage private var showInspector = false
   private let metadataReader = ImageMetadataReader()
@@ -73,7 +77,9 @@ public struct WorkspaceView: View {
     .focusedSceneValue(
       \.workspaceActions,
       WorkspaceActions(
-        workspace: workspace, canDecide: !choosingFolder, openFolder: openFolder, reload: reload,
+        workspace: workspace, canDecide: !choosingFolder, columns: gridColumns,
+        togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
+        openFolder: openFolder, reload: reload,
         canReload: workspace.directory != nil)
     )
     .task(id: workspace.sessionID) {
@@ -234,6 +240,7 @@ public struct WorkspaceView: View {
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .onChange(of: columns, initial: true) { gridColumns = columns }
       .focusable().focused($gridFocused).focusEffectDisabled()
       .onKeyPress(.leftArrow) {
         workspace.moveSelection(by: -1)
@@ -338,8 +345,8 @@ public struct WorkspaceView: View {
         .buttonStyle(.plain).accessibilityLabel("Close preview")
       }.padding(16)
       if let photo = workspace.selectedPhoto {
-        PhotoImageView(
-          photo: photo, pipeline: previews, maximumPixelSize: 2560, detailed: true,
+        DetailPreviewView(
+          photo: photo, pipeline: previews, detailPipeline: detailPipeline,
           sessionID: workspace.sessionID
         )
         .id("\(workspace.sessionID)-\(photo.id)")

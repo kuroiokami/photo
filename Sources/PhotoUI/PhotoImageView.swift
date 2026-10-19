@@ -13,6 +13,7 @@ struct PhotoImageView: View {
   let maximumPixelSize: Int
   var detailed = false
   var sessionID: UUID?
+  var onLoaded: ((PhotoPreview) -> Void)?
   @ImageStorage private var preview: PhotoPreview?
   @ErrorStorage private var error: String?
   @RetryStorage private var retry = 0
@@ -75,6 +76,7 @@ struct PhotoImageView: View {
       {
         try Task.checkCancellation()
         preview = cached
+        onLoaded?(cached)
         return
       }
       // Only cold previews need the arrow-repeat debounce. Cached images are immediate.
@@ -83,6 +85,7 @@ struct PhotoImageView: View {
         for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
       try Task.checkCancellation()
       preview = result
+      onLoaded?(result)
     } catch is CancellationError {
       // A disappearing cell or superseded preview must not publish stale state.
     } catch {

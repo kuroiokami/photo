@@ -28,6 +28,7 @@ public final class WorkspaceState {
   public var canUndo: Bool { !undoStack.isEmpty }
   public var canRedo: Bool { !redoStack.isEmpty }
   public private(set) var metadata: [String: PhotoMetadata] = [:]
+  @ObservationIgnored private var decisionRevision = 0
   @ObservationIgnored private var metadataAttempted: Set<String> = []
   public private(set) var indexedCount = 0
   public private(set) var indexing = false
@@ -179,10 +180,15 @@ public final class WorkspaceState {
     let snapshot = allPhotos
     let metadata = metadata
     let ratings = decisions.mapValues(\.rating)
+    let revision = decisionRevision
     let ordered = await Task.detached(priority: .userInitiated) {
       sort.ordered(snapshot, metadata: metadata, ratings: ratings)
     }.value
     guard session == sessionID, self.sort == sort else { return }
+    if sort == .rating, revision != decisionRevision {
+      await setSort(sort)
+      return
+    }
     let selected = selectedID
     allPhotos = ordered
     photos = ordered.filter { matches($0) }
@@ -239,6 +245,7 @@ public final class WorkspaceState {
       return
     }
     fileIdentities[photo.id] = entry.identity
+    decisionRevision += 1
     decisions[photo.id] = entry.decision
     saveStatus[photo.id] = entry.status
     decisionsReady.insert(photo.id)
@@ -274,6 +281,7 @@ public final class WorkspaceState {
     if before != after {
       undoStack.append(DecisionChange(photo: photo, before: before, after: after))
       redoStack = []
+      decisionRevision += 1
       decisions[photo.id] = after
       repositionRating(photo)
       persist(photo, after)
@@ -314,6 +322,7 @@ public final class WorkspaceState {
   public func undoDecision() {
     guard let change = undoStack.popLast() else { return }
     redoStack.append(change)
+    decisionRevision += 1
     decisions[change.photo.id] = change.before
     repositionRating(change.photo)
     persist(change.photo, change.before)
@@ -322,6 +331,7 @@ public final class WorkspaceState {
   public func redoDecision() {
     guard let change = redoStack.popLast() else { return }
     undoStack.append(change)
+    decisionRevision += 1
     decisions[change.photo.id] = change.after
     repositionRating(change.photo)
     persist(change.photo, change.after)
@@ -366,6 +376,7 @@ public final class WorkspaceState {
     do {
       let entry = try await decisionStore.useExternal(for: url, expectedIdentity: identity)
       guard session == sessionID else { return }
+      decisionRevision += 1
       decisions[photo.id] = entry.decision
       saveStatus[photo.id] = entry.status
       rebuildVisible(preferred: photo.id)

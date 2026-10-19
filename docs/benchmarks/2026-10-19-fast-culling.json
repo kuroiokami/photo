@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "build": "Release, fast-culling implementation",
+  "arw": {
+    "cachedPreviews": {
+      "count": 30,
+      "maximumMilliseconds": 0.016333,
+      "p50Milliseconds": 0.0095,
+      "p95Milliseconds": 0.015542
+    },
+    "concurrentSameImageMilliseconds": 16.148417,
+    "decodedFileCount": 3,
+    "enumeration": {
+      "count": 5,
+      "maximumMilliseconds": 3.537291,
+      "p50Milliseconds": 0.113083,
+      "p95Milliseconds": 3.537291
+    },
+    "fileCount": 3,
+    "finalResidentMiB": 87.15625,
+    "folderSwitching": {
+      "count": 10,
+      "maximumMilliseconds": 0.380791,
+      "p50Milliseconds": 0.109083,
+      "p95Milliseconds": 0.380791
+    },
+    "imageFailures": 0,
+    "logicalCPUCount": 18,
+    "maximumLongEdge": 9504,
+    "minimumLongEdge": 9504,
+    "notes": [
+      "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+      "At most 64 files decoded; hashes cover all enumerated files.",
+      "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+      "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+      "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 87.15625,
+    "physicalMemoryGiB": 128,
+    "previewCacheMiB": 19.97314453125,
+    "previews": {
+      "count": 3,
+      "maximumMilliseconds": 19.306375,
+      "p50Milliseconds": 18.299083,
+      "p95Milliseconds": 19.306375
+    },
+    "rapidSelection": {
+      "count": 500,
+      "maximumMilliseconds": 0.037583,
+      "p50Milliseconds": 0.000416,
+      "p95Milliseconds": 0.000667
+    },
+    "schemaVersion": 1,
+    "thumbnailCacheMiB": 1.768798828125,
+    "thumbnails": {
+      "count": 3,
+      "maximumMilliseconds": 176.728292,
+      "p50Milliseconds": 15.016333,
+      "p95Milliseconds": 176.728292
+    },
+    "totalSourceBytes": 216842240,
+    "virtualCollectionCount": 50000
+  },
+  "jpeg": {
+    "cachedPreviews": {
+      "count": 30,
+      "maximumMilliseconds": 0.020875,
+      "p50Milliseconds": 0.009916,
+      "p95Milliseconds": 0.017375
+    },
+    "concurrentSameImageMilliseconds": 106.92875,
+    "decodedFileCount": 17,
+    "enumeration": {
+      "count": 5,
+      "maximumMilliseconds": 3.959875,
+      "p50Milliseconds": 0.266458,
+      "p95Milliseconds": 3.959875
+    },
+    "fileCount": 17,
+    "finalResidentMiB": 375.765625,
+    "folderSwitching": {
+      "count": 10,
+      "maximumMilliseconds": 0.688333,
+      "p50Milliseconds": 0.341667,
+      "p95Milliseconds": 0.688333
+    },
+    "imageFailures": 0,
+    "logicalCPUCount": 18,
+    "maximumLongEdge": 8640,
+    "minimumLongEdge": 8640,
+    "notes": [
+      "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+      "At most 64 files decoded; hashes cover all enumerated files.",
+      "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+      "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+      "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 447.375,
+    "physicalMemoryGiB": 128,
+    "previewCacheMiB": 50.0390625,
+    "previews": {
+      "count": 17,
+      "maximumMilliseconds": 142.1435,
+      "p50Milliseconds": 123.397875,
+      "p95Milliseconds": 142.1435
+    },
+    "rapidSelection": {
+      "count": 500,
+      "maximumMilliseconds": 0.042458,
+      "p50Milliseconds": 0.000417,
+      "p95Milliseconds": 0.000708
+    },
+    "schemaVersion": 1,
+    "thumbnailCacheMiB": 9.9609375,
+    "thumbnails": {
+      "count": 17,
+      "maximumMilliseconds": 103.29575,
+      "p50Milliseconds": 90.936375,
+      "p95Milliseconds": 103.29575
+    },
+    "totalSourceBytes": 181363581,
+    "virtualCollectionCount": 50000
+  }
+}

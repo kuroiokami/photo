@@ -84,3 +84,13 @@ Use unit tests for metadata and state rules, integration tests for file operatio
 - [ ] Broaden performance coverage across hardware, cameras, and storage media.
 
 Revisit this plan after each phase; defer additional features until the current exit criteria are met.
+
+## Accepted fast-culling milestones — 2026-10-19
+
+The user confirmed Sony ARW first and local decisions plus XMP, in this order. These approved milestones refine the earlier proposed scope.
+
+1. **RAW/EXIF:** embedded-only Sony ARW contact sheet/preview, actual preview provenance/resolution, selected-priority EXIF indexing, numeric metadata sorting with missing values last and identity-preserving selection. Implemented in the feature branch.
+2. **Decisions:** independent flags/stars, keyboard and visible controls, filters, rating ordering, one-step auto-advance, Undo/Redo, durable SQLite, preserving atomic XMP sync, visible errors/conflicts and replacement-file protection. Implemented; direct Lightroom interoperability is not yet verified.
+3. **Detail:** explicit Fit/physical-pixel 100%, focal double-click, pan and navigator, separate full-detail worker, on-demand Apple RAW rendering, 256 MiB decoded-image limit and reset on selection. Implemented; broader camera/hardware/OS coverage remains open.
+
+Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFORMANCE.md. Future work includes additional RAW formats, RAW+JPEG pairing, batch organization, focus/exposure tools, wider accessibility/platform validation, and release signing/distribution.
