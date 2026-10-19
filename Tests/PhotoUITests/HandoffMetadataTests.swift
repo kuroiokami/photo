@@ -34,6 +34,7 @@ struct HandoffMetadataTests {
     let descriptive = try XMPSidecar.mergingMetadata(
       value, fields: Set(patch.fields.keys), keywords: true, into: nil)
     let packet = try XMPSidecar.merging(CullingDecision(rating: 4, flag: .pick), into: descriptive)
+    #expect(!String(decoding: packet, as: UTF8.self).hasPrefix("<?xml "))
     #expect(
       CGImageMetadataCreateFromXMPData(packet as CFData) != nil,
       "Synthetic XMP must be accepted by ImageIO: \(String(decoding: packet, as: UTF8.self))")

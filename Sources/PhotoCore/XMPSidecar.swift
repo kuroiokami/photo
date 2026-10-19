@@ -34,6 +34,17 @@ public enum XMPSidecar {
     else { throw SidecarError.malformed }
     return document
   }
+  /// XMP is an XML fragment/packet, not a standalone XML document. In
+  /// particular, older ImageIO XMP readers reject Foundation's standalone
+  /// declaration. Preserve the existing packet instructions and tree.
+  static func serializedPacket(_ document: XMLDocument) -> Data {
+    document.characterEncoding = "UTF-8"
+    var text = String(decoding: document.xmlData(options: [.nodePreserveAll]), as: UTF8.self)
+    if text.hasPrefix("<?xml "), let end = text.range(of: "?>") {
+      text.removeSubrange(text.startIndex..<end.upperBound)
+    }
+    return Data(text.utf8)
+  }
   // Traverse explicitly: namespace prefixes are arbitrary in real sidecars.
   static func walk(_ node: XMLNode) -> [XMLElement] {
     var result: [XMLElement] = []
@@ -102,6 +113,6 @@ public enum XMPSidecar {
         )
       }
     }
-    return doc.xmlData(options: [.nodePreserveAll])
+    return serializedPacket(doc)
   }
 }

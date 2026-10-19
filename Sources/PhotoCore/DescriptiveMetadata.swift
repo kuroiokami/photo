@@ -287,7 +287,7 @@ extension XMPSidecar {
         target, target: target, uri: lr, prefix: "lr", local: "hierarchicalSubject",
         values: value.hierarchy, container: "Bag", preserveEmpty: true)
     }
-    return doc.xmlData(options: [.nodePreserveAll])
+    return serializedPacket(doc)
   }
   private static func languageItem(_ text: String) -> XMLElement {
     let item = XMLElement(name: "rdf:li", uri: rdf)
