@@ -1,0 +1,58 @@
+# Operating system files
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+Desktop.ini
+
+# Editor-local state
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Logs and temporary output
+*.log
+*.tmp
+*.temp
+/tmp/
+/temp/
+/coverage/
+/.cache/
+
+# Generated builds and dependency directories
+node_modules/
+/dist/
+/build/
+/out/
+/target/
+/.next/
+/.venv/
+/venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.swiftpm/
+/DerivedData/
+/.build/
+
+# Local photo libraries, catalogs, and generated previews
+# Keep intentional test fixtures in a separate tracked fixtures directory.
+/local-data/
+/photos/
+/catalogs/
+/previews/
+/thumbnails/

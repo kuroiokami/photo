@@ -1,0 +1,23 @@
+# Normalize text files in the repository.
+* text=auto
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# Preserve binary image fixtures without text conversion.
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary
+*.heic binary
+*.tif binary
+*.tiff binary
+*.dng binary
+*.cr2 binary
+*.cr3 binary
+*.nef binary
+*.arw binary
+*.pdf binary
