@@ -94,7 +94,9 @@ public enum XMPSidecar {
       for item in target.children?.compactMap({ $0 as? XMLElement }) ?? []
       where item.uri == uri && item.localName == name { item.detach() }
       if let value {
-        target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
+        if target.resolveNamespace(forName: "\(prefix):\(name)") == nil {
+          target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
+        }
         target.addAttribute(
           XMLNode.attribute(withName: "\(prefix):\(name)", uri: uri, stringValue: value) as! XMLNode
         )

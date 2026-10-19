@@ -188,9 +188,9 @@ extension XMPSidecar {
     return resource
   }
   private static func bind(_ target: XMLElement, uri: String, prefix: String) throws {
-    if let binding = target.resolveNamespace(forName: "\(prefix):field"), binding.stringValue != uri
-    {
-      throw SidecarError.ambiguous
+    if let binding = target.resolveNamespace(forName: "\(prefix):field") {
+      guard binding.stringValue == uri else { throw SidecarError.ambiguous }
+      return
     }
     target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
   }
