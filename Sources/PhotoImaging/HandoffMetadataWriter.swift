@@ -19,10 +19,14 @@ public actor HandoffMetadataWriter {
         let source = CGImageSourceCreateWithURL(
           copy as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
         let type = CGImageSourceGetType(source),
-        ["public.jpeg", "public.png"].contains(type as String),
-        let metadata = CGImageMetadataCreateFromXMPData(bytes as CFData),
-        let output = CGImageDestinationCreateWithURL(temporary as CFURL, type, 1, nil)
-      else { throw PreviewError.unreadable }
+        ["public.jpeg", "public.png"].contains(type as String)
+      else { throw MediaOperationError.invalid("Cannot read the JPEG/PNG handoff copy.") }
+      guard let metadata = CGImageMetadataCreateFromXMPData(bytes as CFData) else {
+        throw MediaOperationError.invalid("ImageIO could not parse the prepared XMP metadata.")
+      }
+      guard let output = CGImageDestinationCreateWithURL(temporary as CFURL, type, 1, nil) else {
+        throw MediaOperationError.invalid("Cannot create the temporary metadata export.")
+      }
       var error: Unmanaged<CFError>?
       let options: [CFString: Any] = [
         kCGImageDestinationMetadata: metadata, kCGImageDestinationMergeMetadata: true,
@@ -30,12 +34,21 @@ public actor HandoffMetadataWriter {
       guard CGImageDestinationCopyImageSource(output, source, options as CFDictionary, &error)
       else {
         if let error { throw error.takeRetainedValue() as any Error }
-        throw PreviewError.unreadable
+        throw MediaOperationError.invalid("ImageIO could not copy the image with its metadata.")
       }
-      guard let check = CGImageSourceCreateWithURL(temporary as CFURL, nil),
-        let outputMetadata = CGImageSourceCopyMetadataAtIndex(check, 0, nil),
+    }
+    // Release the destination before reopening it. Older ImageIO versions can
+    // retain buffered output until the destination closes; CopyImageSource must
+    // not be followed by CGImageDestinationFinalize.
+    try autoreleasepool {
+      guard let check = CGImageSourceCreateWithURL(temporary as CFURL, nil) else {
+        throw MediaOperationError.invalid("Cannot reopen the metadata export for verification.")
+      }
+      guard let outputMetadata = CGImageSourceCopyMetadataAtIndex(check, 0, nil),
         let xmp = CGImageMetadataCreateXMPData(outputMetadata, nil)
-      else { throw PreviewError.unreadable }
+      else {
+        throw MediaOperationError.invalid("ImageIO did not expose XMP in the metadata export.")
+      }
       let wanted = try XMPSidecar.descriptive(bytes)
       let actual = try XMPSidecar.descriptive(xmp as Data)
       guard wanted.fields.allSatisfy({ (actual.fields[$0.key] ?? "") == $0.value }),
