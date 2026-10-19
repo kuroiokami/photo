@@ -81,7 +81,7 @@ The current feature branch adds Sony `.arw` (case-insensitive) embedded previews
 
 ### Culling decisions
 
-Use **P** to pick, **X** to reject, **U** to clear the flag, and **0–5** for stars. Flags and stars are independent. Hold Shift to apply and advance, or enable the remembered Auto-advance checkbox. Reject never deletes a photo. Use Decisions and Edit menus for commands and Undo/Redo (Command-Z / Shift-Command-Z). Filter by flag and minimum stars; Clear Filters restores the full folder. Rating sort places highest stars first.
+Use **P** to pick, **X** to reject, **U** to clear the flag, and **0–5** for stars. Flags and stars are independent. Hold Shift to apply and advance, or enable the remembered Auto-advance checkbox. Reject never deletes a photo. Undo history is per folder session and resets on Reload/new folder. Use Decisions and Edit menus for commands and Undo/Redo (Command-Z / Shift-Command-Z). Filter by flag and minimum stars; Clear Filters restores the full folder. Rating sort places highest stars first.
 
 Decisions save in `~/Library/Application Support/Photo/decisions.sqlite` and synchronize to XMP sidecars. ARW uses `name.xmp`; JPEG/PNG uses `name.jpg.xmp`/`name.png.xmp` (other apps may not read these). Original images are untouched. Saved locally / XMP pending means the local decision is durable; Retry XMP Sync retries the sidecar. A conflict offers Use My Decisions or Use External Decisions and never silently overwrites an external edit. Normal quit waits for queued saves; sudden process termination can lose a change still marked Saving. Samples are not persisted.
 

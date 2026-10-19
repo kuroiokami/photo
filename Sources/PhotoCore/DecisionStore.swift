@@ -10,7 +10,7 @@ public struct DecisionEntry: Sendable {
     self.status = status
     self.identity = identity
   }
-  public var conflict: Bool { status == "XMP conflict" }
+  public var conflict: Bool { status.hasPrefix("XMP conflict") }
 }
 
 private struct StoredDecision: Codable {
@@ -76,7 +76,7 @@ public actor DecisionStore {
     guard
       sqlite3_exec(
         db,
-        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL)",
+        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL)",
         nil, nil, nil) == SQLITE_OK
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
@@ -128,6 +128,31 @@ public actor DecisionStore {
     }
   }
 
+  private func pathIdentity(_ image: URL, update: String? = nil) throws -> String? {
+    try withDB { db in
+      var statement: OpaquePointer?
+      let sql =
+        update == nil
+        ? "SELECT identity FROM paths WHERE path = ?"
+        : "INSERT OR REPLACE INTO paths(path,identity) VALUES(?,?)"
+      guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+        throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+      }
+      defer { sqlite3_finalize(statement) }
+      let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+      sqlite3_bind_text(statement, 1, image.standardizedFileURL.path, -1, transient)
+      if let update { sqlite3_bind_text(statement, 2, update, -1, transient) }
+      let result = sqlite3_step(statement)
+      if result == SQLITE_ROW, let text = sqlite3_column_text(statement, 0) {
+        return String(cString: text)
+      }
+      guard result == SQLITE_DONE else {
+        throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+      }
+      return nil
+    }
+  }
+
   private func sidecarData(_ image: URL) throws -> Data? {
     let url = XMPSidecar.url(for: image)
     if image.pathExtension.lowercased() == "arw" {
@@ -153,20 +178,32 @@ public actor DecisionStore {
 
   public func load(for image: URL) throws -> DecisionEntry {
     let identity = try key(for: image)
-    let entry = try loadValue(for: image)
+    let entry = try loadValue(for: image, previousIdentity: pathIdentity(image))
+    _ = try pathIdentity(image, update: identity)
     return DecisionEntry(decision: entry.decision, status: entry.status, identity: identity)
   }
 
-  private func loadValue(for image: URL) throws -> DecisionEntry {
+  private func loadValue(for image: URL, previousIdentity: String?) throws -> DecisionEntry {
     let identity = try key(for: image)
     let local = try read(identity)
     do {
       let data = try sidecarData(image)
       let digest = XMPSidecar.digest(data)
+      if local == nil, let previousIdentity, previousIdentity != identity, data != nil {
+        // A sidecar left behind at a reused pathname must not silently apply
+        // the previous image's decisions to its replacement.
+        try write(
+          StoredDecision(
+            decision: CullingDecision(), pending: true,
+            baseline: "replacement:" + digest), key: identity)
+        return DecisionEntry(decision: CullingDecision(), status: "XMP conflict · image replaced")
+      }
       if let local, local.pending {
         // Recover a crash after atomic XMP publication but before the SQLite
         // acknowledgement. Matching decisions need no further sidecar write.
-        if let data, try XMPSidecar.read(data) == local.decision {
+        if !local.baseline.hasPrefix("replacement:"), let data,
+          try XMPSidecar.read(data) == local.decision
+        {
           try write(
             StoredDecision(decision: local.decision, pending: false, baseline: digest),
             key: identity)
@@ -174,7 +211,9 @@ public actor DecisionStore {
         }
         return DecisionEntry(
           decision: local.decision,
-          status: local.baseline == digest ? "Saved locally · XMP pending" : "XMP conflict")
+          status: local.baseline.hasPrefix("replacement:")
+            ? "XMP conflict · image replaced"
+            : local.baseline == digest ? "Saved locally · XMP pending" : "XMP conflict")
       }
       if let local, local.baseline == digest {
         return DecisionEntry(decision: local.decision, status: "Saved")

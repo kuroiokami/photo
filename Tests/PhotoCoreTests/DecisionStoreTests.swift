@@ -157,6 +157,27 @@ struct DecisionStoreTests {
     }
   }
 
+  @Test func replacementCannotInheritItsPredecessorsSidecar() async throws {
+    let dir = try folder()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let image = dir.appendingPathComponent("same.arw")
+    try Data("original image".utf8).write(to: image)
+    let database = dir.appendingPathComponent("db")
+    let store = DecisionStore(databaseURL: database)
+    _ = try await store.load(for: image)
+    _ = try await store.save(CullingDecision(rating: 5, flag: .pick), for: image)
+    let originalSidecar = try Data(contentsOf: XMPSidecar.url(for: image))
+    try Data("different replacement image bytes".utf8).write(to: image)
+    let replacement = try await store.load(for: image)
+    #expect(replacement.decision == CullingDecision())
+    #expect(replacement.conflict)
+    let restarted = try await DecisionStore(databaseURL: database).load(for: image)
+    #expect(restarted.decision == CullingDecision())
+    #expect(restarted.conflict)
+    #expect(try Data(contentsOf: XMPSidecar.url(for: image)) == originalSidecar)
+    #expect(try await store.useExternal(for: image).decision.rating == 5)
+  }
+
   @Test func renamedIdentityRetainedAndReplacementNotInherited() async throws {
     let dir = try folder()
     defer { try? FileManager.default.removeItem(at: dir) }
@@ -205,6 +226,35 @@ struct CullingWorkflowTests {
     #expect(state.selectedPhoto == nil)
     state.setFilter(.all, minimumRating: 0)
     #expect(state.selectedPhoto != nil)
+  }
+
+  @Test func activeFiltersWaitForDecisionsAndReloadPreservesIdentity() async throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let picked = dir.appendingPathComponent("picked.png")
+    try Data().write(to: picked)
+    try Data().write(to: dir.appendingPathComponent("unflagged.png"))
+    let store = DecisionStore(databaseURL: dir.appendingPathComponent("db"))
+    _ = try await store.load(for: picked)
+    _ = try await store.save(CullingDecision(rating: 4, flag: .pick), for: picked)
+    let state = WorkspaceState(decisionStore: store)
+    state.setFilter(.pick, minimumRating: 0)
+    await state.openFolder(dir)
+    #expect(state.decisionsLoading)
+    #expect(state.photos.isEmpty)
+    await state.loadDecisions()
+    #expect(!state.decisionsLoading)
+    #expect(state.photos.map(\.filename) == ["picked.png"])
+    let selected = state.selectedID
+    await state.openFolder(dir)
+    #expect(state.photos.isEmpty)
+    await state.loadDecisions()
+    #expect(state.selectedID == selected)
+    state.showSamples()
+    await state.loadDecisions()
+    state.setFilter(.all, minimumRating: 0)
+    #expect(state.decisionsReady.count == SampleLibrary.photos.count)
   }
 
   @Test func terminationBarrierWaitsForOrderedSaves() async {

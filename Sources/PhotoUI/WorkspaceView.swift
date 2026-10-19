@@ -88,7 +88,7 @@ public struct WorkspaceView: View {
       await thumbnails.startSession(session)
       await previews.startSession(session)
     }
-    .task(id: workspace.loadState) {
+    .task(id: "\(workspace.sessionID)-\(workspace.loadState)") {
       guard workspace.loadState == .ready else { return }
       async let metadata: Void = workspace.indexMetadata(using: metadataReader)
       async let decisions: Void = workspace.loadDecisions()
@@ -185,6 +185,8 @@ public struct WorkspaceView: View {
             Button("Reload Folder", action: reload)
             Button("Choose Another Folder…", action: openFolder)
           }
+        case .ready where workspace.photos.isEmpty && workspace.decisionsLoading:
+          ProgressView("Reading culling decisions…")
         case .ready where workspace.photos.isEmpty && workspace.totalCount > 0:
           ContentUnavailableView {
             Label("No photos match these filters", systemImage: "line.3.horizontal.decrease.circle")
@@ -461,7 +463,7 @@ public struct WorkspaceView: View {
       if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
         Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
         HStack {
-          if status == "XMP conflict" {
+          if status.hasPrefix("XMP conflict") {
             Button("Use My Decisions") { workspace.retrySync(useLocal: true) }
             Button("Use External Decisions") { Task { await workspace.useExternalDecision() } }
           } else if status != "Saving…" {

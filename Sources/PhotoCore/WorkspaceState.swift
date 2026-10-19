@@ -13,6 +13,8 @@ public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
   public private(set) var decisions: [String: CullingDecision] = [:]
   public private(set) var saveStatus: [String: String] = [:]
+  public private(set) var decisionsLoading = false
+  @ObservationIgnored private var reloadSelection: String?
   public private(set) var decisionsReady: Set<String> = []
   public var autoAdvance = UserDefaults.standard.bool(forKey: "Photo.autoAdvance") {
     didSet { UserDefaults.standard.set(autoAdvance, forKey: "Photo.autoAdvance") }
@@ -66,6 +68,8 @@ public final class WorkspaceState {
     let previousID = self.directory == directory ? selectedID : nil
     folderTask?.cancel()
     resetDecisions()
+    decisionsLoading = true
+    reloadSelection = previousID
     sessionID = UUID()
     let session = sessionID
     self.directory = directory
@@ -97,14 +101,15 @@ public final class WorkspaceState {
       }
       guard sessionID == session else { return }
       try Task.checkCancellation()
-      photos = loaded.photos
       allPhotos = loaded.photos
-      indicesByID = loaded.indices
+      photos = flagFilter == .all && minimumRating == 0 ? loaded.photos : []
+      indicesByID = photos.isEmpty ? [:] : loaded.indices
       selectedIndex = previousID.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
       loadState = .ready
       folderTask = nil
     } catch {
       guard sessionID == session else { return }
+      decisionsLoading = false
       loadState = .failed(
         error is CancellationError
           ? "Folder loading was cancelled. Reload to try again." : error.localizedDescription)
@@ -116,11 +121,12 @@ public final class WorkspaceState {
     folderTask?.cancel()
     folderTask = nil
     resetDecisions()
+    decisionsLoading = true
     sessionID = UUID()
     directory = nil
     selectedIndex = nil
-    photos = SampleLibrary.photos
-    allPhotos = photos
+    allPhotos = SampleLibrary.photos
+    photos = flagFilter == .all && minimumRating == 0 ? allPhotos : []
     metadata = [:]
     metadataAttempted = []
     indexedCount = 0
@@ -191,7 +197,7 @@ public final class WorkspaceState {
     }
     let selected = selectedID
     allPhotos = ordered
-    photos = ordered.filter { matches($0) }
+    photos = visiblePhotos(ordered)
     indicesByID = Self.makeIndex(photos)
     selectedIndex = selected.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
   }
@@ -206,6 +212,8 @@ public final class WorkspaceState {
     decisions = [:]
     saveStatus = [:]
     decisionsReady = []
+    decisionsLoading = false
+    reloadSelection = nil
     decisionVersions = [:]
     fileIdentities = [:]
     undoStack = []
@@ -213,6 +221,7 @@ public final class WorkspaceState {
   }
 
   public func loadDecisions() async {
+    decisionsLoading = true
     let session = sessionID
     let snapshot = allPhotos
     await DecisionSaveQueue.shared.flush()
@@ -226,7 +235,9 @@ public final class WorkspaceState {
       allPhotos = sort.ordered(
         allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
     }
-    rebuildVisible(preferred: selectedID)
+    decisionsLoading = false
+    rebuildVisible(preferred: selectedID ?? reloadSelection)
+    reloadSelection = nil
   }
 
   private func loadDecision(_ photo: PhotoItem, session: UUID) async {
@@ -256,8 +267,15 @@ public final class WorkspaceState {
     return flagFilter.includes(decision.flag) && decision.rating >= minimumRating
   }
 
+  private func visiblePhotos(_ candidates: [PhotoItem]) -> [PhotoItem] {
+    if decisionsLoading && (flagFilter != .all || minimumRating > 0) { return [] }
+    return candidates.filter { matches($0) }
+  }
+
   private func rebuildVisible(preferred: String?, fallback: [String] = []) {
-    photos = allPhotos.filter { matches($0) }
+    photos =
+      decisionsLoading && (flagFilter != .all || minimumRating > 0)
+      ? [] : allPhotos.filter { matches($0) }
     indicesByID = Self.makeIndex(photos)
     selectedIndex =
       preferred.flatMap { indicesByID[$0] }
