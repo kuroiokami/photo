@@ -8,7 +8,7 @@ For installation, usage, feature status, planned work, and handoff evidence, see
 
 The Phase 2 browsing slice opens real folders of JPEG and PNG images in a contact sheet with an adjustable thumbnail grid and resizable preview pane. Loading runs away from the main actor with cancellation and bounded decoded-image caches. Original images and metadata are never written.
 
-Ratings, RAW/HEIC support, persistent catalogs, and release distribution are planned. Real-camera performance budgets and benchmarks remain open; this is a working development build.
+Ratings, RAW/HEIC support, persistent catalogs, and release distribution are planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
 
 ## Requirements and installation
 
@@ -50,10 +50,18 @@ sh scripts/check.sh
 
 The shared local/CI script checks formatting, compiles in Swift 6 language mode with warnings as errors, and runs the test suite. No `Package.resolved` exists without external dependencies; commit it when dependencies are introduced.
 
+## Performance checks
+
+```sh
+sh scripts/benchmark.sh --folder "/path/to/photo/folder" > /tmp/photo-benchmark.json
+```
+
+This release-mode benchmark measures folder/image loading, cached navigation, indexed selection, and sampled process memory. It verifies source hashes before/after and emits aggregate statistics only. See the [report and reproducibility notes](docs/PERFORMANCE.md) for corpus limits, targets, and synthetic-folder generation. Do not interpret pipeline timing as UI frame time.
+
 ## Structure
 
 - **PhotoCore**: models, observable workspace state, cancellation-safe folder sessions, and read-only file enumeration.
-- **PhotoImaging**: ImageIO decoding, orientation handling, separate serial thumbnail/preview lanes, and cost-bounded caches.
+- **PhotoImaging**: ImageIO decoding, orientation handling, persistent serial thumbnail/preview lanes, and cost-bounded session caches.
 - **PhotoUI**: contact sheet, asynchronous image views, folder picker, menu commands, and bundled samples.
 - **PhotoApp**: process startup and window lifecycle.
 

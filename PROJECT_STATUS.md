@@ -6,7 +6,7 @@ This is the current handoff for humans and AI contributors. Update it in the sam
 
 ## Current state
 
-Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. Phase 2 performance targets and representative real-camera benchmarks remain open. The chunk is published in [draft PR #1](https://github.com/kuroiokami/photo/pull/1) on `codex/folder-browser`; it has not been merged into `main`.
+Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. The browsing slice now has paired real-camera measurements, mixed-format/large-folder validation, and reference-machine targets recorded in [PERFORMANCE.md](docs/PERFORMANCE.md). Wider hardware/camera coverage remains open. The chunk is published in [draft PR #1](https://github.com/kuroiokami/photo/pull/1) on `codex/folder-browser`; it has not been merged into `main`.
 
 ## Installation and first run
 
@@ -50,10 +50,10 @@ For a native local app bundle, run `sh scripts/build-app.sh`, then `open .build/
 | Keyboard navigation | Implemented and interactively checked | Arrow keys, Home/End, Space, Escape, Command-O/R |
 | File and preview adapters | Implemented | Actor-based enumeration and ImageIO downsampling; EXIF orientation |
 | General metadata reader/persistence | Interfaces/planned | Original dimensions shown; no metadata writes |
-| Formatting, build, and automated tests | Locally verified | Shared script passed all 13 tests |
+| Formatting, build, and automated tests | Locally verified | Shared script passed all 18 tests; extension test has eight argument cases |
 | GitHub Actions | Verified for Phase 2 code | [Folder-browser run passed](https://github.com/kuroiokami/photo/actions/runs/39261955925) for `6904965` |
 | Real-folder browsing and asynchronous previews | Implemented | Separate serial decode lanes, LRU caches, session cancellation, retry |
-| Representative performance budgets | Pending: Phase 2 | 240 synthetic images used interactively; no real-camera benchmark yet |
+| Reference-machine performance targets | Verified | 17 real 50 MP JPEGs, 2,000 mixed JPEG/PNG files, 50,000-item selection stress; see performance report |
 | Ratings, flags, filtering, undo, persistence | Planned: Phase 3 | Metadata ownership and semantics need decisions |
 | Broader format support and performance validation | Planned: Phase 4 | No RAW/HEIC/color-management claims yet |
 | Accessibility review and release packaging | Planned: Phase 4 | Signing and distribution not implemented |
@@ -82,14 +82,22 @@ Phase 2 remote evidence, 2026-10-19: [Swift checks run 39261955925](https://gith
 
 Historical initial remote evidence, 2026-10-19: [Swift checks run 39257940587](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed on `main` for commit `e297d22`. Formatting, build, and tests completed successfully on the macOS runner. This records that specific code revision; later commits must be checked against their own runs.
 
+## Performance validation follow-up — 2026-10-19
+
+The user reported that their real folder generally worked and authorized measurement, fixes, and merge of PR #1. The current check script passes all 18 tests, including eight Unicode filename/extension variants. Paired release runs found and fixed redundant same-image decoding and linear selection scans. Image workers now persist across sessions, temporary decoder objects have local autorelease pools, and cached previews bypass the cold-load debounce.
+
+Median real-camera results across three alternating runs: concurrent identical previews 1628.8 → 203.1 ms, selection lookup p95 7.1260 → 0.0009 ms in a virtual 50,000-item collection, and sampled CLI peak RSS 531.2 → 418.6 MiB. All source hashes matched. The 2,000-file folder loaded below the local 250 ms target; individual cold 50 MP previews remained about 0.24 seconds. See [aggregate evidence and limits](docs/PERFORMANCE.md).
+
+The rebuilt native app loaded a temporary mixed folder containing copies of 17 real-camera JPEGs plus six generated PNGs with Unicode names and `.jpg`/`.jpeg`/uppercase/mixed-case variants. Rapid navigation, portrait preview, and selection retention on Reload passed. The native app also opened and scrolled the 2,000-file mixed corpus. Its sampled debug RSS ranged from 216.9 to 312.3 MiB, ending at 296.1 MiB; this is not a matched-lifetime comparison with the earlier native sample. UI testing found and fixed selected-tile visibility after preview/grid reflow. The final native check kept photo 2,000 visible after hiding/reopening the preview. Grid reflow now coalesces intermediate layouts and reveals the selected item after layout settles. Latest remote CI and PR merge status remain pending. Preserve the pre-existing local edit in `docs/DEVELOPMENT_PLAN.md`; it is unrelated to this change and must not be included in the commit.
+
 ## Next work and open decisions
 
-1. Review [draft PR #1](https://github.com/kuroiokami/photo/pull/1) and establish a representative real-camera corpus and numeric latency/memory targets; profile the folder workflow before closing Phase 2.
+1. Finish final rebuilt-app validation and review/merge [PR #1](https://github.com/kuroiokami/photo/pull/1) after its updated checks pass. Keep the reference-machine benchmarks current as the corpus grows.
 2. Decide supported RAW/HEIC formats and the next preview/zoom capabilities.
 3. Confirm ratings/labels and catalog-versus-XMP ownership before Phase 3 persistence work.
 4. Broaden accessibility, large-folder, minimum-macOS, and Intel verification; design distribution signing/sandbox behavior before release.
 
-No live folder watching, recursion, multi-selection, 1:1 zoom, RAW/HEIC decoding, persistent catalogs, ratings, or metadata writes are implemented. Decoded caches are capped at 24 MiB (thumbnails) and 64 MiB (previews); visible image views and transient decoder/OS allocations are additional. Decode work is limited to one thumbnail plus one preview at a time and cancellation is cooperative around filesystem/ImageIO calls.
+No live folder watching, recursion, multi-selection, 1:1 zoom, RAW/HEIC decoding, persistent catalogs, ratings, or metadata writes are implemented. Decoded caches are capped at 24 MiB (thumbnails) and 64 MiB (previews); visible image views and transient decoder/OS allocations are additional. Persistent per-window workers limit decode work to one thumbnail plus one preview at a time, including across folder switches; cancellation is cooperative around filesystem/ImageIO calls.
 
 License and distribution requirements remain open. Proposed MVP exclusions remain destructive editing, cloud sync, collaboration, AI ranking, advanced search, and multi-user catalogs.
 
@@ -102,6 +110,13 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 - File reads are implemented; metadata writes and persistence are not. Folder generations and view cancellation reject superseded results. See decision 0002 for cache and UI boundaries.
 
 ## Change log
+
+### 2026-10-19 — Real-camera validation and tuning
+
+- Added repeatable release benchmarks, aggregate-only evidence, local regression targets, and original-byte hash verification.
+- Removed redundant concurrent decoding, bounded temporary decoder retention, reused workers across folder sessions, bypassed cached-preview debounce, and indexed selection off the main actor.
+- Passed all 18 tests, including eight extension/case variants, and verified native real/mixed/large-folder interactions. Fixed selected-thumbnail visibility when grid geometry changes. Remote checks and merge status are tracked above.
+
 
 ### 2026-10-19 — Read-only folder browsing
 

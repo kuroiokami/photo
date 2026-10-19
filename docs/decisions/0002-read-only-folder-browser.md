@@ -35,3 +35,7 @@ Camera Bits' documented contact-sheet screenshots and interaction guidance infor
 
 - [Contact Sheets: An Overview (legacy Photo Mechanic 6)](https://docs.camerabits.com/support/solutions/articles/48001252561-contact-sheets-an-overview)
 - [The Preview Window](https://camerabits.freshdesk.com/support/solutions/articles/48001144384-the-preview-window)
+
+## Implementation refinement
+
+Worker/cache lifetime and the preview protocol were refined after real-camera measurements in [decision 0003](0003-measured-browsing-performance.md). Workers now persist across sessions, and session changes invalidate caches without overlapping replacement workers. Refer to that decision for the current implementation.

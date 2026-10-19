@@ -18,33 +18,35 @@ public enum PreviewError: LocalizedError {
   }
 }
 
-/// One decoder per lane means at most one thumbnail and one preview decode run
-/// concurrently. Cancelled requests check before entering expensive ImageIO work.
-private actor ImageDecoder {
-  func decode(_ url: URL, maximumPixelSize: Int) throws -> PhotoPreview {
-    try Task.checkCancellation()
-    let options = [kCGImageSourceShouldCache: false] as CFDictionary
-    guard let source = CGImageSourceCreateWithURL(url as CFURL, options),
-      let type = CGImageSourceGetType(source) as String?,
-      ["public.jpeg", "public.png"].contains(type),
-      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-      let width = properties[kCGImagePropertyPixelWidth] as? Int,
-      let height = properties[kCGImagePropertyPixelHeight] as? Int
-    else { throw PreviewError.unreadable }
-    let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
-    let thumbnailOptions: [CFString: Any] = [
-      kCGImageSourceCreateThumbnailFromImageAlways: true,
-      kCGImageSourceCreateThumbnailWithTransform: true,
-      kCGImageSourceThumbnailMaxPixelSize: maximumPixelSize,
-      kCGImageSourceShouldCacheImmediately: true,
-    ]
-    guard
-      let image = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary)
-    else { throw PreviewError.unreadable }
-    try Task.checkCancellation()
-    return PhotoPreview(
-      image: image, originalWidth: orientation >= 5 ? height : width,
-      originalHeight: orientation >= 5 ? width : height)
+/// Synchronous ImageIO work runs inside its owning pipeline actor. A local
+/// autorelease pool releases temporary decoder objects after every image.
+private enum ImageDecoder {
+  static func decode(_ url: URL, maximumPixelSize: Int) throws -> PhotoPreview {
+    try autoreleasepool {
+      try Task.checkCancellation()
+      let options = [kCGImageSourceShouldCache: false] as CFDictionary
+      guard let source = CGImageSourceCreateWithURL(url as CFURL, options),
+        let type = CGImageSourceGetType(source) as String?,
+        ["public.jpeg", "public.png"].contains(type),
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+        let width = properties[kCGImagePropertyPixelWidth] as? Int,
+        let height = properties[kCGImagePropertyPixelHeight] as? Int
+      else { throw PreviewError.unreadable }
+      let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
+      let thumbnailOptions: [CFString: Any] = [
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceCreateThumbnailWithTransform: true,
+        kCGImageSourceThumbnailMaxPixelSize: maximumPixelSize,
+        kCGImageSourceShouldCacheImmediately: true,
+      ]
+      guard
+        let image = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary)
+      else { throw PreviewError.unreadable }
+      try Task.checkCancellation()
+      return PhotoPreview(
+        image: image, originalWidth: orientation >= 5 ? height : width,
+        originalHeight: orientation >= 5 ? width : height)
+    }
   }
 }
 
@@ -53,29 +55,31 @@ public actor ImagePipeline: PhotoPreviewLoading {
     let url: URL
     let size: Int
   }
-  private let decoder = ImageDecoder()
+  private var sessionID: UUID?
   private let byteLimit: Int
   private var cache: [Key: PhotoPreview] = [:]
   private var order: [Key] = []
   public private(set) var cachedByteCount = 0
+  private(set) var decodedImageCount = 0
 
   public init(byteLimit: Int) { self.byteLimit = max(0, byteLimit) }
 
-  public func preview(for file: URL, maximumPixelSize: Int) async throws -> PhotoPreview {
+  public func preview(
+    for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
+  ) async throws -> PhotoPreview {
     try Task.checkCancellation()
+    startSession(sessionID)
     let size = min(max(maximumPixelSize, 1), 2560)
     let key = Key(url: file, size: size)
     if let cached = cache[key] {
       touch(key)
       return cached
     }
-    let result = try await decoder.decode(file, maximumPixelSize: size)
+    // Do not suspend between the cache check and decoding: queued requests
+    // then reuse the completed entry instead of redundantly decoding it.
+    decodedImageCount += 1
+    let result = try ImageDecoder.decode(file, maximumPixelSize: size)
     try Task.checkCancellation()
-    // Another request may have populated the same entry while awaiting decoding.
-    if let existing = cache[key] {
-      touch(key)
-      return existing
-    }
     if result.byteCost <= byteLimit {
       while cachedByteCount + result.byteCost > byteLimit, let oldest = order.first {
         order.removeFirst()
@@ -86,6 +90,27 @@ public actor ImagePipeline: PhotoPreviewLoading {
       cachedByteCount += result.byteCost
     }
     return result
+  }
+
+  /// A non-decoding lookup lets the UI bypass its cold-preview debounce on hits.
+  public func cachedPreview(
+    for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
+  ) -> PhotoPreview? {
+    guard !Task.isCancelled, self.sessionID == sessionID else { return nil }
+    let key = Key(url: file, size: min(max(maximumPixelSize, 1), 2560))
+    guard let result = cache[key] else { return nil }
+    touch(key)
+    return result
+  }
+
+  /// Keep the actor/worker stable across folders; changing a session only drops
+  /// cached images. In-flight work cannot overlap a replacement worker.
+  public func startSession(_ sessionID: UUID?) {
+    guard !Task.isCancelled, self.sessionID != sessionID else { return }
+    self.sessionID = sessionID
+    cache.removeAll(keepingCapacity: true)
+    order.removeAll(keepingCapacity: true)
+    cachedByteCount = 0
   }
 
   private func touch(_ key: Key) {

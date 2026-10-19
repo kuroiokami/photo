@@ -6,7 +6,7 @@ public protocol PhotoFileAccess: Sendable {
 
 public protocol PhotoPreviewLoading: Sendable {
   associatedtype Preview: Sendable
-  func preview(for file: URL, maximumPixelSize: Int) async throws -> Preview
+  func preview(for file: URL, maximumPixelSize: Int, sessionID: UUID?) async throws -> Preview
 }
 
 public struct PhotoMetadata: Equatable, Sendable {

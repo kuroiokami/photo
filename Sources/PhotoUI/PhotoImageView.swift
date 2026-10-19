@@ -12,6 +12,7 @@ struct PhotoImageView: View {
   let pipeline: ImagePipeline
   let maximumPixelSize: Int
   var detailed = false
+  var sessionID: UUID?
   @ImageStorage private var preview: PhotoPreview?
   @ErrorStorage private var error: String?
   @RetryStorage private var retry = 0
@@ -48,7 +49,7 @@ struct PhotoImageView: View {
       }
     }
     .task(
-      id: "\(photo.id)-\(ObjectIdentifier(pipeline))-\(retry)",
+      id: "\(photo.id)-\(ObjectIdentifier(pipeline))-\(String(describing: sessionID))-\(retry)",
       priority: detailed ? .userInitiated : .utility
     ) { await load() }
     .onDisappear { preview = nil }
@@ -59,8 +60,6 @@ struct PhotoImageView: View {
     preview = nil
     error = nil
     do {
-      // Coalesce arrow-key repeat before scheduling a full preview decode.
-      if detailed { try await Task.sleep(for: .milliseconds(35)) }
       let url: URL
       if let fileURL = photo.fileURL {
         url = fileURL
@@ -69,7 +68,19 @@ struct PhotoImageView: View {
       } else {
         throw PreviewError.unreadable
       }
-      let result = try await pipeline.preview(for: url, maximumPixelSize: maximumPixelSize)
+      if detailed,
+        let cached = await pipeline.cachedPreview(
+          for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID
+        )
+      {
+        try Task.checkCancellation()
+        preview = cached
+        return
+      }
+      // Only cold previews need the arrow-repeat debounce. Cached images are immediate.
+      if detailed { try await Task.sleep(for: .milliseconds(35)) }
+      let result = try await pipeline.preview(
+        for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
       try Task.checkCancellation()
       preview = result
     } catch is CancellationError {

@@ -11,15 +11,16 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
-  public private(set) var selectedID: PhotoItem.ID?
+  public private(set) var selectedIndex: Int?
+  @ObservationIgnored private var indicesByID: [PhotoItem.ID: Int]
   public private(set) var directory: URL?
   public private(set) var loadState: FolderLoadState = .ready
   public private(set) var sessionID = UUID()
   @ObservationIgnored private let fileAccess: any PhotoFileAccess
-  @ObservationIgnored private var folderTask: Task<[URL], Error>?
+  @ObservationIgnored private var folderTask: Task<LoadedPhotos, Error>?
 
-  public var selectedPhoto: PhotoItem? { photos.first { $0.id == selectedID } }
-  public var selectedIndex: Int? { photos.firstIndex { $0.id == selectedID } }
+  public var selectedPhoto: PhotoItem? { selectedIndex.map { photos[$0] } }
+  public var selectedID: PhotoItem.ID? { selectedPhoto?.id }
   public var title: String { directory?.lastPathComponent ?? "Sample collection" }
 
   public init(
@@ -28,7 +29,8 @@ public final class WorkspaceState {
   ) {
     self.photos = photos
     self.fileAccess = fileAccess
-    selectedID = photos.first?.id
+    indicesByID = Self.makeIndex(photos)
+    selectedIndex = photos.isEmpty ? nil : 0
   }
 
   public func openFolder(_ directory: URL) async {
@@ -37,22 +39,32 @@ public final class WorkspaceState {
     sessionID = UUID()
     let session = sessionID
     self.directory = directory
+    selectedIndex = nil
     photos = []
-    selectedID = nil
+    indicesByID = [:]
     loadState = .loading
     let fileAccess = fileAccess
-    let task = Task { try await fileAccess.photos(in: directory) }
+    // Build models and the lookup table away from the main actor as well as IO.
+    let task = Task.detached(priority: .userInitiated) {
+      let urls = try await fileAccess.photos(in: directory)
+      try Task.checkCancellation()
+      let photos = urls.map(PhotoItem.init(fileURL:))
+      let indices = Self.makeIndex(photos)
+      try Task.checkCancellation()
+      return LoadedPhotos(photos: photos, indices: indices)
+    }
     folderTask = task
     do {
-      let urls = try await withTaskCancellationHandler {
+      let loaded = try await withTaskCancellationHandler {
         try await task.value
       } onCancel: {
         task.cancel()
       }
       guard sessionID == session else { return }
       try Task.checkCancellation()
-      photos = urls.map(PhotoItem.init(fileURL:))
-      selectedID = photos.first(where: { $0.id == previousID })?.id ?? photos.first?.id
+      photos = loaded.photos
+      indicesByID = loaded.indices
+      selectedIndex = previousID.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
       loadState = .ready
       folderTask = nil
     } catch {
@@ -69,24 +81,41 @@ public final class WorkspaceState {
     folderTask = nil
     sessionID = UUID()
     directory = nil
+    selectedIndex = nil
     photos = SampleLibrary.photos
-    selectedID = photos.first?.id
+    indicesByID = Self.makeIndex(photos)
+    selectedIndex = photos.isEmpty ? nil : 0
     loadState = .ready
   }
 
   public func select(_ id: PhotoItem.ID?) {
     guard let id else {
-      selectedID = nil
+      selectedIndex = nil
       return
     }
-    guard photos.contains(where: { $0.id == id }) else { return }
-    selectedID = id
+    guard let index = indicesByID[id] else { return }
+    selectedIndex = index
   }
 
   public func moveSelection(by offset: Int) {
     guard !photos.isEmpty else { return }
     let current = selectedIndex ?? 0
     let movement = min(max(offset, -current), photos.count - 1 - current)
-    selectedID = photos[current + movement].id
+    selectedIndex = current + movement
   }
+
+  private struct LoadedPhotos: Sendable {
+    let photos: [PhotoItem]
+    let indices: [PhotoItem.ID: Int]
+  }
+
+  private nonisolated static func makeIndex(_ photos: [PhotoItem]) -> [PhotoItem.ID: Int] {
+    var indices: [PhotoItem.ID: Int] = [:]
+    indices.reserveCapacity(photos.count)
+    for (index, photo) in photos.enumerated() where indices[photo.id] == nil {
+      indices[photo.id] = index
+    }
+    return indices
+  }
+
 }

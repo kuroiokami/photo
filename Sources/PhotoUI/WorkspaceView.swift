@@ -9,6 +9,12 @@ private typealias SizeStorage = SwiftUI.State<Double>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
+private struct GridLayout: Equatable {
+  let size: CGSize
+  let thumbnailSize: Double
+  let showsPreview: Bool
+}
+
 public struct WorkspaceView: View {
   @WorkspaceStorage private var workspace: WorkspaceState
   @BoolStorage private var showPreview = true
@@ -65,10 +71,11 @@ public struct WorkspaceView: View {
       WorkspaceActions(
         openFolder: openFolder, reload: reload, canReload: workspace.directory != nil)
     )
-    .onChange(of: workspace.sessionID) {
-      // A folder generation owns its caches. Old decodes cannot populate new views.
-      thumbnails = ImagePipeline(byteLimit: 24 * 1024 * 1024)
-      previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
+    .task(id: workspace.sessionID) {
+      // Retain one worker per lane across folders, while invalidating caches.
+      let session = workspace.sessionID
+      await thumbnails.startSession(session)
+      await previews.startSession(session)
     }
   }
 
@@ -113,8 +120,10 @@ public struct WorkspaceView: View {
     HStack(spacing: 16) {
       VStack(alignment: .leading, spacing: 3) {
         Text(workspace.title).font(.title3.weight(.semibold)).lineLimit(1)
-        Text("\(workspace.photos.count) photos · Filename order")
-          .font(.caption).foregroundStyle(.secondary)
+        Text(
+          "\(workspace.photos.count) photos · \(workspace.directory == nil ? "Bundled samples" : "Filename order")"
+        )
+        .font(.caption).foregroundStyle(.secondary)
       }
       Spacer(minLength: 8)
       Image(systemName: "square.grid.3x3").foregroundStyle(.secondary)
@@ -173,6 +182,18 @@ public struct WorkspaceView: View {
             .onChange(of: workspace.selectedID) {
               if let id = workspace.selectedID { proxy.scrollTo(id) }
             }
+            .task(
+              id: GridLayout(
+                size: geometry.size, thumbnailSize: thumbnailSize, showsPreview: showPreview)
+            ) {
+              // Lazy-grid positions settle after pane/density reflow. Coalesce
+              // intermediate layouts, then reveal the current selection once.
+              do {
+                try await Task.sleep(for: .milliseconds(50))
+                try Task.checkCancellation()
+                if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+              } catch {}
+            }
           }
           .id(workspace.sessionID)
         }
@@ -227,9 +248,11 @@ public struct WorkspaceView: View {
       gridFocused = true
     } label: {
       VStack(alignment: .leading, spacing: 8) {
-        PhotoImageView(photo: photo, pipeline: thumbnails, maximumPixelSize: 480)
-          .frame(height: thumbnailSize * 0.7)
-          .clipShape(RoundedRectangle(cornerRadius: 4))
+        PhotoImageView(
+          photo: photo, pipeline: thumbnails, maximumPixelSize: 480, sessionID: workspace.sessionID
+        )
+        .frame(height: thumbnailSize * 0.7)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
         Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
           .foregroundStyle(selected ? Color.white : Color.secondary)
       }
@@ -264,9 +287,12 @@ public struct WorkspaceView: View {
         .buttonStyle(.plain).accessibilityLabel("Close preview")
       }.padding(16)
       if let photo = workspace.selectedPhoto {
-        PhotoImageView(photo: photo, pipeline: previews, maximumPixelSize: 2560, detailed: true)
-          .id("\(workspace.sessionID)-\(photo.id)")
-          .padding(.horizontal, 16)
+        PhotoImageView(
+          photo: photo, pipeline: previews, maximumPixelSize: 2560, detailed: true,
+          sessionID: workspace.sessionID
+        )
+        .id("\(workspace.sessionID)-\(photo.id)")
+        .padding(.horizontal, 16)
         VStack(spacing: 8) {
           Text(photo.filename).font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
           HStack {

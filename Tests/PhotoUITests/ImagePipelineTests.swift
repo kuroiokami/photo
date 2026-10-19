@@ -2,10 +2,11 @@ import CoreGraphics
 import Foundation
 import ImageIO
 import PhotoCore
-import PhotoImaging
 import PhotoUI
 import Testing
 import UniformTypeIdentifiers
+
+@testable import PhotoImaging
 
 struct ImagePipelineTests {
   @Test func pngAndJPEGDecodeWithoutChangingSourceBytes() async throws {
@@ -86,6 +87,66 @@ struct ImagePipelineTests {
     let result = try await pipeline.preview(for: file, maximumPixelSize: 160)
     #expect(result.image.width == 160)
     #expect(try Data(contentsOf: file) == original)
+  }
+
+  @Test func concurrentRequestsDecodeOnceAndShareTheCache() async throws {
+    let url = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let pipeline = ImagePipeline(byteLimit: 1024 * 1024)
+    try await withThrowingTaskGroup(of: PhotoPreview.self) { group in
+      for _ in 0..<8 {
+        group.addTask { try await pipeline.preview(for: url, maximumPixelSize: 160) }
+      }
+      var count = 0
+      for try await image in group {
+        #expect(image.image.width == 160)
+        count += 1
+      }
+      #expect(count == 8)
+    }
+    #expect(await pipeline.decodedImageCount == 1)
+    #expect(await pipeline.cachedPreview(for: url, maximumPixelSize: 160) != nil)
+    #expect(await pipeline.cachedPreview(for: url, maximumPixelSize: 160, sessionID: UUID()) == nil)
+    #expect(await pipeline.decodedImageCount == 1)
+  }
+
+  @Test func cancelledSessionResetCannotEvictTheCurrentCache() async throws {
+    let url = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let pipeline = ImagePipeline(byteLimit: 1024 * 1024)
+    let current = UUID()
+    _ = try await pipeline.preview(for: url, maximumPixelSize: 160, sessionID: current)
+    let reset = Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      await pipeline.startSession(UUID())
+    }
+    await reset.value
+    #expect(
+      await pipeline.cachedPreview(for: url, maximumPixelSize: 160, sessionID: current) != nil)
+    #expect(await pipeline.decodedImageCount == 1)
+  }
+
+  @Test func newFolderSessionDropsStalePixelsAndAllowsRetry() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let original = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let bytes = try Data(contentsOf: original)
+    let file = directory.appendingPathComponent("reload.png")
+    try bytes.write(to: file)
+    let pipeline = ImagePipeline(byteLimit: 1024 * 1024)
+    let first = UUID()
+    let next = UUID()
+    _ = try await pipeline.preview(for: file, maximumPixelSize: 160, sessionID: first)
+    try Data("changed externally".utf8).write(to: file)
+    #expect(await pipeline.cachedPreview(for: file, maximumPixelSize: 160, sessionID: first) != nil)
+    await pipeline.startSession(next)
+    #expect(await pipeline.cachedByteCount == 0)
+    await #expect(throws: (any Error).self) {
+      try await pipeline.preview(for: file, maximumPixelSize: 160, sessionID: next)
+    }
+    try bytes.write(to: file)
+    let recovered = try await pipeline.preview(for: file, maximumPixelSize: 160, sessionID: next)
+    #expect(recovered.image.width == 160)
+    #expect(await pipeline.decodedImageCount == 3)
   }
 
   @Test func cacheStaysWithinBudgetAndOversizedImagesAreNotCached() async throws {

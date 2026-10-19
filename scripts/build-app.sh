@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-swift build
+swift build --product Photo
 bin_path="$(swift build --show-bin-path)"
 app_dir="$PWD/.build/Photo.app"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"

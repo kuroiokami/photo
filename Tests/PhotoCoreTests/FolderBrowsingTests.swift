@@ -43,6 +43,17 @@ struct FolderBrowsingTests {
     #expect(photos.map(\.lastPathComponent) == ["Photo1.jpeg", "Photo2.png", "Photo10.JPG"])
   }
 
+  @Test(arguments: ["jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG", "PNG", "pNg"])
+  func extensionVariantsAndUnicodeNamesAreIncluded(_ ext: String) async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let filename = "café-旅行.\(ext)"
+    try Data().write(to: directory.appendingPathComponent(filename))
+    let files = try await LocalPhotoFileAccess().photos(in: directory)
+    #expect(files.map(\.lastPathComponent) == [filename])
+  }
+
   @Test func latestFolderWinsEvenWhenOldProviderIgnoresCancellation() async {
     let provider = ControlledFiles()
     let state = WorkspaceState(fileAccess: provider)
