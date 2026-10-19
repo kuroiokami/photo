@@ -132,3 +132,7 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 - Added SwiftUI sample workspace, synthetic resources, service boundaries, local checks, and five tests.
 - Added GitHub Actions and this maintained project tracker with AI handoff instructions.
 - Local checks and the initial remote GitHub Actions run passed. Published the foundation on `main` as `e297d22`; interactive UI verification remains pending.
+
+## Fast culling implementation — 2026-10-19
+
+Approved order: Sony ARW/EXIF → local SQLite decisions with XMP sync → genuine detail zoom. The RAW/EXIF chunk adds case-insensitive ARW enumeration, ImageIO embedded-only previews, preview provenance/resolution, asynchronous EXIF indexing and numeric sorts. Existing 18 checks passed after implementation; added sort/ARW cases are being verified. No RAW rendering occurs during ordinary browsing. Embedded preview availability and camera coverage depend on ImageIO; the inspected Sony files yielded 1616-pixel previews. Persistence and zoom remain pending at this checkpoint.

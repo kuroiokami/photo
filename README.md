@@ -74,3 +74,7 @@ No recursion, live folder watching, multi-selection, 1:1 zoom, RAW/HEIC support,
 ## License
 
 No license has been selected. Choose one before external distribution or accepting outside contributions.
+
+## Fast culling development
+
+The current feature branch adds Sony `.arw` (case-insensitive) embedded previews alongside JPEG/PNG. Preview badges identify actual decoded resolution. The shooting information button reveals EXIF; Sort supports capture time, ISO, shutter speed, aperture and focal length. Metadata indexes in the background; EXIF sorting waits for indexing to finish. Missing values sort last. Capture times without offsets use consistent wall-clock ordering rather than the Mac's current timezone.

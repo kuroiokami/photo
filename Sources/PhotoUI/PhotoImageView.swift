@@ -42,7 +42,7 @@ struct PhotoImageView: View {
     }
     .overlay(alignment: .bottomTrailing) {
       if detailed, let preview {
-        Text("\(preview.originalWidth) × \(preview.originalHeight)")
+        Text("\(preview.sourceKind.rawValue) · \(preview.decodedWidth) × \(preview.decodedHeight)")
           .font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.7))
           .padding(8).background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
           .padding(12)

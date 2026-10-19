@@ -11,6 +11,11 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
+  public private(set) var metadata: [String: PhotoMetadata] = [:]
+  public private(set) var indexedCount = 0
+  public private(set) var indexing = false
+  public private(set) var sort: PhotoSort = .filename
+  @ObservationIgnored private var allPhotos: [PhotoItem] = []
   public private(set) var selectedIndex: Int?
   @ObservationIgnored private var indicesByID: [PhotoItem.ID: Int]
   public private(set) var directory: URL?
@@ -28,6 +33,7 @@ public final class WorkspaceState {
     fileAccess: any PhotoFileAccess = LocalPhotoFileAccess()
   ) {
     self.photos = photos
+    allPhotos = photos
     self.fileAccess = fileAccess
     indicesByID = Self.makeIndex(photos)
     selectedIndex = photos.isEmpty ? nil : 0
@@ -41,6 +47,10 @@ public final class WorkspaceState {
     self.directory = directory
     selectedIndex = nil
     photos = []
+    allPhotos = []
+    metadata = [:]
+    indexedCount = 0
+    indexing = false
     indicesByID = [:]
     loadState = .loading
     let fileAccess = fileAccess
@@ -63,6 +73,7 @@ public final class WorkspaceState {
       guard sessionID == session else { return }
       try Task.checkCancellation()
       photos = loaded.photos
+      allPhotos = loaded.photos
       indicesByID = loaded.indices
       selectedIndex = previousID.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
       loadState = .ready
@@ -83,6 +94,10 @@ public final class WorkspaceState {
     directory = nil
     selectedIndex = nil
     photos = SampleLibrary.photos
+    allPhotos = photos
+    metadata = [:]
+    indexedCount = 0
+    indexing = false
     indicesByID = Self.makeIndex(photos)
     selectedIndex = photos.isEmpty ? nil : 0
     loadState = .ready
@@ -102,6 +117,48 @@ public final class WorkspaceState {
     let current = selectedIndex ?? 0
     let movement = min(max(offset, -current), photos.count - 1 - current)
     selectedIndex = current + movement
+  }
+
+  public func indexMetadata(using reader: any PhotoMetadataReading) async {
+    let session = sessionID
+    let snapshot = allPhotos
+    indexing = true
+    for photo in snapshot {
+      guard !Task.isCancelled, sessionID == session else { return }
+      // Re-check selection between each low-priority read.
+      if let selectedPhoto { await readMetadata(selectedPhoto, using: reader) }
+      await readMetadata(photo, using: reader)
+      guard !Task.isCancelled, sessionID == session else { return }
+      indexedCount += 1
+      await Task.yield()
+    }
+    guard sessionID == session else { return }
+    indexing = false
+    await setSort(sort)
+  }
+
+  public func readMetadata(_ photo: PhotoItem, using reader: any PhotoMetadataReading) async {
+    guard metadata[photo.id] == nil, let url = photo.fileURL else { return }
+    let session = sessionID
+    let value = try? await reader.metadata(for: url)
+    guard session == sessionID, !Task.isCancelled else { return }
+    if let value { metadata[photo.id] = value }
+  }
+
+  public func setSort(_ sort: PhotoSort) async {
+    self.sort = sort
+    guard sort == .filename || sort == .rating || !indexing else { return }
+    let session = sessionID
+    let snapshot = allPhotos
+    let metadata = metadata
+    let ordered = await Task.detached(priority: .userInitiated) {
+      sort.ordered(snapshot, metadata: metadata)
+    }.value
+    guard session == sessionID, self.sort == sort else { return }
+    let selected = selectedID
+    photos = ordered
+    indicesByID = Self.makeIndex(photos)
+    selectedIndex = selected.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
   }
 
   private struct LoadedPhotos: Sendable {

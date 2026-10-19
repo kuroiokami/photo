@@ -23,6 +23,8 @@ public struct WorkspaceView: View {
   @PipelineStorage private var thumbnails = ImagePipeline(byteLimit: 24 * 1024 * 1024)
   @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
   @GridFocus private var gridFocused: Bool
+  @BoolStorage private var showInspector = false
+  private let metadataReader = ImageMetadataReader()
 
   public init(workspace: WorkspaceState = WorkspaceState()) {
     _workspace = State(initialValue: workspace)
@@ -77,6 +79,10 @@ public struct WorkspaceView: View {
       await thumbnails.startSession(session)
       await previews.startSession(session)
     }
+    .task(id: workspace.loadState) {
+      guard workspace.loadState == .ready else { return }
+      await workspace.indexMetadata(using: metadataReader)
+    }
   }
 
   private var sidebar: some View {
@@ -107,7 +113,7 @@ public struct WorkspaceView: View {
       Spacer()
       VStack(alignment: .leading, spacing: 7) {
         Label("Originals stay untouched", systemImage: "lock.shield")
-        Text("JPEG & PNG · This folder only")
+        Text("JPEG · PNG · Sony ARW")
         Text("← → Navigate   Space Preview")
       }
       .font(.caption).foregroundStyle(.secondary)
@@ -126,6 +132,22 @@ public struct WorkspaceView: View {
         .font(.caption).foregroundStyle(.secondary)
       }
       Spacer(minLength: 8)
+      Picker(
+        "Sort",
+        selection: Binding(
+          get: { workspace.sort },
+          set: { sort in
+            Task { await workspace.setSort(sort) }
+          })
+      ) {
+        ForEach(PhotoSort.allCases.filter { $0 != .rating }, id: \.self) {
+          Text($0.rawValue).tag($0)
+        }
+      }.frame(width: 160)
+      if workspace.indexing {
+        Text("EXIF \(workspace.indexedCount)/\(workspace.photos.count)")
+          .font(.caption).foregroundStyle(.secondary)
+      }
       Image(systemName: "square.grid.3x3").foregroundStyle(.secondary)
       Slider(value: $thumbnailSize, in: 110...240, step: 10)
         .frame(width: 100).accessibilityLabel("Thumbnail size")
@@ -154,10 +176,10 @@ public struct WorkspaceView: View {
           }
         case .ready where workspace.photos.isEmpty:
           ContentUnavailableView {
-            Label("No JPEG or PNG images", systemImage: "photo.on.rectangle")
+            Label("No supported images", systemImage: "photo.on.rectangle")
           } description: {
             Text(
-              "Choose a folder with JPEG or PNG files. Subfolders and hidden files are not included."
+              "Choose a folder with JPEG, PNG, or Sony ARW files. Subfolders and hidden files are not included."
             )
           } actions: {
             Button("Open Folder…", action: openFolder)
@@ -279,6 +301,12 @@ public struct WorkspaceView: View {
         Text("PREVIEW").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
         Spacer()
         Button {
+          showInspector.toggle()
+        } label: {
+          Image(systemName: "info.circle")
+        }
+        .buttonStyle(.plain).accessibilityLabel("Show shooting information")
+        Button {
           showPreview = false
           gridFocused = true
         } label: {
@@ -294,6 +322,20 @@ public struct WorkspaceView: View {
         .id("\(workspace.sessionID)-\(photo.id)")
         .padding(.horizontal, 16)
         VStack(spacing: 8) {
+          if let metadata = workspace.metadata[photo.id] {
+            Text(metadata.shootingSummary).font(.caption.monospacedDigit()).foregroundStyle(
+              .secondary)
+            if showInspector {
+              VStack(alignment: .leading, spacing: 4) {
+                Text(metadata.camera ?? "Camera unavailable")
+                Text(metadata.lens ?? "Lens unavailable")
+                Text(metadata.captureTimeText ?? "Capture time unavailable")
+                Text(
+                  metadata.focalLength.map { "\($0.formatted()) mm" } ?? "Focal length unavailable")
+                Text("\(metadata.pixelWidth) × \(metadata.pixelHeight)")
+              }.font(.caption).textSelection(.enabled)
+            }
+          }
           Text(photo.filename).font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
           HStack {
             Button {

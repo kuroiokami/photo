@@ -43,7 +43,9 @@ struct FolderBrowsingTests {
     #expect(photos.map(\.lastPathComponent) == ["Photo1.jpeg", "Photo2.png", "Photo10.JPG"])
   }
 
-  @Test(arguments: ["jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG", "PNG", "pNg"])
+  @Test(arguments: [
+    "jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG", "PNG", "pNg", "ARW", "arw", "ArW",
+  ])
   func extensionVariantsAndUnicodeNamesAreIncluded(_ ext: String) async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
