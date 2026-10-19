@@ -182,8 +182,12 @@ extension XMPSidecar {
     guard create else { return nil }
     try bind(target, uri: iptc, prefix: "Iptc4xmpExt")
     let property = XMLElement(name: "Iptc4xmpExt:\(kind)", uri: iptc)
-    let resource = XMLElement(name: "rdf:Description", uri: rdf)
-    property.addChild(resource)
+    let bag = XMLElement(name: "rdf:Bag", uri: rdf)
+    let resource = XMLElement(name: "rdf:li", uri: rdf)
+    resource.addAttribute(
+      XMLNode.attribute(withName: "rdf:parseType", uri: rdf, stringValue: "Resource") as! XMLNode)
+    bag.addChild(resource)
+    property.addChild(bag)
     target.addChild(property)
     return resource
   }

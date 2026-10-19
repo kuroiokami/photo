@@ -27,7 +27,10 @@ struct HandoffMetadataTests {
     let copy = root.appendingPathComponent("handoff." + ext)
     try FileManager.default.copyItem(at: source, to: copy)
     var patch = MetadataPatch()
-    patch.fields = [.creator: "Photographer", .title: "Title & caption", .caption: "Description"]
+    patch.fields = [
+      .creator: "Photographer", .title: "Title & caption", .caption: "Description",
+      .createdCity: "Atlanta", .shownCountry: "United States",
+    ]
     patch.keywordAction = .append
     patch.keywordText = "Wildlife|Birds|Heron"
     let value = try patch.applying(to: DescriptiveMetadata())
@@ -38,12 +41,23 @@ struct HandoffMetadataTests {
     #expect(
       CGImageMetadataCreateFromXMPData(packet as CFData) != nil,
       "Synthetic XMP must be accepted by ImageIO: \(String(decoding: packet, as: UTF8.self))")
+    if let parsed = CGImageMetadataCreateFromXMPData(packet as CFData),
+      let tag = CGImageMetadataCopyTagWithPath(
+        parsed, nil, "Iptc4xmpExt:LocationCreated" as CFString),
+      let value = CGImageMetadataTagCopyValue(tag)
+    {
+      #expect(CFGetTypeID(value) == CFArrayGetTypeID())
+    } else {
+      Issue.record("IPTC location-created must be an XMP array of location structures.")
+    }
     let sidecar = XMPSidecar.url(for: copy)
     try packet.write(to: sidecar)
     _ = try await HandoffMetadataWriter().embed(in: copy, sidecar: sidecar)
     #expect(try Data(contentsOf: source) == before)
     let metadata = try #require(try await ImageMetadataReader().embeddedXMP(for: copy))
     #expect(try XMPSidecar.descriptive(metadata).fields[.caption] == "Description")
+    #expect(try XMPSidecar.descriptive(metadata).fields[.createdCity] == "Atlanta")
+    #expect(try XMPSidecar.descriptive(metadata).fields[.shownCountry] == "United States")
     #expect(try XMPSidecar.descriptive(metadata).hierarchy == ["Wildlife|Birds|Heron"])
     #expect(try XMPSidecar.read(metadata) == CullingDecision(rating: 4, flag: .pick))
     let originalSource = try #require(CGImageSourceCreateWithURL(source as CFURL, nil))
