@@ -6,7 +6,7 @@ This is the current handoff for humans and AI contributors. Update it in the sam
 
 ## Current state
 
-Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. Phase 2 performance targets and representative real-camera benchmarks remain open.
+Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. Phase 2 performance targets and representative real-camera benchmarks remain open. The chunk is published in [draft PR #1](https://github.com/kuroiokami/photo/pull/1) on `codex/folder-browser`; it has not been merged into `main`.
 
 ## Installation and first run
 
@@ -51,7 +51,7 @@ For a native local app bundle, run `sh scripts/build-app.sh`, then `open .build/
 | File and preview adapters | Implemented | Actor-based enumeration and ImageIO downsampling; EXIF orientation |
 | General metadata reader/persistence | Interfaces/planned | Original dimensions shown; no metadata writes |
 | Formatting, build, and automated tests | Locally verified | Shared script passed all 13 tests |
-| GitHub Actions | Verified | [Initial run passed](https://github.com/kuroiokami/photo/actions/runs/39257940587) for `e297d22` |
+| GitHub Actions | Verified for Phase 2 code | [Folder-browser run passed](https://github.com/kuroiokami/photo/actions/runs/39261955925) for `6904965` |
 | Real-folder browsing and asynchronous previews | Implemented | Separate serial decode lanes, LRU caches, session cancellation, retry |
 | Representative performance budgets | Pending: Phase 2 | 240 synthetic images used interactively; no real-camera benchmark yet |
 | Ratings, flags, filtering, undo, persistence | Planned: Phase 3 | Metadata ownership and semantics need decisions |
@@ -74,15 +74,17 @@ sh scripts/format.sh
 
 Phase 2 local evidence, 2026-10-19: `sh scripts/check.sh` passed formatting, compilation, and all 13 tests in the actual repository with Apple Swift 6.4 on arm64. This includes retry after restoring read permission. Coverage includes initial/invalid/cleared selection, clamped navigation, empty collections, natural sorting and filtering, late folder results, sample reset during a pending load, selection restoration, removed folders, image decoding/orientation, source-byte preservation, cancellation, and cache budgets.
 
-Native UI inspection using a local development `.app` verified launch, Command-O folder selection, immediate arrow-key navigation after launch/folder load, scrolling to the final item with End, corrupt-file error presentation, empty-folder state without stale previews, picker cancellation preserving the collection, Command-R error recovery for a moved folder, return to samples, and the accessible thumbnail-size increment action. The disposable collection held 240 synthetic PNGs and one corrupt JPEG. UI testing found and fixed lost focus after folder loading and split-pane resets. This is functional evidence, not a real-camera performance benchmark. Minimum macOS version, Intel architecture, and production-size libraries remain untested.
+Native UI inspection using a local development `.app` verified selection/scroll retention on Reload, grid focus after picker cancellation, and launch, Command-O folder selection, immediate arrow-key navigation after launch/folder load, scrolling to the final item with End, corrupt-file error presentation, empty-folder state without stale previews, picker cancellation preserving the collection, Command-R error recovery for a moved folder, return to samples, and the accessible thumbnail-size increment action. The disposable collection held 240 synthetic PNGs and one corrupt JPEG. UI testing found and fixed lost focus after folder loading and split-pane resets. This is functional evidence, not a real-camera performance benchmark. Minimum macOS version, Intel architecture, and production-size libraries remain untested.
 
 The check script discovers the selected toolchain's installed Testing macro plugin when present; this handles a Command Line Tools plugin-discovery issue. The local toolchain also emitted linker search-path warnings for absent developer framework directories; builds and tests completed successfully.
 
-Initial remote evidence, 2026-10-19: [Swift checks run 39257940587](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed on `main` for commit `e297d22`. Formatting, build, and tests completed successfully on the macOS runner. This records that specific code revision; later commits must be checked against their own runs.
+Phase 2 remote evidence, 2026-10-19: [Swift checks run 39261955925](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed on `codex/folder-browser` for implementation commit `6904965`, including all 13 tests. [Draft PR #1](https://github.com/kuroiokami/photo/pull/1) contains the reviewable chunk. Later documentation-only commits record this observed code-revision result; inspect their own checks before merging.
+
+Historical initial remote evidence, 2026-10-19: [Swift checks run 39257940587](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed on `main` for commit `e297d22`. Formatting, build, and tests completed successfully on the macOS runner. This records that specific code revision; later commits must be checked against their own runs.
 
 ## Next work and open decisions
 
-1. Establish a representative real-camera corpus and numeric latency/memory targets; profile the folder workflow before closing Phase 2.
+1. Review [draft PR #1](https://github.com/kuroiokami/photo/pull/1) and establish a representative real-camera corpus and numeric latency/memory targets; profile the folder workflow before closing Phase 2.
 2. Decide supported RAW/HEIC formats and the next preview/zoom capabilities.
 3. Confirm ratings/labels and catalog-versus-XMP ownership before Phase 3 persistence work.
 4. Broaden accessibility, large-folder, minimum-macOS, and Intel verification; design distribution signing/sandbox behavior before release.
@@ -106,7 +108,7 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 - Added shallow JPEG/PNG folder browsing, cancellation-safe folder sessions, natural sorting, EXIF-oriented downsampling, and separate bounded image caches.
 - Replaced the sample filmstrip with a Photo Mechanic-informed contact sheet, density slider, resizable preview, native menu actions, keyboard navigation, and recoverable errors.
 - Added a local development app bundle helper; local checks passed all 13 tests and the native interactions listed above were verified. Real-camera performance budgets remain open.
-- Work is isolated on `codex/folder-browser`; remote validation for this chunk is pending publication, separate from the historical foundation run below.
+- Published implementation commit `6904965` in [draft PR #1](https://github.com/kuroiokami/photo/pull/1); its [remote CI run](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed. This chunk is not merged into `main`.
 
 
 ### 2026-10-19 — Initial foundation

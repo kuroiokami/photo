@@ -32,6 +32,8 @@ Implementation: native SwiftUI sample workspace, PhotoCore/PhotoUI/PhotoApp modu
 
 Implemented browsing slice: native folder picker and Command-O, shallow read-only JPEG/PNG enumeration, natural filename order, lazy contact sheet with a density slider, resizable preview, keyboard navigation, asynchronous ImageIO lanes, bounded caches, cancellation, and recoverable errors. See [decision 0002](decisions/0002-read-only-folder-browser.md).
 
+[Remote CI passed](https://github.com/kuroiokami/photo/actions/runs/39261955925) for implementation commit `6904965`; [draft PR #1](https://github.com/kuroiokami/photo/pull/1) is open for review. Native folder, navigation, failure, and reload checks are recorded in the project tracker.
+
 Performance acceptance remains open: agree on a real-camera benchmark corpus and numerical targets before declaring the entire phase complete.
 
 - Enumerate supported files without modifying their contents.
