@@ -80,3 +80,25 @@ ARW fit results use the camera's 1616-pixel embedded previews, not full-resoluti
 The optional local integration test separately verified 9504 × 6336 Apple RAW detail rendering within the 256 MiB decoded-image limit, cancellation boundaries, and source preservation. Its elapsed test time includes hashing and is not a rendering benchmark. Decoder, GPU, view and OS allocations are additional; no total-application 256 MiB cap is claimed. The CLI does not measure EXIF-indexing, decision-save latency, native input latency or scrolling frame times.
 
 Native checks used disposable ARW copies and generated PNGs: embedded preview badges, EXIF inspector, flags/stars, Shift-and-advance, Undo, Reload persistence, Picks filtering, an empty filtered set and recovery, ISO selection retention, explicit full RAW detail, native scrolling, and rating while zoomed. The build helper now seals the local app with an ad-hoc signature after wrapping its executable; an invalid pre-wrap signature caused native panel failures during validation.
+
+
+## Large-folder reliability follow-up — 2026-10-19
+
+[Aggregate measurements](benchmarks/2026-10-19-large-folder.json) compare `b0fcc3d` services with this PR's hardening follow-up, using the same new `--workspace` harness and reference Mac. Each synthetic corpus has one before/after process run; these are observed results, not portable performance guarantees.
+
+| Corpus / measurement | Before | After |
+| --- | ---: | ---: |
+| 2,000 synthetic JPEG/PNG: initial decisions | 2,541 ms | 1,898 ms |
+| Same: repeat decisions | 1,729 ms | 429 ms |
+| Same: first preview during indexing | 43.8 ms | 44.1 ms |
+| Same: complete metadata indexing | 355 ms | 361 ms |
+| 2,000 synthetic ARW-name/XMP pairs: initial decisions | 35,897 ms | 2,273 ms |
+| Same: repeat decisions | 35,528 ms | 662 ms |
+
+The ARW-name corpus is **not camera imagery**: each `.ARW` contains invalid synthetic bytes beside valid rating XMP. All 2,000 preview/metadata failures are expected, while decision errors are zero. This isolates the former per-photo whole-directory collision scan. It now checks only the eight ARW extension spellings, deduplicating actual filesystem names, without retaining a stale collision cache. The store also reuses one actor-owned SQLite handle and avoids unchanged path-map writes, while retaining FULL synchronization and durable per-decision writes.
+
+JPEG/PNG synthetic templates have valid dimensions but no shooting EXIF; their ISO sorting exercises missing values and natural filename ties, rather than a diverse exposure corpus. After-change ISO/rating sorts took 28.5/39.3 ms. A nominal 10 ms main-actor timer observed maximum gaps of 32.9 ms for mixed images and 13.4 ms for ARW-name fixtures. This includes scheduling and sorting publication; it is not UI frame-time evidence. Source image hashes matched in every report. The benchmark writes only its temporary database, which is removed afterward.
+
+Nine verified disposable real ARW copies (655,712,256 bytes, 9504-pixel sensor long edge) were also tested. All are **Sony ILCE-7CR**, with eight orientation-1 files and one orientation-8 portrait. Embedded previews and genuine rendered detail passed for every file, with matching source hashes. Pipeline preview p95 was 21.72 ms, cached p95 0.014 ms, sampled peak CLI RSS 131.98 MiB and image failures zero. The first thumbnail took 166.85 ms; that exceeds the old 150 ms thumbnail target for this run. In the separate workspace process, first preview during concurrent indexing took **179.61 ms**, exceeding 150 ms; metadata indexing took 167.72 ms, initial/repeat decisions 9.17/2.63 ms and the selected decision 3.90 ms. The pipeline's preview phase follows its thumbnail phase, so its lower preview p95 must not be substituted for startup latency. Decoder initialization/first-open latency remains an explicit optimization target; multiple-camera coverage remains open.
+
+Reproduce workspace measurements using `sh scripts/benchmark.sh --workspace /path/to/folder`. Use disposable folders for any metadata-write tests. The real-camera optional suite now checks every ARW in its supplied shallow folder, rather than only the first file. Camera files, filenames, private EXIF, source paths and hash values are excluded from the committed evidence.

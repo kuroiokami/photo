@@ -34,3 +34,52 @@ struct MetadataSortTests {
       PhotoSort.captureTime.ordered(photos, metadata: ["a": a, "b": b]).map(\.id) == ["b", "a"])
   }
 }
+
+private actor DelayedMetadata: PhotoMetadataReading {
+  private var pending: CheckedContinuation<PhotoMetadata, Never>?
+  private var waiting: CheckedContinuation<Void, Never>?
+
+  func metadata(for file: URL) async throws -> PhotoMetadata {
+    await withCheckedContinuation { continuation in
+      pending = continuation
+      waiting?.resume()
+      waiting = nil
+    }
+  }
+
+  func waitForRead() async {
+    if pending != nil { return }
+    await withCheckedContinuation { waiting = $0 }
+  }
+
+  func finish() {
+    var value = PhotoMetadata(pixelWidth: 100, pixelHeight: 100)
+    value.iso = 800
+    pending?.resume(returning: value)
+    pending = nil
+  }
+}
+
+@MainActor
+struct MetadataSessionTests {
+  @Test func navigationAndSessionSwitchRejectLateMetadata() async {
+    let photos = (0..<10_000).map {
+      PhotoItem(fileURL: URL(fileURLWithPath: "/benchmark/Photo\($0).ARW"))
+    }
+    let state = WorkspaceState(photos: photos)
+    let reader = DelayedMetadata()
+    let indexing = Task { await state.indexMetadata(using: reader) }
+    await reader.waitForRead()
+    state.select(photos.last?.id)
+    #expect(state.selectedID == photos.last?.id)
+    state.showSamples()
+    let session = state.sessionID
+    await reader.finish()
+    await indexing.value
+    #expect(state.sessionID == session)
+    #expect(state.metadata.isEmpty)
+    #expect(state.indexedCount == 0)
+    #expect(!state.indexing)
+    #expect(state.photos == SampleLibrary.photos)
+  }
+}

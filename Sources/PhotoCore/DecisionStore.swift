@@ -37,7 +37,16 @@ public actor DecisionStore {
       for: .applicationSupportDirectory, in: .userDomainMask)[0]
       .appendingPathComponent("Photo/decisions.sqlite"))
   private let databaseURL: URL
+  private var connection: DatabaseConnection?
   public init(databaseURL: URL) { self.databaseURL = databaseURL }
+
+  // Only the owning DecisionStore actor uses this handle. The wrapper closes
+  // it on destruction without exposing a non-Sendable pointer across actors.
+  private final class DatabaseConnection: @unchecked Sendable {
+    let handle: OpaquePointer
+    init(_ handle: OpaquePointer) { self.handle = handle }
+    deinit { sqlite3_close(handle) }
+  }
 
   private func key(for image: URL) throws -> String {
     let attributes = try FileManager.default.attributesOfItem(atPath: image.path)
@@ -59,6 +68,7 @@ public actor DecisionStore {
   }
 
   private func withDB<T>(_ body: (OpaquePointer) throws -> T) throws -> T {
+    if let connection { return try body(connection.handle) }
     try FileManager.default.createDirectory(
       at: databaseURL.deletingLastPathComponent(), withIntermediateDirectories: true)
     var handle: OpaquePointer?
@@ -71,7 +81,7 @@ public actor DecisionStore {
       if let handle { sqlite3_close(handle) }
       throw DecisionStoreError.database("Cannot open decisions database")
     }
-    defer { sqlite3_close(db) }
+    let opened = DatabaseConnection(db)
     sqlite3_busy_timeout(db, 3000)
     guard
       sqlite3_exec(
@@ -81,6 +91,7 @@ public actor DecisionStore {
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
     }
+    connection = opened
     return try body(db)
   }
 
@@ -156,14 +167,22 @@ public actor DecisionStore {
   private func sidecarData(_ image: URL) throws -> Data? {
     let url = XMPSidecar.url(for: image)
     if image.pathExtension.lowercased() == "arw" {
-      let peers = try FileManager.default.contentsOfDirectory(
-        at: image.deletingLastPathComponent(), includingPropertiesForKeys: nil)
-      let matches = peers.filter {
-        $0.pathExtension.lowercased() == "arw"
-          && $0.deletingPathExtension().lastPathComponent
-            == image.deletingPathExtension().lastPathComponent
+      // Check the eight possible ASCII extension spellings directly rather
+      // than scanning the entire folder for every photo. The actual on-disk
+      // name deduplicates aliases on case-insensitive volumes, while distinct
+      // case-only files on case-sensitive volumes still count as collisions.
+      var names: Set<String> = []
+      for ext in ["arw", "arW", "aRw", "aRW", "Arw", "ArW", "ARw", "ARW"] {
+        let peer = image.deletingPathExtension().appendingPathExtension(ext)
+        do {
+          if let name = try peer.resourceValues(forKeys: [.nameKey]).name { names.insert(name) }
+        } catch let error as CocoaError
+          where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile
+        {
+          continue
+        }
       }
-      guard matches.count <= 1 else { throw SidecarError.ambiguous }
+      guard names.count <= 1 else { throw SidecarError.ambiguous }
     }
     if (try? FileManager.default.destinationOfSymbolicLink(atPath: url.path)) != nil {
       throw SidecarError.malformed
@@ -178,8 +197,9 @@ public actor DecisionStore {
 
   public func load(for image: URL) throws -> DecisionEntry {
     let identity = try key(for: image)
-    let entry = try loadValue(for: image, previousIdentity: pathIdentity(image))
-    _ = try pathIdentity(image, update: identity)
+    let previous = try pathIdentity(image)
+    let entry = try loadValue(for: image, previousIdentity: previous)
+    if previous != identity { _ = try pathIdentity(image, update: identity) }
     return DecisionEntry(decision: entry.decision, status: entry.status, identity: identity)
   }
 

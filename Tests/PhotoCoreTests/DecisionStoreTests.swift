@@ -60,6 +60,22 @@ struct DecisionStoreTests {
       XMPSidecar.url(for: dir.appendingPathComponent("photo.jpg")).lastPathComponent
         == "photo.jpg.xmp")
   }
+  @Test(arguments: ["arw", "arW", "aRw", "aRW", "Arw", "ArW", "ARw", "ARW"])
+  func everyRawExtensionCaseSyncsAndReloads(_ ext: String) async throws {
+    let dir = try folder()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let image = dir.appendingPathComponent("café.\(ext)")
+    let bytes = Data("synthetic persistence fixture".utf8)
+    try bytes.write(to: image)
+    let database = dir.appendingPathComponent("db")
+    let store = DecisionStore(databaseURL: database)
+    _ = try await store.load(for: image)
+    let decision = CullingDecision(rating: 4, flag: .pick)
+    #expect(try await store.save(decision, for: image).status == "Saved")
+    #expect(try await DecisionStore(databaseURL: database).load(for: image).decision == decision)
+    #expect(try Data(contentsOf: image) == bytes)
+  }
+
   @Test func malformedAndEntitySidecarsAreUntouched() throws {
     for text in ["not xml", "<!DOCTYPE a [<!ENTITY x SYSTEM 'file:///etc/passwd'>]><a>&x;</a>"] {
       #expect(throws: (any Error).self) {
@@ -255,6 +271,29 @@ struct CullingWorkflowTests {
     await state.loadDecisions()
     state.setFilter(.all, minimumRating: 0)
     #expect(state.decisionsReady.count == SampleLibrary.photos.count)
+  }
+
+  @Test func acceptingExternalDecisionRepositionsRatingSortAndRetainsSelection() async throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let first = dir.appendingPathComponent("a.jpg")
+    let second = dir.appendingPathComponent("b.jpg")
+    try Data().write(to: first)
+    try Data().write(to: second)
+    let store = DecisionStore(databaseURL: dir.appendingPathComponent("db"))
+    let state = WorkspaceState(decisionStore: store)
+    await state.openFolder(dir)
+    await state.loadDecisions()
+    await state.setSort(.rating)
+    let selected = try #require(state.photos.last)
+    state.select(selected.id)
+    try XMPSidecar.merging(CullingDecision(rating: 5, flag: .pick), into: nil)
+      .write(to: XMPSidecar.url(for: second))
+    await state.useExternalDecision()
+    #expect(state.photos.first?.id == selected.id)
+    #expect(state.selectedID == selected.id)
+    #expect(state.decisions[selected.id] == CullingDecision(rating: 5, flag: .pick))
   }
 
   @Test func terminationBarrierWaitsForOrderedSaves() async {

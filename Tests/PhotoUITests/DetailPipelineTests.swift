@@ -48,18 +48,34 @@ struct DetailPipelineTests {
     let folder = URL(fileURLWithPath: path)
     let files = try await LocalPhotoFileAccess().photos(in: folder)
       .filter { $0.pathExtension.lowercased() == "arw" }
-    let file = try #require(files.first)
-    let before = SHA256.hash(data: try Data(contentsOf: file))
-    let embedded = try await ImagePipeline(byteLimit: 64 * 1024 * 1024).preview(
-      for: file, maximumPixelSize: 2560)
-    #expect(embedded.sourceKind == .embedded)
-    #expect(embedded.decodedWidth <= 2560 && embedded.decodedHeight <= 2560)
-    let detail = try await DetailPipeline().detail(for: file)
-    #expect(detail.sourceKind == .raw)
-    #expect(detail.decodedWidth == embedded.originalWidth)
-    #expect(detail.decodedHeight == embedded.originalHeight)
-    #expect(detail.byteCost <= DetailPipeline.byteLimit)
-    #expect(SHA256.hash(data: try Data(contentsOf: file)) == before)
+    #expect(!files.isEmpty)
+    for file in files {
+      let before = SHA256.hash(data: try Data(contentsOf: file))
+      let embedded = try await ImagePipeline(byteLimit: 64 * 1024 * 1024).preview(
+        for: file, maximumPixelSize: 2560)
+      #expect(embedded.sourceKind == .embedded)
+      #expect(embedded.decodedWidth <= 2560 && embedded.decodedHeight <= 2560)
+      let detail = try await DetailPipeline().detail(for: file)
+      #expect(detail.sourceKind == .raw)
+      #expect(detail.decodedWidth == embedded.originalWidth)
+      #expect(detail.decodedHeight == embedded.originalHeight)
+      #expect(detail.byteCost <= DetailPipeline.byteLimit)
+      #expect(SHA256.hash(data: try Data(contentsOf: file)) == before)
+    }
+  }
+
+  @Test func corruptDetailExplainsReadFailureInsteadOfMemoryLimit() async throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: dir) }
+    let file = dir.appendingPathComponent("corrupt.ARW")
+    try Data("not a RAW image".utf8).write(to: file)
+    do {
+      _ = try await DetailPipeline().detail(for: file)
+      Issue.record("Corrupt detail unexpectedly decoded")
+    } catch let error as PreviewError {
+      #expect(error == .unreadable)
+    }
   }
 
   @Test func budgetOverflowAndCancellationAreSafe() async throws {

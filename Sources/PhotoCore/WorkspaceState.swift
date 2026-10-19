@@ -160,6 +160,7 @@ public final class WorkspaceState {
       guard !Task.isCancelled, sessionID == session else { return }
       // Re-check selection between each low-priority read.
       if let selectedPhoto { await readMetadata(selectedPhoto, using: reader) }
+      guard !Task.isCancelled, sessionID == session else { return }
       await readMetadata(photo, using: reader)
       guard !Task.isCancelled, sessionID == session else { return }
       indexedCount += 1
@@ -228,6 +229,7 @@ public final class WorkspaceState {
     for photo in snapshot {
       guard session == sessionID, !Task.isCancelled else { return }
       if let selectedPhoto { await loadDecision(selectedPhoto, session: session) }
+      guard session == sessionID, !Task.isCancelled else { return }
       await loadDecision(photo, session: session)
     }
     guard session == sessionID, !Task.isCancelled else { return }
@@ -397,6 +399,7 @@ public final class WorkspaceState {
       decisionRevision += 1
       decisions[photo.id] = entry.decision
       saveStatus[photo.id] = entry.status
+      repositionRating(photo)
       rebuildVisible(preferred: photo.id)
     } catch { saveStatus[photo.id] = error.localizedDescription }
   }

@@ -94,3 +94,16 @@ The user confirmed Sony ARW first and local decisions plus XMP, in this order. T
 3. **Detail:** explicit Fit/physical-pixel 100%, focal double-click, pan and navigator, separate full-detail worker, on-demand Apple RAW rendering, 256 MiB decoded-image limit and reset on selection. Implemented; broader camera/hardware/OS coverage remains open.
 
 Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFORMANCE.md. Future work includes additional RAW formats, RAW+JPEG pairing, batch organization, focus/exposure tools, wider accessibility/platform validation, and release signing/distribution.
+
+
+## Reliability acceptance follow-up — 2026-10-19
+
+- [x] Add repeatable large-folder EXIF/decision/first-preview measurement with isolated storage.
+- [x] Measure and remove unbounded per-photo ARW directory scans; retain collision/replacement protections and FULL local durability.
+- [x] Verify every provided ARW, orientation handling, source hashes and full detail; current corpus covers nine ILCE-7CR files only.
+- [x] Cover external-rating reorder, stale metadata sessions and corrupt-detail recovery with regressions.
+- [ ] Bring first-open RAW preview/thumbnail latency within target, including decoder initialization while indexing runs.
+- [ ] Add other Sony models, real diverse EXIF at large scale, native frame-time measurements and other storage media.
+- [ ] Verify application-level Lightroom round trips in an isolated catalog; the prior import UI attempt remains unverified.
+
+Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing, minimum-macOS/Intel and licensing limits remain open.

@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "measuredDate": "2026-10-19",
+  "baseline": "b0fcc3d production services with the new workspace measurement harness",
+  "after": "large-folder hardening follow-up in PR #2",
+  "mixedJPEGPNG2000": {
+    "before": {
+      "decisionErrors": 0,
+      "enumerationMilliseconds": 70.538125,
+      "fileCount": 2000,
+      "firstPreviewDuringIndexingMilliseconds": 43.804709,
+      "firstPreviewSucceeded": true,
+      "initialDecisionLoadMilliseconds": 2541.0258750000003,
+      "isoSortMilliseconds": 28.579791,
+      "logicalCPUCount": 18,
+      "mainActorSamples": 405,
+      "maximumMainActorGapMilliseconds": 28.602958,
+      "metadataFailures": 0,
+      "metadataIndexMilliseconds": 355.378958,
+      "notes": [
+        "Fresh temporary SQLite database; source folders and sidecars are never written.",
+        "Metadata and initial decision indexing run concurrently with the first preview.",
+        "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+        "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+        "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+        "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "ratingSortMilliseconds": 40.077041,
+      "repeatDecisionLoadMilliseconds": 1728.60925,
+      "schemaVersion": 1,
+      "selectedDecisionMilliseconds": 3.684583
+    },
+    "after": {
+      "decisionErrors": 0,
+      "enumerationMilliseconds": 70.14525,
+      "fileCount": 2000,
+      "firstPreviewDuringIndexingMilliseconds": 44.096958,
+      "firstPreviewSucceeded": true,
+      "initialDecisionLoadMilliseconds": 1898.211292,
+      "isoSortMilliseconds": 28.5125,
+      "logicalCPUCount": 18,
+      "mainActorSamples": 241,
+      "maximumMainActorGapMilliseconds": 32.864417,
+      "metadataFailures": 0,
+      "metadataIndexMilliseconds": 361.2885,
+      "notes": [
+        "Fresh temporary SQLite database; source folders and sidecars are never written.",
+        "Metadata and initial decision indexing run concurrently with the first preview.",
+        "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+        "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+        "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+        "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "ratingSortMilliseconds": 39.31825,
+      "repeatDecisionLoadMilliseconds": 429.157084,
+      "schemaVersion": 1,
+      "selectedDecisionMilliseconds": 3.136792
+    }
+  },
+  "syntheticARWNameXMP2000": {
+    "before": {
+      "decisionErrors": 0,
+      "enumerationMilliseconds": 54.672833,
+      "fileCount": 2000,
+      "firstPreviewDuringIndexingMilliseconds": 2.082166,
+      "firstPreviewSucceeded": false,
+      "initialDecisionLoadMilliseconds": 35896.774458,
+      "isoSortMilliseconds": 1.599584,
+      "logicalCPUCount": 18,
+      "mainActorSamples": 5963,
+      "maximumMainActorGapMilliseconds": 17.51875,
+      "metadataFailures": 2000,
+      "metadataIndexMilliseconds": 122.860167,
+      "notes": [
+        "Fresh temporary SQLite database; source folders and sidecars are never written.",
+        "Metadata and initial decision indexing run concurrently with the first preview.",
+        "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+        "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+        "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+        "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "ratingSortMilliseconds": 1.789375,
+      "repeatDecisionLoadMilliseconds": 35527.743333,
+      "schemaVersion": 1,
+      "selectedDecisionMilliseconds": 20.672458
+    },
+    "after": {
+      "decisionErrors": 0,
+      "enumerationMilliseconds": 54.788708,
+      "fileCount": 2000,
+      "firstPreviewDuringIndexingMilliseconds": 2.114459,
+      "firstPreviewSucceeded": false,
+      "initialDecisionLoadMilliseconds": 2273.16425,
+      "isoSortMilliseconds": 1.576667,
+      "logicalCPUCount": 18,
+      "mainActorSamples": 252,
+      "maximumMainActorGapMilliseconds": 13.358875,
+      "metadataFailures": 2000,
+      "metadataIndexMilliseconds": 134.554125,
+      "notes": [
+        "Fresh temporary SQLite database; source folders and sidecars are never written.",
+        "Metadata and initial decision indexing run concurrently with the first preview.",
+        "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+        "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+        "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+        "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "ratingSortMilliseconds": 1.806792,
+      "repeatDecisionLoadMilliseconds": 661.7265,
+      "schemaVersion": 1,
+      "selectedDecisionMilliseconds": 3.389791
+    }
+  },
+  "realSony9": {
+    "pipeline": {
+      "cachedPreviews": {
+        "count": 30,
+        "maximumMilliseconds": 0.019875,
+        "p50Milliseconds": 0.009833,
+        "p95Milliseconds": 0.014
+      },
+      "concurrentSameImageMilliseconds": 17.458791,
+      "decodedFileCount": 9,
+      "enumeration": {
+        "count": 5,
+        "maximumMilliseconds": 3.919458,
+        "p50Milliseconds": 0.1385,
+        "p95Milliseconds": 3.919458
+      },
+      "fileCount": 9,
+      "finalResidentMiB": 131.984375,
+      "folderSwitching": {
+        "count": 10,
+        "maximumMilliseconds": 0.507291,
+        "p50Milliseconds": 0.213083,
+        "p95Milliseconds": 0.507291
+      },
+      "imageFailures": 0,
+      "logicalCPUCount": 18,
+      "maximumLongEdge": 9504,
+      "minimumLongEdge": 9504,
+      "notes": [
+        "Pipeline-cold timings; OS filesystem caches are uncontrolled.",
+        "At most 64 files decoded; hashes cover all enumerated files.",
+        "RSS sampled at 10 ms in this CLI process, not total UI app memory.",
+        "Selection timing uses a virtual 50,000-item collection, not real input event latency.",
+        "Reports contain aggregate statistics only, with no filenames, paths, hashes, EXIF, or photo content."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "peakResidentMiB": 131.984375,
+      "physicalMemoryGiB": 128,
+      "previewCacheMiB": 59.91943359375,
+      "previews": {
+        "count": 9,
+        "maximumMilliseconds": 21.718792,
+        "p50Milliseconds": 14.736875,
+        "p95Milliseconds": 21.718792
+      },
+      "rapidSelection": {
+        "count": 500,
+        "maximumMilliseconds": 0.031584,
+        "p50Milliseconds": 0.000417,
+        "p95Milliseconds": 0.000625
+      },
+      "schemaVersion": 1,
+      "thumbnailCacheMiB": 5.29541015625,
+      "thumbnails": {
+        "count": 9,
+        "maximumMilliseconds": 166.846208,
+        "p50Milliseconds": 13.405625,
+        "p95Milliseconds": 166.846208
+      },
+      "totalSourceBytes": 655712256,
+      "virtualCollectionCount": 50000
+    },
+    "workspace": {
+      "decisionErrors": 0,
+      "enumerationMilliseconds": 2.885875,
+      "fileCount": 9,
+      "firstPreviewDuringIndexingMilliseconds": 179.612375,
+      "firstPreviewSucceeded": true,
+      "initialDecisionLoadMilliseconds": 9.172584,
+      "isoSortMilliseconds": 0.045,
+      "logicalCPUCount": 18,
+      "mainActorSamples": 43,
+      "maximumMainActorGapMilliseconds": 12.576416,
+      "metadataFailures": 0,
+      "metadataIndexMilliseconds": 167.718208,
+      "notes": [
+        "Fresh temporary SQLite database; source folders and sidecars are never written.",
+        "Metadata and initial decision indexing run concurrently with the first preview.",
+        "Selected decision is read before full indexing; repeat load uses a fresh workspace and the same database.",
+        "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
+        "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
+        "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "ratingSortMilliseconds": 0.038125,
+      "repeatDecisionLoadMilliseconds": 2.634459,
+      "schemaVersion": 1,
+      "selectedDecisionMilliseconds": 3.901791
+    },
+    "coverage": {
+      "cameraModels": {
+        "ILCE-7CR": 9
+      },
+      "orientations": {
+        "1": 8,
+        "8": 1
+      }
+    }
+  },
+  "limitations": [
+    "One sequential before/after process run per synthetic corpus; uncontrolled filesystem caches.",
+    "ARW-name stress fixtures are invalid image bytes plus valid synthetic XMP, solely for persistence scaling; their preview/metadata failures are expected.",
+    "All nine real files are ILCE-7CR: this does not establish additional Sony camera-model coverage.",
+    "Workspace first-preview timing includes decoder initialization and concurrent indexing, unlike previews after the thumbnail phase in the original pipeline benchmark.",
+    "Synthetic JPEG/PNG templates contain no shooting EXIF; ISO sort mainly measures missing-value/name comparisons.",
+    "No native frame timing, Lightroom interoperability, minimum-macOS or Intel verification is implied."
+  ]
+}

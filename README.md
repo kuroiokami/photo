@@ -56,7 +56,15 @@ The shared local/CI script checks formatting, compiles in Swift 6 language mode 
 sh scripts/benchmark.sh --folder "/path/to/photo/folder" > /tmp/photo-benchmark.json
 ```
 
-This release-mode benchmark measures folder/image loading, cached navigation, indexed selection, and sampled process memory. It verifies source hashes before/after and emits aggregate statistics only. See the [report and reproducibility notes](docs/PERFORMANCE.md) for corpus limits, targets, and synthetic-folder generation. Do not interpret pipeline timing as UI frame time.
+To measure EXIF/decision indexing and first-preview latency while indexing runs:
+
+```sh
+sh scripts/benchmark.sh --workspace "/path/to/photo/folder" > /tmp/photo-workspace.json
+```
+
+The workspace mode uses a fresh temporary SQLite database and never writes input images or sidecars. It records initial/repeat decision loading, EXIF indexing, ISO/rating sorting and a sampled main-actor timer gap. The gap includes scheduler delays and is not frame time.
+
+The original release-mode benchmark measures folder/image loading, cached navigation, indexed selection, and sampled process memory. It verifies source hashes before/after and emits aggregate statistics only. See the [report and reproducibility notes](docs/PERFORMANCE.md) for corpus limits, targets, and synthetic-folder generation. Do not interpret pipeline timing as UI frame time.
 
 ## Structure
 
@@ -95,4 +103,4 @@ Ordinary ARW browsing uses the embedded JPEG; its badge shows its actual resolut
 
 See the [culling design and research](docs/CULLING_DESIGN.md) and [current tracker](PROJECT_STATUS.md) for validation and interoperability limits.
 
-For optional real-camera integration checks, set `PHOTO_RAW_TEST_FOLDER` to a disposable folder containing supported Sony ARWs when running `sh scripts/check.sh`. That test checks embedded previews, full RAW detail and unchanged source hashes. CI skips it without the environment variable; personal files are never checked into the repository.
+For optional real-camera integration checks, set `PHOTO_RAW_TEST_FOLDER` to a disposable folder containing supported Sony ARWs when running `sh scripts/check.sh`. That test checks every ARW directly inside the supplied folder for embedded previews, full RAW detail and unchanged source hashes; it does not recurse. CI skips it without the environment variable; personal files are never checked into the repository.

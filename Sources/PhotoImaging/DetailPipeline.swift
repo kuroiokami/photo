@@ -18,9 +18,9 @@ public actor DetailPipeline {
         ["public.jpeg", "public.png", "com.sony.arw-raw-image"].contains(type),
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
         let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue,
-        let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue,
-        Self.fits(width: width, height: height)
-      else { throw PreviewError.detailTooLarge }
+        let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue
+      else { throw PreviewError.unreadable }
+      guard Self.fits(width: width, height: height) else { throw PreviewError.detailTooLarge }
       let image: CGImage
       let raw = type == "com.sony.arw-raw-image"
       if raw {
