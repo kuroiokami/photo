@@ -45,9 +45,14 @@ public struct PhotoFamily: Sendable {
       let other = bucket.filter {
         !PhotoFormats.isRaw($0) && !["jpg", "jpeg"].contains($0.pathExtension.lowercased())
       }
-      let grouped: [[URL]] =
-        raws.count == 1 && jpegs.count == 1
-        ? [raws + jpegs] + other.map { [$0] } : bucket.map { [$0] }
+      var grouped: [[URL]] = []
+      if raws.count == 1 && jpegs.count == 1 {
+        let pair: [URL] = raws + jpegs
+        grouped.append(pair)
+        for image in other { grouped.append([image]) }
+      } else {
+        for image in bucket { grouped.append([image]) }
+      }
       for members in grouped {
         let primary = members.first!
         let expected = Set(
