@@ -42,7 +42,7 @@ Handoff first copies image/companion bytes and writes `.photo-handoff.json` with
 
 ## RAW coverage and speed
 
-Extension matching is case-insensitive: Sony ARW; Canon CR2, CR3 and legacy CRW; Olympus/OM System ORF; JPEG/JPEG spelling variants and PNG. Real-camera checks cover Sony ILCE-7CR from prior work, Canon EOS Rebel SL1 (CR2), Canon EOS R (CR3), Olympus E-M1MarkII and OM System OM-1 (ORF). Legacy CRW is recognized but **not verified with a real camera sample**. Format recognition does not guarantee every camera/mode has an accessible preview or an installed macOS RAW decoder.
+Extension matching is case-insensitive: Sony ARW; Canon CR2, CR3 and legacy CRW; Olympus/OM System ORF; JPG/JPEG spelling variants and PNG. Real-camera checks cover Sony ILCE-7CR from prior work, Canon EOS Rebel SL1 (CR2), Canon EOS R (CR3), Olympus E-M1MarkII and OM System OM-1 (ORF). Legacy CRW is recognized but **not verified with a real camera sample**. Format recognition does not guarantee every camera/mode has an accessible preview or an installed macOS RAW decoder.
 
 Fit uses existing JPEG previews and never enables generate-from-RAW options. CR3 has a bounded Canon-container reader for its embedded PRVW JPEG, because ImageIO's first container access measured about five seconds on the reference Mac. Unknown layouts fall back to ImageIO embedded-only access. Full detail still uses Apple CIRAWFilter only on demand, subject to the 256 MiB decoded-image limit. Embedded images can be much smaller than the sensor; only rendered detail is labelled Rendered RAW. EXIF reads remain asynchronous and may incur Apple's initialization delay. See [performance evidence](PERFORMANCE.md) and [public fixture provenance](fixtures/public-raw-provenance.json).
 

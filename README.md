@@ -10,6 +10,8 @@ Photo opens JPEG, PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM System ORF fol
 
 The Workflow panel adds verified dual-destination ingest, multi-selection and RAW+JPEG grouping, reviewed bulk rename/Undo, IPTC presets and hierarchical keywords, and a Lightroom Classic handoff. See the [workflow guide](docs/WORKFLOW.md) for usage, recovery and verified camera coverage. Other RAW formats, HEIC and release distribution remain planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
 
+The workflow changes are currently in draft [PR #3](https://github.com/kuroiokami/photo/pull/3), stacked on the unmerged culling PR. After cloning, use `git switch --track origin/codex/ingest-metadata-cameras` to try this development version before building. The default branch does not include these unmerged features yet.
+
 ## Requirements and installation
 
 - macOS 14 or newer.
