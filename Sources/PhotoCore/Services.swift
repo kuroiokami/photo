@@ -28,8 +28,13 @@ public struct PhotoMetadata: Equatable, Sendable {
 
   public var shootingSummary: String {
     [
-      exposureTime.map { $0 < 1 ? "1/\(Int((1 / $0).rounded())) s" : "\($0.formatted()) s" },
-      aperture.map { "f/\($0.formatted())" }, iso.map { "ISO \(Int($0))" },
+      exposureTime.map {
+        $0 < 1
+          ? "1/\((1 / $0).formatted(.number.precision(.fractionLength(0)))) s"
+          : "\($0.formatted()) s"
+      },
+      aperture.map { "f/\($0.formatted())" },
+      iso.map { "ISO \($0.formatted(.number.precision(.fractionLength(0))))" },
     ]
     .compactMap { $0 }.joined(separator: "  ·  ")
   }

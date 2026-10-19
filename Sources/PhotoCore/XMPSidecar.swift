@@ -1,0 +1,103 @@
+import CryptoKit
+import Foundation
+
+public enum SidecarError: LocalizedError {
+  case malformed, conflict, ambiguous
+  public var errorDescription: String? {
+    switch self {
+    case .malformed: "XMP could not be safely read. The existing sidecar was left untouched."
+    case .conflict:
+      "XMP changed externally. Your decisions are saved locally; resolve the conflict before syncing."
+    case .ambiguous: "Multiple files share this RAW sidecar name. Decisions are saved locally."
+    }
+  }
+}
+
+public enum XMPSidecar {
+  private static let xmp = "http://ns.adobe.com/xap/1.0/"
+  private static let dm = "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
+  private static let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  public static func url(for image: URL) -> URL {
+    image.pathExtension.lowercased() == "arw"
+      ? image.deletingPathExtension().appendingPathExtension("xmp")
+      : image.appendingPathExtension("xmp")
+  }
+  public static func digest(_ data: Data?) -> String {
+    data.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? "absent"
+  }
+  private static func document(_ data: Data) throws -> XMLDocument {
+    guard data.count <= 16 * 1024 * 1024,
+      let text = String(data: data, encoding: .utf8),
+      !text.uppercased().contains("<!DOCTYPE"), !text.uppercased().contains("<!ENTITY"),
+      let document = try? XMLDocument(data: data, options: [.nodePreserveAll]),
+      document.rootElement() != nil
+    else { throw SidecarError.malformed }
+    return document
+  }
+  // Traverse explicitly: namespace prefixes are arbitrary in real sidecars.
+  private static func walk(_ node: XMLNode) -> [XMLElement] {
+    var result: [XMLElement] = []
+    if let element = node as? XMLElement { result.append(element) }
+    for child in node.children ?? [] { result += walk(child) }
+    return result
+  }
+  public static func read(_ data: Data) throws -> CullingDecision {
+    let doc = try document(data)
+    func value(_ uri: String, _ name: String) -> String? {
+      for element in walk(doc) {
+        for attr in element.attributes ?? [] where attr.localName == name && attr.uri == uri {
+          return attr.stringValue
+        }
+        if element.localName == name && element.uri == uri { return element.stringValue }
+      }
+      return nil
+    }
+    let rating = Int(value(xmp, "Rating") ?? "0") ?? 0
+    let pick = value(dm, "pick").flatMap(Int.init).flatMap(PhotoFlag.init(rawValue:))
+    let good = value(dm, "good")?.lowercased()
+    return CullingDecision(
+      rating: rating,
+      flag: pick
+        ?? (rating == -1
+          ? .reject : good == "true" ? .pick : good == "false" ? .reject : .unflagged))
+  }
+  public static func merging(_ decision: CullingDecision, into data: Data?) throws -> Data {
+    let initial = Data(
+      "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"\(rdf)\"><rdf:Description rdf:about=\"\"/></rdf:RDF></x:xmpmeta>"
+        .utf8)
+    let doc = try document(data ?? initial)
+    let descriptions = walk(doc).filter { $0.localName == "Description" && $0.uri == rdf }
+    guard let target = descriptions.first, descriptions.count == 1 else {
+      throw SidecarError.malformed
+    }
+    let fields: [(String, String, String, String?)] = [
+      (xmp, "xmp", "Rating", String(decision.rating)),
+      (dm, "xmpDM", "pick", String(decision.flag.rawValue)),
+      (
+        dm, "xmpDM", "good",
+        decision.flag == .unflagged ? nil : decision.flag == .pick ? "true" : "false"
+      ),
+    ]
+    for (uri, prefix, name, value) in fields {
+      // Reject conflicting prefix bindings instead of damaging unrelated properties.
+      if let binding = target.resolveNamespace(forName: "\(prefix):\(name)"),
+        binding.stringValue != uri
+      {
+        throw SidecarError.malformed
+      }
+      for element in walk(doc) {
+        for attr in element.attributes ?? [] where attr.uri == uri && attr.localName == name {
+          if let attrName = attr.name { element.removeAttribute(forName: attrName) }
+        }
+        if element.uri == uri && element.localName == name { element.detach() }
+      }
+      if let value {
+        target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
+        target.addAttribute(
+          XMLNode.attribute(withName: "\(prefix):\(name)", uri: uri, stringValue: value) as! XMLNode
+        )
+      }
+    }
+    return doc.xmlData(options: [.nodePreserveAll])
+  }
+}

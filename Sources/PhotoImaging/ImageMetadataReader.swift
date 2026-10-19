@@ -43,6 +43,17 @@ public actor ImageMetadataReader: PhotoMetadataReading {
           result.captureTime = formatter.date(from: text)
         }
       }
+      if let fraction = exif[kCGImagePropertyExifSubsecTimeOriginal] as? String,
+        fraction.allSatisfy(\.isNumber), let seconds = Double("0." + fraction), seconds.isFinite
+      {
+        result.captureTime = result.captureTime?.addingTimeInterval(seconds)
+      }
+      if let value = result.exposureTime, !value.isFinite || value <= 0 {
+        result.exposureTime = nil
+      }
+      if let value = result.aperture, !value.isFinite || value <= 0 { result.aperture = nil }
+      if let value = result.iso, !value.isFinite || value <= 0 { result.iso = nil }
+      if let value = result.focalLength, !value.isFinite || value <= 0 { result.focalLength = nil }
       try Task.checkCancellation()
       return result
     }

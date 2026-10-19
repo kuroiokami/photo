@@ -2,6 +2,7 @@ import AppKit
 import PhotoCore
 import PhotoImaging
 import SwiftUI
+import UniformTypeIdentifiers
 
 private typealias WorkspaceStorage = SwiftUI.State<WorkspaceState>
 private typealias BoolStorage = SwiftUI.State<Bool>
@@ -37,6 +38,7 @@ public struct WorkspaceView: View {
     } detail: {
       VStack(spacing: 0) {
         collectionHeader
+        filterBar
         Divider()
         HSplitView {
           contactSheet.frame(
@@ -71,7 +73,8 @@ public struct WorkspaceView: View {
     .focusedSceneValue(
       \.workspaceActions,
       WorkspaceActions(
-        openFolder: openFolder, reload: reload, canReload: workspace.directory != nil)
+        workspace: workspace, canDecide: !choosingFolder, openFolder: openFolder, reload: reload,
+        canReload: workspace.directory != nil)
     )
     .task(id: workspace.sessionID) {
       // Retain one worker per lane across folders, while invalidating caches.
@@ -81,7 +84,9 @@ public struct WorkspaceView: View {
     }
     .task(id: workspace.loadState) {
       guard workspace.loadState == .ready else { return }
-      await workspace.indexMetadata(using: metadataReader)
+      async let metadata: Void = workspace.indexMetadata(using: metadataReader)
+      async let decisions: Void = workspace.loadDecisions()
+      _ = await (metadata, decisions)
     }
   }
 
@@ -127,7 +132,7 @@ public struct WorkspaceView: View {
       VStack(alignment: .leading, spacing: 3) {
         Text(workspace.title).font(.title3.weight(.semibold)).lineLimit(1)
         Text(
-          "\(workspace.photos.count) photos · \(workspace.directory == nil ? "Bundled samples" : "Filename order")"
+          "\(workspace.photos.count) of \(workspace.totalCount) photos"
         )
         .font(.caption).foregroundStyle(.secondary)
       }
@@ -140,7 +145,7 @@ public struct WorkspaceView: View {
             Task { await workspace.setSort(sort) }
           })
       ) {
-        ForEach(PhotoSort.allCases.filter { $0 != .rating }, id: \.self) {
+        ForEach(PhotoSort.allCases, id: \.self) {
           Text($0.rawValue).tag($0)
         }
       }.frame(width: 160)
@@ -173,6 +178,14 @@ public struct WorkspaceView: View {
           } actions: {
             Button("Reload Folder", action: reload)
             Button("Choose Another Folder…", action: openFolder)
+          }
+        case .ready where workspace.photos.isEmpty && workspace.totalCount > 0:
+          ContentUnavailableView {
+            Label("No photos match these filters", systemImage: "line.3.horizontal.decrease.circle")
+          } description: {
+            Text("Clear the flag and star filters to see all photos in this folder.")
+          } actions: {
+            Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
           }
         case .ready where workspace.photos.isEmpty:
           ContentUnavailableView {
@@ -265,6 +278,7 @@ public struct WorkspaceView: View {
 
   private func thumbnail(_ photo: PhotoItem) -> some View {
     let selected = workspace.selectedID == photo.id
+    let decision = workspace.decisions[photo.id] ?? CullingDecision()
     return Button {
       workspace.select(photo.id)
       gridFocused = true
@@ -275,6 +289,14 @@ public struct WorkspaceView: View {
         )
         .frame(height: thumbnailSize * 0.7)
         .clipShape(RoundedRectangle(cornerRadius: 4))
+        HStack(spacing: 4) {
+          Image(systemName: decision.flag.symbol).accessibilityLabel(decision.flag.title)
+          Text(
+            String(repeating: "★", count: decision.rating)
+              + String(repeating: "☆", count: 5 - decision.rating)
+          )
+          .accessibilityLabel("\(decision.rating) stars")
+        }.font(.caption2).foregroundStyle(.secondary)
         Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
           .foregroundStyle(selected ? Color.white : Color.secondary)
       }
@@ -291,6 +313,7 @@ public struct WorkspaceView: View {
     }
     .buttonStyle(.plain).help(photo.filename)
     .accessibilityLabel("Select \(photo.filename)")
+    .accessibilityValue("\(decision.flag.title), \(decision.rating) stars")
     .accessibilityAddTraits(selected ? .isSelected : [])
     .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
   }
@@ -322,6 +345,7 @@ public struct WorkspaceView: View {
         .id("\(workspace.sessionID)-\(photo.id)")
         .padding(.horizontal, 16)
         VStack(spacing: 8) {
+          decisionControls(photo)
           if let metadata = workspace.metadata[photo.id] {
             Text(metadata.shootingSummary).font(.caption.monospacedDigit()).foregroundStyle(
               .secondary)
@@ -365,10 +389,86 @@ public struct WorkspaceView: View {
     .background(Color.black.opacity(0.2))
   }
 
+  private var filterBar: some View {
+    HStack {
+      Picker(
+        "Flags",
+        selection: Binding(
+          get: { workspace.flagFilter },
+          set: {
+            workspace.setFilter($0, minimumRating: workspace.minimumRating)
+          })
+      ) {
+        ForEach(FlagFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+      }.frame(width: 150)
+      Picker(
+        "Stars",
+        selection: Binding(
+          get: { workspace.minimumRating },
+          set: {
+            workspace.setFilter(workspace.flagFilter, minimumRating: $0)
+          })
+      ) {
+        Text("All stars").tag(0)
+        ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
+      }.frame(width: 150)
+      Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
+      Spacer()
+      Toggle(
+        "Auto-advance",
+        isOn: Binding(get: { workspace.autoAdvance }, set: { workspace.autoAdvance = $0 })
+      )
+      .toggleStyle(.checkbox).help("Move to the next photo after a decision; Shift always advances")
+    }.font(.caption).padding(.horizontal, 20).padding(.bottom, 10)
+  }
+
+  private func decisionControls(_ photo: PhotoItem) -> some View {
+    let decision = workspace.decisions[photo.id] ?? CullingDecision()
+    return VStack(spacing: 8) {
+      HStack(spacing: 10) {
+        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
+          Button {
+            workspace.applyDecision(flag: flag)
+            gridFocused = true
+          } label: {
+            Image(systemName: flag.symbol)
+              .foregroundStyle(decision.flag == flag ? Color.accentColor : Color.secondary)
+          }.help(flag.title).accessibilityLabel(flag.title)
+        }
+        Divider().frame(height: 16)
+        ForEach(1...5, id: \.self) { rating in
+          Button {
+            workspace.applyDecision(rating: rating)
+            gridFocused = true
+          } label: {
+            Image(systemName: rating <= decision.rating ? "star.fill" : "star")
+          }
+          .accessibilityLabel("Set \(rating) stars")
+          .accessibilityValue(rating <= decision.rating ? "Selected" : "Not selected")
+        }
+        Button("0") {
+          workspace.applyDecision(rating: 0)
+          gridFocused = true
+        }.help("Clear stars")
+      }.buttonStyle(.borderless).disabled(!workspace.decisionsReady.contains(photo.id))
+      if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
+        Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+        HStack {
+          if status == "XMP conflict" {
+            Button("Use My Decisions") { workspace.retrySync(useLocal: true) }
+            Button("Use External Decisions") { Task { await workspace.useExternalDecision() } }
+          } else if status != "Saving…" {
+            Button("Retry XMP Sync") { workspace.retrySync() }
+          }
+        }.font(.caption)
+      }
+    }
+  }
+
   private var statusBar: some View {
     HStack {
       Label(
-        workspace.directory == nil ? "Sample collection" : "Read-only browsing",
+        workspace.selectedID.flatMap { workspace.saveStatus[$0] } ?? "Originals stay untouched",
         systemImage: "checkmark.shield")
       Spacer()
       Text(workspace.selectedPhoto?.filename ?? "No selection").lineLimit(1)
@@ -383,8 +483,9 @@ public struct WorkspaceView: View {
     let panel = NSOpenPanel()
     panel.title = "Open Photo Folder"
     panel.prompt = "Open Folder"
-    panel.canChooseDirectories = true
+    panel.allowedContentTypes = [.folder]
     panel.canChooseFiles = false
+    panel.canChooseDirectories = true
     panel.allowsMultipleSelection = false
     panel.canCreateDirectories = false
     let completion: (NSApplication.ModalResponse) -> Void = { response in

@@ -136,3 +136,7 @@ License and distribution requirements remain open. Proposed MVP exclusions remai
 ## Fast culling implementation — 2026-10-19
 
 Approved order: Sony ARW/EXIF → local SQLite decisions with XMP sync → genuine detail zoom. The RAW/EXIF chunk adds case-insensitive ARW enumeration, ImageIO embedded-only previews, preview provenance/resolution, asynchronous EXIF indexing and numeric sorts. Existing 18 checks passed after implementation; added sort/ARW cases are being verified. No RAW rendering occurs during ordinary browsing. Embedded preview availability and camera coverage depend on ImageIO; the inspected Sony files yielded 1616-pixel previews. Persistence and zoom remain pending at this checkpoint.
+
+### 2026-10-19 — Persistent culling checkpoint
+
+The second chunk implements independent flags/stars, P/X/U and 0–5 shortcuts, Shift-and-advance, filters, rating sort, Undo/Redo and a remembered auto-advance toggle. System SQLite stores durable decisions and pending XMP sync; namespace-aware XML merges preserve unrelated properties. Conflicts require an explicit local/external choice, read-only folders retain local decisions, and a save queue drains at normal quit. File identity plus creation/modification/size fingerprints prevent replacement inheritance; queued UI saves carry the loaded identity. Native checks verified ARW decisions, undo and reload persistence on disposable copies. Foundation/XMP tests passed; direct Lightroom exchange remains unverified. Detail UI is still being validated separately.

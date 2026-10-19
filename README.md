@@ -78,3 +78,11 @@ No license has been selected. Choose one before external distribution or accepti
 ## Fast culling development
 
 The current feature branch adds Sony `.arw` (case-insensitive) embedded previews alongside JPEG/PNG. Preview badges identify actual decoded resolution. The shooting information button reveals EXIF; Sort supports capture time, ISO, shutter speed, aperture and focal length. Metadata indexes in the background; EXIF sorting waits for indexing to finish. Missing values sort last. Capture times without offsets use consistent wall-clock ordering rather than the Mac's current timezone.
+
+### Culling decisions
+
+Use **P** to pick, **X** to reject, **U** to clear the flag, and **0–5** for stars. Flags and stars are independent. Hold Shift to apply and advance, or enable the remembered Auto-advance checkbox. Reject never deletes a photo. Use Decisions and Edit menus for commands and Undo/Redo (Command-Z / Shift-Command-Z). Filter by flag and minimum stars; Clear Filters restores the full folder. Rating sort places highest stars first.
+
+Decisions save in `~/Library/Application Support/Photo/decisions.sqlite` and synchronize to XMP sidecars. ARW uses `name.xmp`; JPEG/PNG uses `name.jpg.xmp`/`name.png.xmp` (other apps may not read these). Original images are untouched. Saved locally / XMP pending means the local decision is durable; Retry XMP Sync retries the sidecar. A conflict offers Use My Decisions or Use External Decisions and never silently overwrites an external edit. Normal quit waits for queued saves; sudden process termination can lose a change still marked Saving. Samples are not persisted.
+
+The local app bundle is now **ad-hoc signed**, without a distribution certificate or notarization, so macOS can validate native panel services. It remains a development build.
