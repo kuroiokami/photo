@@ -14,6 +14,7 @@ struct MetadataPreset: Codable, Identifiable {
 @Observable
 final class WorkflowModel {
   let workspace: WorkspaceState
+  var requestedTab = 0
   var busy = false
   var backgroundable = false
   var status = "Choose an operation. File changes are intended for photos before Lightroom import."
@@ -71,7 +72,8 @@ final class WorkflowModel {
     do { pendingRenames = try await MediaOperations.shared.pendingRenames() } catch {
       status = "Rename recovery needs attention: " + error.localizedDescription
     }
-    if let image = workspace.selectedPhoto?.fileURL {
+    currentMetadata = DescriptiveMetadata()
+    if let image = workspace.firstSelectedPhoto?.fileURL {
       do {
         let embedded = try await ImageMetadataReader().embeddedXMP(for: image)
         currentMetadata = try await workspace.persistence.loadMetadata(
@@ -164,6 +166,16 @@ final class WorkflowModel {
       status = "Incomplete renames recovered to their original names."
     }
   }
+  func previewField(_ field: MetadataField, value: String, clear: Bool, scope: String) {
+    guard clear || !value.isEmpty else {
+      metadataPlan = []
+      status = "Enter a value or choose Clear for this field."
+      return
+    }
+    var patch = MetadataPatch()
+    patch.fields[field] = clear ? "" : value
+    previewMetadata(patch, scope: scope)
+  }
   func previewMetadata(_ patch: MetadataPatch, scope: String) {
     run { [self] in
       guard !patch.fields.isEmpty || patch.keywordAction != .leave else {
@@ -196,7 +208,7 @@ final class WorkflowModel {
       metadataPlan = []
       status =
         "Metadata processed: \(metadataResults.values.filter { $0 == "Saved" }.count)/\(plans.count) synchronized. Review local-only or conflict rows below."
-      if let directory = workspace.directory { await workspace.openFolder(directory) }
+      await refresh()
     }
   }
   func resolveMetadata(path: String, choice: String) {

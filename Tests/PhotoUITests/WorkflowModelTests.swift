@@ -30,4 +30,49 @@ struct WorkflowModelTests {
     #expect(workspace.directory?.lastPathComponent == "DCIM")
     #expect(model.status.hasPrefix("Processed 2 files"))
   }
+  @Test func oneFieldCanBeCopiedToFiftyPhotosWithoutChangingOtherFieldsOrSelection() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sample = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let bytes = try Data(contentsOf: sample)
+    let store = DecisionStore(databaseURL: root.appendingPathComponent("db.sqlite"))
+    for index in 0..<51 {
+      let image = root.appendingPathComponent(String(format: "%03d.png", index))
+      try bytes.write(to: image)
+      _ = try await store.load(for: image)
+      _ = try await store.save(CullingDecision(rating: index % 6), for: image)
+      var patch = MetadataPatch()
+      patch.fields = [.caption: "Unique caption \(index)", .copyright: "Original \(index)"]
+      for plan in try await store.prepareMetadata(patch, images: [image]) {
+        _ = try await store.saveMetadata(plan)
+      }
+    }
+    let workspace = WorkspaceState(decisionStore: store)
+    await workspace.openFolder(root)
+    await workspace.loadDecisions()
+    let selected = Set(workspace.photos.prefix(50).map(\.id))
+    workspace.selectGroup(selected, focus: workspace.photos[49].id)
+    let model = WorkflowModel(workspace: workspace)
+    await model.refresh()
+    #expect(model.currentMetadata.fields[.caption] == "Unique caption 0")
+    model.previewField(.copyright, value: "Shared copyright", clear: false, scope: "Selection")
+    await model.worker?.value
+    #expect(model.metadataPlan.count == 50)
+    #expect(model.metadataPlan.allSatisfy { $0.fields == [.copyright] && !$0.changesKeywords })
+    model.applyMetadata()
+    await model.worker?.value
+    #expect(workspace.selectedIDs == selected)
+    #expect(workspace.selectedPhoto?.filename == "049.png")
+    #expect(model.metadataResults.values.allSatisfy { $0 == "Saved" })
+    for index in 0..<51 {
+      let image = root.appendingPathComponent(String(format: "%03d.png", index))
+      let metadata = try await store.loadMetadata(for: image).value
+      #expect(metadata.fields[.caption] == "Unique caption \(index)")
+      #expect(metadata.fields[.copyright] == (index < 50 ? "Shared copyright" : "Original 50"))
+      #expect(try await store.load(for: image).decision.rating == index % 6)
+      #expect(try Data(contentsOf: image) == bytes)
+    }
+  }
+
 }

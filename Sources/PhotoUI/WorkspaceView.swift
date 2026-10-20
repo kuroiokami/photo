@@ -11,6 +11,9 @@ private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
 private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
+private typealias TileFramesStorage = SwiftUI.State<[String: CGRect]>
+private typealias MarqueeStorage = SwiftUI.State<SelectionMarquee?>
+private typealias FolderLibraryStorage = SwiftUI.State<FolderLibrary>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
 private struct GridLayout: Equatable {
@@ -20,6 +23,7 @@ private struct GridLayout: Equatable {
 }
 
 public struct WorkspaceView: View {
+  @FolderLibraryStorage private var folderLibrary = FolderLibrary()
   @WorkspaceStorage private var workspace: WorkspaceState
   @WorkflowModelStorage private var workflowModel: WorkflowModel
   @BoolStorage private var showPreview = true
@@ -32,6 +36,9 @@ public struct WorkspaceView: View {
   @GridFocus private var gridFocused: Bool
   @BoolStorage private var showInspector = false
   @BoolStorage private var showingWorkflow = false
+  @BoolStorage private var showingHelp = false
+  @TileFramesStorage private var tileFrames: [String: CGRect] = [:]
+  @MarqueeStorage private var marquee: SelectionMarquee?
   private let metadataReader = ImageMetadataReader()
 
   public init(workspace: WorkspaceState = WorkspaceState()) {
@@ -79,16 +86,28 @@ public struct WorkspaceView: View {
         .help("Show or hide preview (Space)")
       }
     }
+    .sheet(isPresented: $showingHelp) { CullingHelpView() }
+    .task {
+      if workspace.directory == nil, let saved = folderLibrary.selected {
+        await workspace.openFolder(saved)
+      }
+      await folderLibrary.restoreExpanded()
+    }
+    .onChange(of: workspace.directory) {
+      if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
+    }
     .sheet(isPresented: $showingWorkflow) { WorkflowView(model: workflowModel) }
     .focusedSceneValue(
       \.workspaceActions,
       WorkspaceActions(
         workspace: workspace,
-        canDecide: !choosingFolder && !showingWorkflow
+        canDecide: !choosingFolder && !showingWorkflow && !showingHelp
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
-        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow)
+        workflow: showWorkflow, help: { showingHelp = true },
+        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow && !showingHelp
+      )
     )
     .task(id: workspace.sessionID) {
       // Retain one worker per lane across folders, while invalidating caches.
@@ -114,15 +133,13 @@ public struct WorkspaceView: View {
         Text("A closer look.").font(.caption).foregroundStyle(.secondary)
       }
       .padding(.top, 12)
-      Text("COLLECTION").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-      Label(
-        workspace.title, systemImage: workspace.directory == nil ? "photo.stack" : "folder.fill"
-      )
-      .font(.callout.weight(.medium)).lineLimit(2)
-      if let directory = workspace.directory {
-        Text(directory.path).font(.caption).foregroundStyle(.secondary)
-          .textSelection(.enabled).lineLimit(5)
-      }
+      Text("FOLDERS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+      FolderSidebar(
+        library: folderLibrary, current: workspace.directory, open: browse,
+        remove: { folder in
+          folderLibrary.remove(folder)
+          if folderLibrary.selected == nil { workspace.showSamples() }
+        })
       Button("Open Folder…", action: openFolder).disabled(choosingFolder)
       Button("Ingest, Rename & Metadata…") { showingWorkflow = true }
       if workspace.directory != nil {
@@ -132,7 +149,7 @@ public struct WorkspaceView: View {
         }
         .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
       }
-      Spacer()
+      Button("Quick Start & Shortcuts") { showingHelp = true }.font(.caption)
       VStack(alignment: .leading, spacing: 7) {
         Label("Originals stay untouched", systemImage: "lock.shield")
         Text("JPEG · PNG · Sony · Canon · Olympus RAW")
@@ -211,7 +228,7 @@ public struct WorkspaceView: View {
             Label("No supported images", systemImage: "photo.on.rectangle")
           } description: {
             Text(
-              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Subfolders and hidden files are not included."
+              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Expand a sidebar folder and click a subfolder to browse its photos. Hidden files are not included."
             )
           } actions: {
             Button("Open Folder…", action: openFolder)
@@ -226,14 +243,55 @@ public struct WorkspaceView: View {
                 ForEach(workspace.photos) { photo in
                   thumbnail(photo)
                     .id(photo.id)
+                    .background(
+                      GeometryReader { tile in
+                        Color.clear.preference(
+                          key: PhotoTileFrames.self,
+                          value: [photo.id: tile.frame(in: .named("ContactSheetViewport"))])
+                      })
                 }
               }
               .padding(16)
             }
+            .coordinateSpace(name: "ContactSheetViewport")
+            .onPreferenceChange(PhotoTileFrames.self) { tileFrames = $0 }
+            .simultaneousGesture(
+              DragGesture(minimumDistance: 5)
+                .onChanged { value in
+                  if marquee == nil {
+                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+                    marquee = SelectionMarquee(
+                      start: value.startLocation, end: value.location,
+                      base: modifiers.contains(.command) || modifiers.contains(.shift)
+                        ? workspace.selectedIDs : [])
+                  }
+                  marquee?.end = value.location
+                  guard let marquee else { return }
+                  let viewport = CGRect(origin: .zero, size: geometry.size)
+                  let hits = Set(
+                    tileFrames.filter {
+                      viewport.intersects($0.value) && marquee.rectangle.intersects($0.value)
+                    }.keys)
+                  workspace.selectGroup(marquee.base.union(hits))
+                }.onEnded { _ in
+                  marquee = nil
+                  gridFocused = true
+                }
+            )
+            .overlay(alignment: .topLeading) {
+              if let marquee {
+                Rectangle().fill(Color.accentColor.opacity(0.12))
+                  .overlay(Rectangle().stroke(Color.accentColor, lineWidth: 1))
+                  .frame(width: marquee.rectangle.width, height: marquee.rectangle.height)
+                  .offset(x: marquee.rectangle.minX, y: marquee.rectangle.minY)
+                  .allowsHitTesting(false)
+              }
+            }.clipped()
             .onAppear {
               if let id = workspace.selectedID { proxy.scrollTo(id) }
             }
             .onChange(of: workspace.selectedID) {
+              guard marquee == nil else { return }
               if let id = workspace.selectedID { proxy.scrollTo(id) }
             }
             .task(
@@ -250,25 +308,29 @@ public struct WorkspaceView: View {
             }
           }
           .id(workspace.sessionID)
+          .onChange(of: workspace.sessionID) {
+            tileFrames = [:]
+            marquee = nil
+          }
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .onChange(of: columns, initial: true) { gridColumns = columns }
       .focusable().focused($gridFocused).focusEffectDisabled()
-      .onKeyPress(.leftArrow) {
-        workspace.moveSelection(by: -1)
+      .onKeyPress(.leftArrow, phases: .down) { press in
+        workspace.moveSelection(by: -1, extending: press.modifiers.contains(.shift))
         return .handled
       }
-      .onKeyPress(.rightArrow) {
-        workspace.moveSelection(by: 1)
+      .onKeyPress(.rightArrow, phases: .down) { press in
+        workspace.moveSelection(by: 1, extending: press.modifiers.contains(.shift))
         return .handled
       }
-      .onKeyPress(.upArrow) {
-        workspace.moveSelection(by: -columns)
+      .onKeyPress(.upArrow, phases: .down) { press in
+        workspace.moveSelection(by: -columns, extending: press.modifiers.contains(.shift))
         return .handled
       }
-      .onKeyPress(.downArrow) {
-        workspace.moveSelection(by: columns)
+      .onKeyPress(.downArrow, phases: .down) { press in
+        workspace.moveSelection(by: columns, extending: press.modifiers.contains(.shift))
         return .handled
       }
       .onKeyPress(.space) {
@@ -336,7 +398,29 @@ public struct WorkspaceView: View {
       )
       .contentShape(Rectangle())
     }
-    .buttonStyle(.plain).help(photo.filename)
+    .buttonStyle(.plain).help(
+      photo.filename
+        + "\nClick to select; ⌘-click adds/removes; Shift-click selects a range. P/X/U flags the selection."
+    )
+    .contextMenu {
+      ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
+        Button(flag.title + " Selection") {
+          if !workspace.selectedIDs.contains(photo.id) {
+            workspace.selectMultiple(photo.id, extending: false, range: false)
+          }
+          workspace.applyDecision(flag: flag)
+        }.disabled(
+          !workspace.decisionsReady.contains(photo.id)
+            || (selected && !workspace.decisionSelectionReady))
+      }
+      Divider()
+      Button("Edit IPTC & Keywords…") {
+        if !workspace.selectedIDs.contains(photo.id) {
+          workspace.selectMultiple(photo.id, extending: false, range: false)
+        }
+        showWorkflow(2)
+      }
+    }
     .accessibilityLabel("Select \(photo.filename)")
     .accessibilityValue("\(decision.flag.title), \(decision.rating) stars")
     .accessibilityAddTraits(selected ? .isSelected : [])
@@ -415,40 +499,61 @@ public struct WorkspaceView: View {
   }
 
   private var filterBar: some View {
-    HStack {
-      Picker(
-        "Flags",
-        selection: Binding(
-          get: { workspace.flagFilter },
-          set: {
-            workspace.setFilter($0, minimumRating: workspace.minimumRating)
-          })
-      ) {
-        ForEach(FlagFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-      }.frame(width: 150)
-      Picker(
-        "Stars",
-        selection: Binding(
-          get: { workspace.minimumRating },
-          set: {
-            workspace.setFilter(workspace.flagFilter, minimumRating: $0)
-          })
-      ) {
-        Text("All stars").tag(0)
-        ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
-      }.frame(width: 150)
-      Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
-      Toggle(
-        "RAW+JPEG", isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
-      ).toggleStyle(.checkbox)
-      Button("Select All") { workspace.selectAllVisible() }
-      Text("\(workspace.selectedIDs.count) selected").font(.caption)
-      Spacer()
-      Toggle(
-        "Auto-advance",
-        isOn: Binding(get: { workspace.autoAdvance }, set: { workspace.autoAdvance = $0 })
-      )
-      .toggleStyle(.checkbox).help("Move to the next photo after a decision; Shift always advances")
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Picker(
+          "Flags",
+          selection: Binding(
+            get: { workspace.flagFilter },
+            set: {
+              workspace.setFilter($0, minimumRating: workspace.minimumRating)
+            })
+        ) {
+          ForEach(FlagFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        }.frame(width: 150)
+        Picker(
+          "Stars",
+          selection: Binding(
+            get: { workspace.minimumRating },
+            set: {
+              workspace.setFilter(workspace.flagFilter, minimumRating: $0)
+            })
+        ) {
+          Text("All stars").tag(0)
+          ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
+        }.frame(width: 150)
+        Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
+        Toggle(
+          "RAW+JPEG",
+          isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
+        ).toggleStyle(.checkbox)
+        Button("Select All") { workspace.selectAllVisible() }
+        Text("\(workspace.selectedIDs.count) selected").font(.caption)
+        Spacer()
+        Toggle(
+          "Auto-advance",
+          isOn: Binding(get: { workspace.autoAdvance }, set: { workspace.autoAdvance = $0 })
+        )
+        .toggleStyle(.checkbox).help(
+          "Move to the next photo after a decision; Shift always advances")
+      }
+      HStack {
+        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
+          Button {
+            workspace.applyDecision(flag: flag)
+          } label: {
+            Label(flag.title + " Selection", systemImage: flag.symbol)
+          }.disabled(!workspace.decisionSelectionReady)
+            .help(
+              "Apply this flag to every selected photo, preserving stars. Reject does not delete files."
+            )
+        }
+        Button("Edit Selected IPTC…") { showWorkflow(2) }.disabled(workspace.selectedIDs.isEmpty)
+          .help(
+            "Copy one field from the first selected photo to the selection, or review several checked fields."
+          )
+        Spacer()
+      }
     }.font(.caption).padding(.horizontal, 20).padding(.bottom, 10)
   }
 
@@ -480,7 +585,7 @@ public struct WorkspaceView: View {
           workspace.applyDecision(rating: 0)
           gridFocused = true
         }.help("Clear stars")
-      }.buttonStyle(.borderless).disabled(!workspace.decisionsReady.contains(photo.id))
+      }.buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
       if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
         Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
         HStack {
@@ -533,6 +638,7 @@ public struct WorkspaceView: View {
         }
         return
       }
+      folderLibrary.add(url)
       Task {
         await workspace.openFolder(url)
         gridFocused = true
@@ -545,10 +651,24 @@ public struct WorkspaceView: View {
     }
   }
 
+  private func showWorkflow(_ tab: Int) {
+    workflowModel.requestedTab = tab
+    showingWorkflow = true
+  }
+
+  private func browse(_ folder: URL) {
+    folderLibrary.select(folder)
+    Task {
+      await workspace.openFolder(folder)
+      gridFocused = true
+    }
+  }
+
   private func reload() {
     guard let directory = workspace.directory else { return }
     Task {
       await workspace.openFolder(directory)
+      if folderLibrary.expanded.contains(directory.path) { await folderLibrary.refresh(directory) }
       gridFocused = true
     }
   }

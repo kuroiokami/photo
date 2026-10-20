@@ -33,6 +33,7 @@ struct WorkflowView: View {
 
   init(model: WorkflowModel) {
     _model = State(initialValue: model)
+    _tab = State(initialValue: model.requestedTab)
   }
   private var patch: MetadataPatch {
     var value = MetadataPatch()
@@ -188,17 +189,41 @@ struct WorkflowView: View {
       Text(
         "Only checked, nonempty fields change. Choose Clear to remove a value. Other properties and develop settings are preserved; source image bytes are never edited. JPEG/PNG sidecar recognition varies by application."
       ).font(.caption).foregroundStyle(.secondary)
+      Text(
+        "Values from: \(model.workspace.firstSelectedPhoto?.filename ?? "No selected photo") · \(model.targets(scope).count) target files. Other photos may have different values."
+      )
+      .font(.caption).foregroundStyle(.secondary)
       ScrollView {
         VStack(alignment: .leading, spacing: 8) {
           ForEach(MetadataField.allCases) { field in
             HStack {
               Toggle(field.rawValue, isOn: membership(field, in: $enabled)).toggleStyle(.checkbox)
-                .frame(width: 210, alignment: .leading)
+                .frame(width: 190, alignment: .leading)
+                .help(
+                  "Include only this field in the combined preview. Unchecked fields stay unchanged."
+                )
               TextField(
                 field.rawValue,
-                text: Binding(get: { fieldValues[field] ?? "" }, set: { fieldValues[field] = $0 })
+                text: Binding(
+                  get: { fieldValues[field] ?? "" },
+                  set: {
+                    fieldValues[field] = $0
+                    enabled.insert(field)
+                  })
               ).disabled(cleared.contains(field))
               Toggle("Clear", isOn: membership(field, in: $cleared)).toggleStyle(.checkbox)
+                .help("Explicitly remove this field from the target photos.")
+              Button {
+                model.previewField(
+                  field, value: fieldValues[field] ?? "", clear: cleared.contains(field),
+                  scope: scope)
+              } label: {
+                Image(systemName: "rectangle.on.rectangle")
+              }
+              .accessibilityLabel("Preview only " + field.rawValue)
+              .help(
+                "Preview only \(field.rawValue) for \(model.targets(scope).count) target files. Every other field stays unchanged, including other checked fields."
+              )
             }
           }
           Divider()
@@ -259,9 +284,16 @@ struct WorkflowView: View {
       }
       HStack {
         Button("Preview Metadata Changes") { model.previewMetadata(patch, scope: scope) }
-        Button("Apply Reviewed Metadata") { model.applyMetadata() }.disabled(
+        Button("Apply Reviewed Fields to \(model.metadataPlan.count) Photos") {
+          model.applyMetadata()
+        }.disabled(
           model.metadataPlan.isEmpty)
-        Text("\(model.metadataPlan.count) files in preview").font(.caption)
+        Text(
+          model.metadataPlan.first.map { plan in
+            plan.fields.map(\.rawValue).sorted().joined(separator: ", ")
+              + (plan.changesKeywords ? " · Keywords" : "")
+          } ?? "Preview changes first"
+        ).font(.caption).lineLimit(2)
       }
     }.padding()
   }

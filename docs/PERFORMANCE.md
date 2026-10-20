@@ -123,3 +123,7 @@ sh scripts/benchmark.sh --folder /absolute/disposable/raw-folder > camera-report
 sh scripts/benchmark.sh --generate /new/disposable/mixed-folder 2000
 sh scripts/benchmark.sh --workspace /new/disposable/mixed-folder > workspace-report.json
 ```
+
+## Folder and batch usability follow-up — 2026-10-19
+
+Folder disclosure enumerates only immediate directories on a separate actor; photo loading continues through the existing session-isolated lanes. Restoring a folder opens its images before restoring expanded descendants. This change does not alter decoding, cache budgets, RAW render policy or the preceding benchmark results. No new latency/frame-rate claim is made. Rectangle hit testing uses currently laid-out grid frames and the viewport; edge auto-scroll is deferred. A 50-photo field-patch regression verifies preservation and selection, not throughput. Large folder-tree/rectangle frame-time measurements remain future acceptance work.

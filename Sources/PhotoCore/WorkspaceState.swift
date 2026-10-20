@@ -13,6 +13,7 @@ public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
   public private(set) var selectedIDs: Set<String> = []
   public private(set) var groupPairs = false
+  private var selectionAnchorID: String?
   @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:]
   @ObservationIgnored private var allByID: [String: PhotoItem] = [:]
   public var filePhotos: [PhotoItem] { allPhotos }
@@ -36,16 +37,51 @@ public final class WorkspaceState {
     let primary = selectedID.flatMap { familyMembers[$0]?.first?.id }
     rebuildVisible(preferred: value ? primary ?? selectedID : selectedID)
   }
-  public func selectAllVisible() { selectedIDs = Set(photos.map(\.id)) }
+  public var firstSelectedPhoto: PhotoItem? {
+    photos.first { selectedIDs.contains($0.id) } ?? selectedPhoto
+  }
+  public var decisionSelectionReady: Bool {
+    let targets = operationPhotos
+    return !targets.isEmpty && targets.allSatisfy { decisionsReady.contains($0.id) }
+  }
+  public func selectAllVisible() {
+    selectedIDs = Set(photos.map(\.id))
+    if selectedIndex == nil, !photos.isEmpty { selectedIndex = 0 }
+    selectionAnchorID = selectedID
+  }
+  public func deselectAll() {
+    selectedIDs = []
+    selectedIndex = nil
+    selectionAnchorID = nil
+  }
+  public func selectGroup(_ ids: Set<String>, focus: String? = nil) {
+    selectedIDs = ids.filter { indicesByID[$0] != nil }
+    let preferred = focus ?? selectedID
+    selectedIndex =
+      preferred.flatMap { selectedIDs.contains($0) ? indicesByID[$0] : nil }
+      ?? photos.firstIndex { selectedIDs.contains($0.id) }
+    selectionAnchorID = selectedID
+  }
+  public func invertSelection() { selectGroup(Set(photos.map(\.id)).subtracting(selectedIDs)) }
+  public func selectPicks() {
+    selectGroup(Set(photos.filter { decisions[$0.id]?.flag == .pick }.map(\.id)))
+  }
+  public func togglePicks() {
+    let targets = operationPhotos
+    let allPicked = !targets.isEmpty && targets.allSatisfy { decisions[$0.id]?.flag == .pick }
+    applyDecision(flag: allPicked ? .unflagged : .pick)
+  }
   public func selectMultiple(_ id: String, extending: Bool, range: Bool) {
     guard let index = indicesByID[id] else { return }
-    if range, let anchor = selectedIndex {
-      selectedIDs = Set(photos[min(anchor, index)...max(anchor, index)].map(\.id))
+    if range, let anchor = selectionAnchorID.flatMap({ indicesByID[$0] }) ?? selectedIndex {
+      let ids = Set(photos[min(anchor, index)...max(anchor, index)].map(\.id))
+      selectedIDs = extending ? selectedIDs.union(ids) : ids
     } else if extending {
-      if selectedIDs.isEmpty, let selectedID { selectedIDs.insert(selectedID) }
       if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
+      selectionAnchorID = id
     } else {
       selectedIDs = [id]
+      selectionAnchorID = id
     }
     selectedIndex =
       selectedIDs.contains(id) ? index : photos.firstIndex { selectedIDs.contains($0.id) }
@@ -187,21 +223,27 @@ public final class WorkspaceState {
 
   public func select(_ id: PhotoItem.ID?) {
     guard let id else {
-      selectedIndex = nil
-      selectedIDs = []
+      deselectAll()
       return
     }
     guard let index = indicesByID[id] else { return }
     selectedIndex = index
     selectedIDs = [id]
+    selectionAnchorID = id
   }
 
-  public func moveSelection(by offset: Int) {
+  public func moveSelection(by offset: Int, extending: Bool = false) {
     guard !photos.isEmpty else { return }
     let current = selectedIndex ?? 0
     let movement = min(max(offset, -current), photos.count - 1 - current)
-    selectedIndex = current + movement
-    selectedIDs = Set([selectedID].compactMap { $0 })
+    if extending {
+      if selectionAnchorID == nil { selectionAnchorID = selectedID }
+      selectMultiple(photos[current + movement].id, extending: false, range: true)
+    } else {
+      selectedIndex = current + movement
+      selectedIDs = Set([selectedID].compactMap { $0 })
+      selectionAnchorID = selectedID
+    }
   }
 
   public func indexMetadata(using reader: any PhotoMetadataReading, expectedSession: UUID? = nil)
@@ -289,6 +331,7 @@ public final class WorkspaceState {
   private func resetDecisions() {
     decisions = [:]
     selectedIDs = []
+    selectionAnchorID = nil
     familyMembers = [:]
     saveStatus = [:]
     decisionsReady = []
@@ -309,7 +352,14 @@ public final class WorkspaceState {
     await DecisionSaveQueue.shared.flush()
     for photo in snapshot {
       guard session == sessionID, !Task.isCancelled else { return }
-      if let selectedPhoto { await loadDecision(selectedPhoto, session: session) }
+      if let selectedPhoto {
+        let priority =
+          groupPairs ? familyMembers[selectedPhoto.id] ?? [selectedPhoto] : [selectedPhoto]
+        for member in priority {
+          guard session == sessionID, !Task.isCancelled else { return }
+          await loadDecision(member, session: session)
+        }
+      }
       guard session == sessionID, !Task.isCancelled else { return }
       await loadDecision(photo, session: session)
     }

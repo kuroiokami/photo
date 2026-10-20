@@ -1,3 +1,4 @@
+import AppKit
 import PhotoCore
 import SwiftUI
 
@@ -9,6 +10,8 @@ struct WorkspaceActions {
   let hidePreview: @MainActor () -> Void
   let openFolder: @MainActor () -> Void
   let reload: @MainActor () -> Void
+  let workflow: @MainActor (Int) -> Void
+  let help: @MainActor () -> Void
   let canReload: Bool
 }
 
@@ -37,6 +40,14 @@ public struct WorkspaceCommands: Commands {
             actions?.workspace.canRedo != true)
       }
     }
+    if actions?.canDecide == true {
+      CommandGroup(replacing: .pasteboard) {
+        Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }
+          .keyboardShortcut("c", modifiers: .command)
+        Button("Select All Photos") { actions?.workspace.selectAllVisible() }
+          .keyboardShortcut("a", modifiers: .command)
+      }
+    }
     CommandMenu("Navigate") {
       Group {
         Button("Previous Photo") { actions?.workspace.moveSelection(by: -1) }
@@ -47,6 +58,18 @@ public struct WorkspaceCommands: Commands {
           .keyboardShortcut(.upArrow, modifiers: [])
         Button("Next Row") { actions?.workspace.moveSelection(by: actions?.columns ?? 1) }
           .keyboardShortcut(.downArrow, modifiers: [])
+        Button("Extend Selection Left") {
+          actions?.workspace.moveSelection(by: -1, extending: true)
+        }.keyboardShortcut(.leftArrow, modifiers: .shift)
+        Button("Extend Selection Right") {
+          actions?.workspace.moveSelection(by: 1, extending: true)
+        }.keyboardShortcut(.rightArrow, modifiers: .shift)
+        Button("Extend Selection Up") {
+          actions?.workspace.moveSelection(by: -(actions?.columns ?? 1), extending: true)
+        }.keyboardShortcut(.upArrow, modifiers: .shift)
+        Button("Extend Selection Down") {
+          actions?.workspace.moveSelection(by: actions?.columns ?? 1, extending: true)
+        }.keyboardShortcut(.downArrow, modifiers: .shift)
         Button("First Photo") { actions?.workspace.moveSelection(by: Int.min) }
           .keyboardShortcut(.home, modifiers: [])
         Button("Last Photo") { actions?.workspace.moveSelection(by: Int.max) }
@@ -59,8 +82,16 @@ public struct WorkspaceCommands: Commands {
     }
     CommandMenu("Decisions") {
       if actions?.canDecide == true {
-        Button("Select All Photos") { actions?.workspace.selectAllVisible() }
-          .keyboardShortcut("a", modifiers: .command)
+        Button("Deselect All Photos") { actions?.workspace.deselectAll() }.keyboardShortcut(
+          "d", modifiers: .command)
+        Button("Invert Selection") { actions?.workspace.invertSelection() }.keyboardShortcut(
+          "o", modifiers: [.command, .shift])
+        Button("Select Picks") { actions?.workspace.selectPicks() }.keyboardShortcut(
+          "t", modifiers: .command)
+        Button("Toggle Picks") { actions?.workspace.togglePicks() }.keyboardShortcut(
+          "t", modifiers: []
+        )
+        .disabled(actions?.workspace.decisionSelectionReady != true)
       }
       Divider()
       Group {
@@ -83,9 +114,23 @@ public struct WorkspaceCommands: Commands {
           }
           .keyboardShortcut(KeyEquivalent(Character(String(rating))), modifiers: .shift)
         }
-      }.disabled(actions?.canDecide != true || actions?.workspace.selectedPhoto == nil)
+      }.disabled(actions?.canDecide != true || actions?.workspace.decisionSelectionReady != true)
     }
 
+    CommandMenu("Workflow") {
+      if actions?.canDecide == true {
+        Button("Ingest…") { actions?.workflow(0) }.keyboardShortcut("g", modifiers: .command)
+        Button("Bulk Rename…") { actions?.workflow(1) }.keyboardShortcut("m", modifiers: [])
+        Button("IPTC & Keywords…") { actions?.workflow(2) }.keyboardShortcut(
+          "i", modifiers: .command)
+        Button("Metadata Info…") { actions?.workflow(2) }.keyboardShortcut("i", modifiers: [])
+        Button("Keywords…") { actions?.workflow(2) }.keyboardShortcut("k", modifiers: .command)
+      }
+    }
+    CommandGroup(after: .help) {
+      Button("Photo Quick Start & Shortcuts") { actions?.help() }.disabled(
+        actions?.canDecide != true)
+    }
     CommandGroup(after: .newItem) {
       Button("Open Folder…") { actions?.openFolder() }
         .keyboardShortcut("o", modifiers: .command)
