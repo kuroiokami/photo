@@ -4,6 +4,10 @@ For setup, read [Installation](INSTALLATION.md). For the complete interface/cont
 
 Implemented development workflow, updated 2026-10-20. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. Photo works with local files for publication or an editor. Lightroom **Classic** is an optional, documented interchange target; cloud Lightroom is not equivalent. See the [job routes and planned source review](USAGE.md#choose-a-route-for-the-job).
 
+## Review-only before copying
+
+Workflow → Ingest → choose a source → **Review Before Copying** protects its files/sidecars and saves stars, flags and Photo-local edits on this Mac. Child folders, Reload and relaunch retain the mode. This first chunk cannot yet copy/transfer reviews: normal ingest/handoff refuse protected sources, and metadata/rename tools are disabled there. Use the ordinary sequence below for copied output today. See [Usage](USAGE.md#review-a-source-before-copying) and [the remaining handover plan](PRE_COPY_CULLING.md).
+
 ## Recommended order
 
 1. **Ingest and verify.** Pick a card/source, a Photo folder, a Backup folder on another drive, and a unique Shoot name. Both receive `Job/Originals/<card tree>`. Photo recurses during ingest, copies supported photos and matching XMP/ACR companions, checks SHA-256, and publishes completed files through temporary-file moves. It never erases or ejects the card. Keep it until both copies finish verification.

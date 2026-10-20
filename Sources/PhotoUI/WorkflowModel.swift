@@ -15,6 +15,7 @@ struct MetadataPreset: Codable, Identifiable {
 final class WorkflowModel {
   let workspace: WorkspaceState
   var requestedTab = 0
+  var sourceReviewLaunch: UUID?
   var busy = false
   var backgroundable = false
   var status =
@@ -93,6 +94,34 @@ final class WorkflowModel {
         ).value
       } catch { status = error.localizedDescription }
     }
+  }
+  func startSourceReview(source: String) {
+    guard !busy else { return }
+    guard !WorkflowOperationBarrier.shared.hasPending else {
+      status = "Wait for the current file operation to finish before protecting a source."
+      return
+    }
+    busy = true
+    status = "Protecting source…"
+    let task = Task { @MainActor [self] in
+      do {
+        let folder = try Self.path(source)
+        _ = try await workspace.persistence.beginSourceReview(folder)
+        // Protection is installed BEFORE draining queued normal saves.
+        await DecisionSaveQueue.shared.flush()
+        await openFolder(folder)
+        guard workspace.loadState == .ready, workspace.isSourceReview else {
+          throw SourceReviewError.sourceChanged
+        }
+        sourceReviewLaunch = UUID()
+        status = "Review saved on this Mac. Source files and metadata stay unchanged."
+        NotificationCenter.default.post(name: .photoSourceReviewChanged, object: nil)
+      } catch { status = error.localizedDescription }
+      busy = false
+      worker = nil
+    }
+    worker = task
+    WorkflowOperationBarrier.shared.track(task)
   }
   func ingest(source: String, primary: String, backup: String, job: String) {
     run(background: true) { [self] in

@@ -93,76 +93,88 @@ extension DecisionStore {
   }
 
   public func saveMetadata(_ plan: MetadataFilePlan) throws -> MetadataEntry {
-    guard try key(for: plan.image) == plan.identity else { throw DecisionStoreError.fileChanged }
-    let previous = try metadataRecord(plan.identity)
-    let pending = previous?.pending == true
-    let record = StoredMetadata(
-      value: plan.after, baseline: plan.baseline, pending: true,
-      fields: pending ? plan.fields.union(previous?.fields ?? []) : plan.fields,
-      changesKeywords: plan.changesKeywords || (pending && previous?.changesKeywords == true),
-      embedded: plan.embedded ?? previous?.embedded)
-    try putMetadata(record, identity: plan.identity)
-    return try syncMetadata(record, image: plan.image, identity: plan.identity, useLocal: false)
+    return try sourceProtection.withWritable([plan.image, XMPSidecar.url(for: plan.image)]) {
+      guard try key(for: plan.image) == plan.identity else { throw DecisionStoreError.fileChanged }
+      let previous = try metadataRecord(plan.identity)
+      let pending = previous?.pending == true
+      let record = StoredMetadata(
+        value: plan.after, baseline: plan.baseline, pending: true,
+        fields: pending ? plan.fields.union(previous?.fields ?? []) : plan.fields,
+        changesKeywords: plan.changesKeywords || (pending && previous?.changesKeywords == true),
+        embedded: plan.embedded ?? previous?.embedded)
+      try putMetadata(record, identity: plan.identity)
+      return try syncMetadata(record, image: plan.image, identity: plan.identity, useLocal: false)
+
+    }
   }
 
   public func retryMetadata(for image: URL, useLocal: Bool = false) throws -> MetadataEntry {
-    let identity = try key(for: image)
-    guard let record = try metadataRecord(identity) else { return try loadMetadata(for: image) }
-    return try syncMetadata(record, image: image, identity: identity, useLocal: useLocal)
+    return try sourceProtection.withWritable([image, XMPSidecar.url(for: image)]) {
+      let identity = try key(for: image)
+      guard let record = try metadataRecord(identity) else { return try loadMetadata(for: image) }
+      return try syncMetadata(record, image: image, identity: identity, useLocal: useLocal)
+
+    }
   }
 
   public func useExternalMetadata(for image: URL) throws -> MetadataEntry {
-    let identity = try key(for: image)
-    let data = try sidecarData(image)
-    let embedded = try metadataRecord(identity)?.embedded
-    let value = try XMPSidecar.combinedDescriptive(sidecar: data, embedded: embedded)
-    let baseline = XMPSidecar.digest(data)
-    try putMetadata(
-      StoredMetadata(
-        value: value, baseline: baseline, pending: false, fields: [], changesKeywords: false,
-        embedded: embedded),
-      identity: identity)
-    return MetadataEntry(value: value, identity: identity, baseline: baseline, status: "Saved")
+    return try sourceProtection.withWritable([image]) {
+      let identity = try key(for: image)
+      let data = try sidecarData(image)
+      let embedded = try metadataRecord(identity)?.embedded
+      let value = try XMPSidecar.combinedDescriptive(sidecar: data, embedded: embedded)
+      let baseline = XMPSidecar.digest(data)
+      try putMetadata(
+        StoredMetadata(
+          value: value, baseline: baseline, pending: false, fields: [], changesKeywords: false,
+          embedded: embedded),
+        identity: identity)
+      return MetadataEntry(value: value, identity: identity, baseline: baseline, status: "Saved")
+
+    }
   }
 
   func syncMetadata(
     _ original: StoredMetadata, image: URL, identity: String, useLocal: Bool
   ) throws -> MetadataEntry {
-    var record = original
-    do {
-      var failure: (any Error)?
-      var coordinationError: NSError?
-      NSFileCoordinator().coordinate(
-        writingItemAt: XMPSidecar.url(for: image), options: .forMerging, error: &coordinationError
-      ) { _ in
-        do {
-          guard try key(for: image) == identity else { throw DecisionStoreError.fileChanged }
-          let data = try sidecarData(image)
-          let old = XMPSidecar.digest(data)
-          guard useLocal || old == record.baseline else { throw SidecarError.conflict }
-          let output = try XMPSidecar.mergingMetadata(
-            record.value, fields: record.fields, keywords: record.changesKeywords,
-            into: data ?? record.embedded)
-          try output.write(to: XMPSidecar.url(for: image), options: .atomic)
-          let new = XMPSidecar.digest(output)
-          if var decision = try read(identity), decision.baseline == old {
-            decision.baseline = new
-            try write(decision, key: identity)
-          }
-          record.baseline = new
-        } catch { failure = error }
+    return try sourceProtection.withWritable([image, XMPSidecar.url(for: image)]) {
+      var record = original
+      do {
+        var failure: (any Error)?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(
+          writingItemAt: XMPSidecar.url(for: image), options: .forMerging, error: &coordinationError
+        ) { _ in
+          do {
+            guard try key(for: image) == identity else { throw DecisionStoreError.fileChanged }
+            let data = try sidecarData(image)
+            let old = XMPSidecar.digest(data)
+            guard useLocal || old == record.baseline else { throw SidecarError.conflict }
+            let output = try XMPSidecar.mergingMetadata(
+              record.value, fields: record.fields, keywords: record.changesKeywords,
+              into: data ?? record.embedded)
+            try output.write(to: XMPSidecar.url(for: image), options: .atomic)
+            let new = XMPSidecar.digest(output)
+            if var decision = try read(identity), decision.baseline == old {
+              decision.baseline = new
+              try write(decision, key: identity)
+            }
+            record.baseline = new
+          } catch { failure = error }
+        }
+        if let error = coordinationError { throw error }
+        if let error = failure { throw error }
+        record.pending = false
+        try putMetadata(record, identity: identity)
+        return MetadataEntry(
+          value: record.value, identity: identity, baseline: record.baseline, status: "Saved")
+      } catch {
+        return MetadataEntry(
+          value: record.value, identity: identity, baseline: record.baseline,
+          status: error is SidecarError && (error as? SidecarError) == .conflict
+            ? "XMP conflict" : "Saved locally · \(error.localizedDescription)")
       }
-      if let error = coordinationError { throw error }
-      if let error = failure { throw error }
-      record.pending = false
-      try putMetadata(record, identity: identity)
-      return MetadataEntry(
-        value: record.value, identity: identity, baseline: record.baseline, status: "Saved")
-    } catch {
-      return MetadataEntry(
-        value: record.value, identity: identity, baseline: record.baseline,
-        status: error is SidecarError && (error as? SidecarError) == .conflict
-          ? "XMP conflict" : "Saved locally · \(error.localizedDescription)")
+
     }
   }
 

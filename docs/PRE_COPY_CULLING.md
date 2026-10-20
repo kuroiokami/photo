@@ -1,8 +1,10 @@
 # Review before copying: implementation plan
 
-Status: **designed, not implemented**. Updated 2026-10-20. Normal browsing still attempts XMP synchronization. Until this feature ships, use verified ingest before making decisions on a card.
+Status: **first chunk implemented: protected review-only**. Updated 2026-10-20. In Workflow → Ingest, choose a source and use **Review Before Copying**. Stars, flags, explicit-review state, Undo and Photo-local composition stay on this Mac; source images/sidecars are protected. Subfolders and relaunch retain this context. The current implementation is recorded in [ADR 0017](decisions/0017-source-review-only.md).
 
-## The experience
+**Not available yet:** reviewed subset copying, decision transfer to destination files and the rest of the guided copy flow below. Normal ingest/handoff reject protected sources rather than lose their local review. If you need copied output now, use ordinary verified ingest before culling. Protection remains after closing/removing a source shortcut; this chunk has no unprotect command. Unprotected ordinary browsing still uses normal XMP synchronization.
+
+## Target experience (copy steps still planned)
 
 Workflow starts with **Copy everything** or **Review before copying**. Direct folder browsing stays available.
 
@@ -35,9 +37,9 @@ Use the current two-verified-destination policy for the first implementation. A 
 
 ### Separate review records from working-file decisions
 
-Add a source-review actor/store in the existing Application Support SQLite database, with additive tables for sessions, review items and copy handovers. Do not put review decisions into the normal `decisions.pending` or descriptive metadata pending queues: those records mean a future sidecar write, whereas source review intentionally has none.
+The first chunk stores per-file review items in Application Support SQLite, with a small synchronized JSON registry for cross-service source protection (ADR 0017). Before copying ships, extend this with reviewed-scope/revision/location data and durable copy handovers. Do not put review decisions into the normal `decisions.pending` or descriptive metadata pending queues: those records mean a future sidecar write, whereas source review intentionally has none.
 
-A review item contains session ID, relative location, available volume/file identifiers, size/creation/modification fingerprint, baseline sidecar digest, explicit-review state, decision, Photo-local composition and revision. Store only overridden decision fields when merging into a copy. Existing source metadata is read, not rewritten. Do not silently inherit unsynchronized normal-workspace intent; identify it separately if present.
+The first chunk stores full decisions, Photo-local composition, explicit-review state and initial sidecar digest/warning, keyed by session UUID and protected file identity. Copy-ready records additionally need source-relative locations, reviewed-field ownership and revisions. Store only overridden decision fields when merging into a copy. Existing source metadata is read, not rewritten. Do not silently inherit unsynchronized normal-workspace intent; identify it separately if present.
 
 Show **Saving review…**, **Review saved on this Mac**, or a real local-save failure. Saving, Undo and normal-quit draining use the existing queue/barrier, but a review save has no XMP retry or conflict-resolution action targeting the source. Local review survives app restart; session Undo can remain session-scoped initially. Session data is not lost when the card is temporarily absent.
 
@@ -85,7 +87,7 @@ Photo-local crops/rotation/mirroring transfer to both copies in Photo’s databa
 
 | Chunk | Work | Required proof |
 | --- | --- | --- |
-| 1. Protected source review | Durable review store/context, guarded mutations, familiar culling controls, source banner, child navigation and restart | Writable disposable source still has identical directory listing and image/sidecar hashes after stars/flags/Undo/retry/metadata/rename attempts, relaunch and second-window tests |
+| 1. Protected source review — implemented; validation in tracker | Durable review store/context, guarded mutations, familiar culling controls, source banner, child navigation and restart | Writable disposable source still has identical directory listing and image/sidecar hashes after stars/flags/Undo/retry/metadata/rename attempts, relaunch and second-window tests |
 | 2. Reviewed subset copy | Source indexing, explicit scopes/family expansion, frozen plan and reviewed counts | No filtered-scope surprises; unreviewed accounted for; grouped/conflicting/ambiguous pairs, missing files, destination overlap/collisions and source replacement covered |
 | 3. Verified handover | Destination identity mapping, local edit/decision transfer, preserving XMP and recovery journal | Both copies retain independent stars/flags/crops, unrelated XMP/ACR survives, source unchanged; failures/crashes at every stage recover without overwriting newer destination edits |
 | 4. Guided native flow and scale | Resume/reconnect, source/destination navigation, publication/editor next steps and performance | Native keyboard/VoiceOver workflow; real disposable card unplug/reconnect; 10k/40k inventory, scrolling, first-preview/p95, save queue and concurrent-copy measurements |

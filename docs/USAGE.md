@@ -23,7 +23,7 @@ Install/build it with the [installation guide](INSTALLATION.md). The [tracker](.
 
 ## 1. A first culling session
 
-1. **Open a working folder** with **⌘O**. For a card, use verified ingest before editing decisions or metadata.
+1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Review Before Copying** for local-only review (copying the review is not available yet).
 2. **Scan in Fit.** Use the large Preview and bottom filmstrip, or press **Space** for the Contact Sheet grid.
 3. **Make decisions.** Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** for stars. Flags and stars are independent. Reject does not delete anything.
 4. **Inspect focus deliberately.** Double-click the large image, choose **100%**, or pinch out over the preview. Pan with a two-finger scroll or drag; use the small navigator to jump to another area.
@@ -37,7 +37,7 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 
 - **News or wire deadline:** copy and verify, begin culling as verified photos arrive, caption the keepers and prepare delivery copies in **Deliver / Edit**. Lightroom is optional. JPEG/PNG delivery copies can carry embedded captions/copyright. RAW files still require a RAW-capable editor; Photo does not yet render publication JPEGs, apply its local crop to exports or upload to an agency.
 - **Wedding or large shoot:** keep the shoot under Photo Home, verify both copies, cull in passes with flags/stars and compare similar frames. Add shared rights/event metadata, then individual captions/keywords. Rename survivors before importing into Lightroom or another editor. A 10–40k-photo shoot is a design target, not a newly verified performance claim.
-- **Review before copying — planned:** a guided, local-only source-review mode will retain decisions without writing to the card and let you copy a reviewed subset. This is not implemented yet. Opening a card directly uses normal browsing: ratings and metadata may write sidecars there. Use verified ingest before making decisions on a card today. The [review-before-copy design](PRE_COPY_CULLING.md) defines the upcoming protected mode, copy choices and recovery requirements.
+- **Review before copying — review-only available:** Workflow → Ingest → choose the card/source → **Review Before Copying**. Stars, flags, Undo and Photo-local rotate/mirror/crop save only on this Mac; source images and metadata stay protected. Copying this review is not available yet. Use ordinary verified ingest first if you need copied output today. [Implementation and next steps](PRE_COPY_CULLING.md).
 
 
 ## 2. Workspace and saved folders
@@ -235,6 +235,18 @@ Both destinations receive `Shoot name/Originals/<source folders>`. Photo recurse
 The first fully verified image family’s folder opens once. Subsequent approved arrivals merge into the currently browsed destination folder without Reload or resetting decisions/selection. Unique RAW+JPEG companions complete together. Other source subfolders remain separately browsable; browsing elsewhere is respected. This is a snapshot ingest, not tethered/continuous source watching.
 
 Re-running verifies matching copies; differing targets are not overwritten. Cancellation retains verified copies and resumable manifests. The second destination is an initial snapshot; later edits/renames are not continuously mirrored. Read the [workflow recovery details](WORKFLOW.md#ingest-behavior-and-recovery) before retrying interrupted operations.
+
+### Review a source before copying
+
+1. In **Workflow → Ingest**, choose the card/source using **Copy from → Choose…**.
+2. Click **Review Before Copying**. Photo protects that source and opens it for browsing. If another file operation is running, finish it first.
+3. Check the **Reviewing source · Source unchanged** banner. P/X/U, 0–5, multi-selection, filtering, comparison, Fit/detail and Photo-local composition work as usual. An explicit decision marks the file reviewed; merely navigating does not. Clearing an already-clear flag also counts, and Undo restores the previous reviewed state.
+4. Expand the source in the sidebar and click child folders. Protection and local decisions restore after Reload or relaunch. A second window cannot write normal XMP/metadata into this source.
+5. Watch for **Review saved on this Mac** or **Review edits saved on this Mac**. Actual save failures expose review retry; they are not XMP errors.
+
+**Current limit:** this is review-only. Copying the review and transferring decisions to working/backup copies follow next; normal ingest/handoff deliberately refuse protected sources. Metadata editing and renaming are disabled there. Other ordinary working folders retain those tools. Closing a source or removing its sidebar shortcut does not remove protection; no unprotect command is available yet. Photo does not erase or eject the card.
+
+Keep Photo’s Application Support folder in backups: `decisions.sqlite` contains reviews/composition and `source-protection.json` contains protected-source bindings. The protection policy applies to this running Photo process, not other software or a forensic write blocker. Ambiguous reconnect/reformatted sources need a new review rather than guessing by filename. Removing local Photo data also removes reviews/protection. [Architecture and boundaries](decisions/0017-source-review-only.md).
 
 ## 10. Bulk rename
 

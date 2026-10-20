@@ -5,10 +5,17 @@ public struct DecisionEntry: Sendable {
   public let decision: CullingDecision
   public let status: String
   public let identity: String?
-  public init(decision: CullingDecision, status: String, identity: String? = nil) {
+  public let reviewed: Bool
+  public let sourceReview: SourceReviewSession?
+  public init(
+    decision: CullingDecision, status: String, identity: String? = nil, reviewed: Bool = false,
+    sourceReview: SourceReviewSession? = nil
+  ) {
     self.decision = decision
     self.status = status
     self.identity = identity
+    self.reviewed = reviewed
+    self.sourceReview = sourceReview
   }
   public var conflict: Bool { status.hasPrefix("XMP conflict") }
 }
@@ -36,9 +43,13 @@ public actor DecisionStore {
     databaseURL: FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask)[0]
       .appendingPathComponent("Photo/decisions.sqlite"))
-  private let databaseURL: URL
+  let databaseURL: URL
+  public nonisolated let sourceProtection: SourceProtection
   private var connection: DatabaseConnection?
-  public init(databaseURL: URL) { self.databaseURL = databaseURL }
+  public init(databaseURL: URL, sourceProtection: SourceProtection = .shared) {
+    self.databaseURL = databaseURL
+    self.sourceProtection = sourceProtection
+  }
 
   // Only the owning DecisionStore actor uses this handle. The wrapper closes
   // it on destruction without exposing a non-Sendable pointer across actors.
@@ -86,7 +97,7 @@ public actor DecisionStore {
     guard
       sqlite3_exec(
         db,
-        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS image_edits (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
+        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS image_edits (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS source_review_items (session TEXT NOT NULL, identity TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(session,identity)); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
         nil, nil, nil) == SQLITE_OK
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
@@ -196,6 +207,9 @@ public actor DecisionStore {
   }
 
   public func load(for image: URL) throws -> DecisionEntry {
+    if let session = try sourceReview(for: image) {
+      return try loadSourceReview(session, image: image).0
+    }
     let identity = try key(for: image)
     let previous = try pathIdentity(image)
     let entry = try loadValue(for: image, previousIdentity: previous)
@@ -256,57 +270,63 @@ public actor DecisionStore {
   )
     throws -> DecisionEntry
   {
-    let identity = try key(for: image)
-    guard expectedIdentity == nil || expectedIdentity == identity else {
-      throw DecisionStoreError.fileChanged
-    }
-    let local = try read(identity)
-    // Baseline must come from load: an external edit after loading is a conflict.
-    let baseline = local?.baseline ?? "absent"
-    var record = StoredDecision(decision: decision, pending: true, baseline: baseline)
-    try write(record, key: identity)
-    do {
-      var coordinationError: NSError?
-      var operationError: (any Error)?
-      let coordinator = NSFileCoordinator()
-      coordinator.coordinate(
-        writingItemAt: XMPSidecar.url(for: image), options: .forMerging, error: &coordinationError
-      ) { _ in
-        do {
-          let current = try sidecarData(image)
-          guard resolveConflict || XMPSidecar.digest(current) == baseline else {
-            throw SidecarError.conflict
-          }
-          let output = try XMPSidecar.merging(decision, into: current)
-          try output.write(to: XMPSidecar.url(for: image), options: .atomic)
-          record.baseline = XMPSidecar.digest(output)
-          try rebaseMetadata(
-            identity: identity, from: XMPSidecar.digest(current), to: record.baseline)
-        } catch { operationError = error }
+    return try sourceProtection.withWritable([image, XMPSidecar.url(for: image)]) {
+      let identity = try key(for: image)
+      guard expectedIdentity == nil || expectedIdentity == identity else {
+        throw DecisionStoreError.fileChanged
       }
-      if let error = coordinationError { throw error }
-      if let error = operationError { throw error }
-      record.pending = false
+      let local = try read(identity)
+      // Baseline must come from load: an external edit after loading is a conflict.
+      let baseline = local?.baseline ?? "absent"
+      var record = StoredDecision(decision: decision, pending: true, baseline: baseline)
       try write(record, key: identity)
-      return DecisionEntry(decision: decision, status: "Saved")
-    } catch SidecarError.conflict {
-      return DecisionEntry(decision: decision, status: "XMP conflict")
-    } catch {
-      return DecisionEntry(
-        decision: decision, status: "Saved locally · \(error.localizedDescription)")
+      do {
+        var coordinationError: NSError?
+        var operationError: (any Error)?
+        let coordinator = NSFileCoordinator()
+        coordinator.coordinate(
+          writingItemAt: XMPSidecar.url(for: image), options: .forMerging, error: &coordinationError
+        ) { _ in
+          do {
+            let current = try sidecarData(image)
+            guard resolveConflict || XMPSidecar.digest(current) == baseline else {
+              throw SidecarError.conflict
+            }
+            let output = try XMPSidecar.merging(decision, into: current)
+            try output.write(to: XMPSidecar.url(for: image), options: .atomic)
+            record.baseline = XMPSidecar.digest(output)
+            try rebaseMetadata(
+              identity: identity, from: XMPSidecar.digest(current), to: record.baseline)
+          } catch { operationError = error }
+        }
+        if let error = coordinationError { throw error }
+        if let error = operationError { throw error }
+        record.pending = false
+        try write(record, key: identity)
+        return DecisionEntry(decision: decision, status: "Saved")
+      } catch SidecarError.conflict {
+        return DecisionEntry(decision: decision, status: "XMP conflict")
+      } catch {
+        return DecisionEntry(
+          decision: decision, status: "Saved locally · \(error.localizedDescription)")
+      }
+
     }
   }
 
   public func useExternal(for image: URL, expectedIdentity: String? = nil) throws -> DecisionEntry {
-    let currentIdentity = try key(for: image)
-    guard expectedIdentity == nil || expectedIdentity == currentIdentity else {
-      throw DecisionStoreError.fileChanged
+    return try sourceProtection.withWritable([image]) {
+      let currentIdentity = try key(for: image)
+      guard expectedIdentity == nil || expectedIdentity == currentIdentity else {
+        throw DecisionStoreError.fileChanged
+      }
+      let data = try sidecarData(image)
+      let decision = try data.map(XMPSidecar.read) ?? CullingDecision()
+      try write(
+        StoredDecision(decision: decision, pending: false, baseline: XMPSidecar.digest(data)),
+        key: key(for: image))
+      return DecisionEntry(decision: decision, status: "Saved")
+
     }
-    let data = try sidecarData(image)
-    let decision = try data.map(XMPSidecar.read) ?? CullingDecision()
-    try write(
-      StoredDecision(decision: decision, pending: false, baseline: XMPSidecar.digest(data)),
-      key: key(for: image))
-    return DecisionEntry(decision: decision, status: "Saved")
   }
 }

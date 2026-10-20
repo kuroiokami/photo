@@ -205,13 +205,23 @@ Current source browsing still uses normal XMP synchronization; it must not be pr
 
 ## Pre-copy review and installable distribution design — 2026-10-20
 
-Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decisions/0016-protected-source-review.md) and [distribution](DISTRIBUTION.md). These are implementation/release designs, not shipped capabilities.
+Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decisions/0016-protected-source-review.md) and [distribution](DISTRIBUTION.md). The first protected review-only chunk is now implemented; copying/handover and distribution remain implementation/release designs.
 
 - [x] Audit current decision writes, ingest scope/manifests and app packaging; define the review boundary, frozen scopes, destination identity transfer and recovery requirements.
-- [ ] Implement review-only store/context and source mutation guards, including queued retries/history, second windows, child folders and relaunch. Prove no image/sidecar/directory changes on a writable disposable source.
+- [x] Implement review-only store/context and source mutation guards, including queued retries/history, second windows, child folders and relaunch. Automated writable-source preservation coverage passes; exact native acceptance is in the tracker.
 - [ ] Implement explicit source-wide copy choices, reviewed/unreviewed counts, pair expansion/conflicts and immutable file/family plans.
 - [ ] Implement journaled two-destination decision/edit handover and destination-only XMP, preserving provenance and later destination edits across interruption/retry.
 - [ ] Complete guided review/copy/resume native acceptance and representative 10k/40k concurrent-copy measurements before claiming that scale.
 - [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, license and hardware support before publishing.
 - [ ] With owner-provided Developer ID/notarization setup, produce and validate a stapled app/DMG on a clean recipient Mac, including upgrade/local-data persistence and offline launch.
 - [ ] Publish only an explicitly authorized, accepted beta artifact with checksum, installation instructions and tested platform/camera limits. Intel/universal builds, automatic updating and App Store distribution remain separate acceptance work.
+
+
+## Protected source review implementation — 2026-10-20
+
+- [x] Add separate SQLite review items and a durable source registry; route stars/flags/composition/Undo locally without normal pending XMP.
+- [x] Guard normal metadata/decision/history, rename/recovery, file destinations and derived-image mutations beneath the UI; preserve identity/replacement/alias protections.
+- [x] Install protection before draining queued saves; restore context on child navigation/relaunch and refresh affected windows.
+- [x] Expose Review Before Copying and an explicit review-only banner/status. Block copy/handoff until reviewed scope and transfer are implemented.
+- [ ] Complete native/platform/removable-card/performance acceptance; exact observed checks are in PROJECT_STATUS.md.
+- [ ] Implement reviewed copy choices and durable handover as the next chunk; retain source bytes, XMP preservation, destination identity binding and two-copy verification.
