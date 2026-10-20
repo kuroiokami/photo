@@ -223,6 +223,11 @@ struct WorkflowView: View {
         "Values from: \(model.workspace.firstSelectedPhoto?.filename ?? "No selected photo") · \(targetDescription). Other photos may have different values."
       )
       .font(.caption).foregroundStyle(.secondary)
+      if let summary = model.metadataUndoSummary {
+        Text("Undo: " + summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+      } else if let summary = model.metadataRedoSummary {
+        Text("Redo: " + summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+      }
       ScrollView {
         VStack(alignment: .leading, spacing: 8) {
           ForEach(MetadataField.allCases) { field in
@@ -335,6 +340,13 @@ struct WorkflowView: View {
             targetCount == 0 || (patch.fields.isEmpty && keywordAction == .leave) || !validKeywords
           )
           .help("Review exactly the checked fields and explicit keyword action before writing.")
+        Button("Undo Metadata Batch") { model.replayMetadata(undo: true) }
+          .disabled(model.metadataUndoCount == 0)
+          .help(
+            "Restore only the fields changed by the latest batch (\(model.metadataUndoCount) files). History survives restart; later edits to those fields stop Undo."
+          )
+        Button("Redo Metadata") { model.replayMetadata(undo: false) }
+          .disabled(model.metadataRedoCount == 0)
         Button(
           model.metadataPlan.isEmpty
             ? "Apply Reviewed Fields" : "Apply to \(model.metadataPlan.count) Files"

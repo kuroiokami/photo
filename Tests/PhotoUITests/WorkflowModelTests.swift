@@ -65,6 +65,16 @@ struct WorkflowModelTests {
     #expect(workspace.selectedIDs == selected)
     #expect(workspace.selectedPhoto?.filename == "049.png")
     #expect(model.metadataResults.values.allSatisfy { $0 == "Saved" })
+    #expect(model.metadataUndoCount == 50)
+    model.replayMetadata(undo: true)
+    await model.worker?.value
+    for index in 0..<50 {
+      let image = root.appendingPathComponent(String(format: "%03d.png", index))
+      #expect(
+        try await store.loadMetadata(for: image).value.fields[.copyright] == "Original \(index)")
+    }
+    model.replayMetadata(undo: false)
+    await model.worker?.value
     for index in 0..<51 {
       let image = root.appendingPathComponent(String(format: "%03d.png", index))
       let metadata = try await store.loadMetadata(for: image).value

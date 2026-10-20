@@ -1,11 +1,11 @@
 # Ingest, cull, organize and hand off to Lightroom Classic
 
-Implemented development workflow, 2026-10-19. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. This workflow targets Lightroom **Classic** and local files; cloud Lightroom is not an equivalent interchange target.
+Implemented development workflow, updated 2026-10-20. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. This workflow targets Lightroom **Classic** and local files; cloud Lightroom is not an equivalent interchange target.
 
 ## Recommended order
 
 1. **Ingest and verify.** Pick a card/source, a working root, a backup root on another drive, and a unique job folder. Both receive `Job/Originals/<card tree>`. Photo recurses during ingest, copies supported photos and matching XMP/ACR companions, checks SHA-256, and publishes completed files through temporary-file moves. It never erases or ejects the card. Keep it until both copies finish verification.
-2. **Cull quickly.** Continue Browsing while ingest runs; Reload shows new arrivals. The first published image's folder opens automatically. Ordinary browsing is shallow: open other card subfolders individually. Use fast Fit previews for the first pass; P/X/U and 0–5 for decisions; enter 100% only for deliberate focus/detail inspection. Rejecting does not delete files. Use RAW+JPEG grouping for a unique same-folder/stem pair, and Command/Shift-click or Select All for batches. A batch decision is one Undo action and does not auto-advance.
+2. **Cull quickly.** Continue Browsing while ingest runs; verified arrivals appear automatically in the current destination folder. The first published image's folder opens automatically. Ordinary browsing is shallow: open other card subfolders individually. Use fast Fit previews for the first pass; P/X/U and 0–5 for decisions; enter 100% only for deliberate focus/detail inspection. Rejecting does not delete files. Use RAW+JPEG grouping for a unique same-folder/stem pair, and Command/Shift-click or Select All for batches. A batch decision is one Undo action and does not auto-advance.
 3. **Name once, before import.** Review full filename mappings, including companions, before Apply. Use a stable template rather than ratings, selection positions, or changing descriptive keywords. Recommended: `{date}_{time}_{camera}_{original}`; compact delivery sequence: `{date}_{camera}_{sequence}`. Keep a unique camera label for multi-camera jobs. Correct camera clocks separately before relying on capture ordering; clock editing is not implemented.
 4. **Apply common metadata in layers.** Save an author/rights preset, a shoot/job/location preset, and smaller subject/individual-caption patches. Apply each explicitly after ingest. Photo does not apply a metadata preset automatically during ingest. Fields only change when checked and nonempty; Clear explicitly removes a value. Always review the per-file preview, especially for batch replacement.
 5. **Keyword after the first cull.** Tag useful survivors with a consistent vocabulary: subject, species/person, activity, event and meaningful location. Example: `Wildlife|Birds|Herons|Great Blue Heron`. Use Append for adding facts; Remove for named corrections; Replace/Clear only deliberately. Saved presets contribute reusable vocabulary suggestions. This is a simple local vocabulary menu, not a complete controlled-vocabulary database.
@@ -36,7 +36,7 @@ Author, copyright, usage rights, copyright URL, title, caption, credit, job iden
 
 Stars and flags remain independent. RAW decisions/descriptions use basename XMP; JPEG/PNG use full-filename XMP. Local SQLite stores pending descriptive intent before sidecar publication, shares file identity protections with decisions, and retains failed writes for Retry. Subsequent pending patches retain earlier pending fields. Own decision/description writes update each other's sync baselines; external changes require explicit Local or External resolution. Original image bytes are never rewritten by culling or descriptive editing.
 
-Flat tags use `dc:subject`; hierarchy paths use `lr:hierarchicalSubject`. Append incorporates embedded image keywords before merging sidecar intent. Explicit empty keyword containers suppress old embedded values. Lightroom keyword dictionary synonyms, export rules, vocabulary-file import/export, arbitrary IPTC fields and metadata Undo are not implemented. Existing unowned XMP is retained, but dictionary-level features are not claimed to transfer.
+Flat tags use `dc:subject`; hierarchy paths use `lr:hierarchicalSubject`. Append incorporates embedded image keywords before merging sidecar intent. Explicit empty keyword containers suppress old embedded values. Lightroom keyword dictionary synonyms, export rules, vocabulary-file import/export and arbitrary IPTC fields are not implemented. Existing unowned XMP is retained, but dictionary-level features are not claimed to transfer.
 
 Handoff first copies image/companion bytes and writes `.photo-handoff.json` with source checksums. Optional JPEG/PNG metadata embedding uses ImageIO's copy-source operation and verifies the requested XMP in a temporary result before replacement. Tests compare decoded pixel bytes and orientation. Resulting metadata bytes differ intentionally; `.photo-derived-checksums.json` records those final hashes. Use a **new dedicated folder** for a subsequent JPEG/PNG handoff; reusing a derived copy is a differing-byte collision. RAW files remain byte-identical. Original library JPEG/PNG bytes remain unchanged.
 
@@ -56,7 +56,7 @@ Location created and location shown have distinct meanings and must not be confl
 
 Lightroom Classic 15+ can place heavy edits in ACR companions in addition to XMP, so both are carried without interpreting or rewriting ACR bytes. [Adobe sidecar documentation](https://helpx.adobe.com/uk/lightroom-classic/desktop/organize-photos-in-lightroom-classic/create-xmp-acr-files.html). Modern flags are documented by [Adobe](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html); actual application-level exchange in this build remains unverified. No original Lightroom catalog was edited for these checks.
 
-Remaining: isolated Lightroom round trip across RAW/JPEG/PNG and flags/hierarchies/structured locations; real CRW and broader camera/mode/macOS coverage; removable/network-drive failure testing; first-open profiling; live arrivals, richer vocabulary management, and release/accessibility work.
+Remaining: isolated Lightroom round trip across RAW/JPEG/PNG and flags/hierarchies/structured locations; real CRW and broader camera/mode/macOS coverage; removable/network-drive failure testing; first-open profiling; continuous source watching, richer vocabulary management, and release/accessibility work.
 
 ## Saved locations, selections and one-field edits
 
@@ -71,3 +71,27 @@ Hover help and Help → Photo Quick Start & Shortcuts explain these actions. The
 ## Preview and contact sheet
 
 Choose Preview for a large image above a horizontal bottom filmstrip, with optional shooting information beside it. Contact Sheet returns to the full grid. Space switches views; Escape shows the contact sheet, and double-clicking a thumbnail opens Preview. Each view keeps its own thumbnail size during the session. Command/Shift-click and batch decisions work in both views. Arrow keys move one photo in the single-row strip; Shift extends the range. Trackpad horizontal scrolling or the native scrollbar browses the strip; navigation reveals the focused photo. Changing views retains selection and returns detail to Fit. Empty/filtered/error states use the full browsing area.
+
+## Comparison, selected review and thumbnail labels
+
+Choose Compare (C) in Preview to pin the current photo as a reference and start on another visible candidate. Arrows change the active candidate; G pins the active photo, Swap exchanges roles when the reference is visible, and O returns to Single Image. Link Zoom/Pan (L) sends explicit Fit/100% choices and normalized image centers to the other pane. Differently sized photos clamp independently. Unlink for independent inspection. Changing either photo, view or folder returns both panes to Fit. Decisions continue to target the thumbnail selection; pinning alone does not select the reference.
+
+Each pane has its own demand-only detail worker and 256 MiB retained region/full-image budget: comparison permits up to 512 MiB in total. Decoder/GPU/transient memory is additional. Fit/navigation releases detail. No speculative RAW rendering or full-detail cache is added.
+
+Select a burst and choose Review Selection from the toolbar or Review menu. Membership freezes the selected physical files; culling then starts with a single focused photo. Selection changes, filters and ratings do not change membership. Filters can temporarily hide members; End Selected Review removes this restriction. Changing/reloading the folder ends review. Unique RAW+JPEG grouping still represents its physical members together.
+
+Labels adds at most two optional rows: exposure, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Choices persist locally. Rows use indexed EXIF and show missing values explicitly; they do not trigger image decoding. Hide Extra Labels restores the compact strip.
+
+## Automatic verified ingest arrivals
+
+Photo publishes an image family only after its images and XMP/ACR companions have been verified at both destinations, source identities checked, and both manifests durably updated. Unique RAW+JPEG pairs arrive together. The first verified folder opens once; subsequent arrivals merge into the currently browsed destination folder without resetting selection, review, decision Undo, caches or the preview session. Opening another destination subfolder during ingest shows only approved arrivals. Browsing elsewhere is respected. Updates coalesce briefly; final/cancelled runs flush completed arrivals.
+
+This applies to a normal Photo ingest snapshot. It is not continuous/tethered source watching, recursive photo browsing or automatic naming/metadata presets. The backup remains an initial snapshot. Ordinary filesystem changes outside Photo ingest require Reload.
+
+## Metadata batch Undo and Redo
+
+Apply Reviewed Fields commits the entire local batch and its history in one SQLite transaction before attempting sidecar writes. In IPTC & Keywords, Undo Metadata Batch and Redo Metadata show the latest affected fields and physical file count. They work independently of the currently selected folder and survive restart; retain the latest 20 batches. A new metadata batch clears Redo. Native text Undo remains available inside fields; ordinary culling Undo remains independent.
+
+Undo/Redo changes only the batch's owned fields and keyword sets. Unrelated captions, ratings, flags, locations and develop settings retain their current values. All target identities and owned values are checked before recording intent. Replaced/missing files or later external changes to an owned field stop the whole replay with an explanation. Review current metadata before proceeding; no force-overwrite history command is provided. Restore renamed/moved files to their expected names before replaying older history.
+
+Sidecar writes remain coordinated atomic replacements per file, not a multi-file filesystem transaction. Read-only folders, interrupted synchronization or conflicting sidecars leave locally saved intent pending for Retry XMP Sync. Cancellation before commit changes no batch intent; after commit the remaining files stay pending. Journal entries contain owned before/after values and file identity/path references, not copies of original images or unrelated XMP packets. Do not delete the SQLite database as a recovery step.

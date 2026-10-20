@@ -13,6 +13,10 @@ struct WorkspaceActions {
   let workflow: @MainActor (Int) -> Void
   let help: @MainActor () -> Void
   let canReload: Bool
+  let comparison: ComparisonSession
+  let toggleComparison: @MainActor () -> Void
+  let pinReference: @MainActor () -> Void
+  let canCompare: Bool
 }
 
 private struct WorkspaceActionsKey: FocusedValueKey {
@@ -132,6 +136,39 @@ public struct WorkspaceCommands: Commands {
         Button("Hide Preview") { actions?.hidePreview() }
           .keyboardShortcut(.escape, modifiers: [])
       }.disabled(actions?.canDecide != true)
+    }
+    CommandMenu("Review") {
+      if actions?.canDecide == true {
+        Button(actions?.comparison.enabled == true ? "Single Image" : "Compare Photos") {
+          actions?.toggleComparison()
+        }
+        .keyboardShortcut("c", modifiers: [])
+        .disabled(actions?.comparison.enabled != true && actions?.canCompare != true)
+        Button("Pin Current as Reference") { actions?.pinReference() }
+          .keyboardShortcut("g", modifiers: []).disabled(actions?.workspace.selectedPhoto == nil)
+        Toggle(
+          "Link Zoom and Pan",
+          isOn: Binding(
+            get: { actions?.comparison.linked ?? true }, set: { actions?.comparison.setLinked($0) })
+        )
+        .keyboardShortcut("l", modifiers: []).disabled(actions?.comparison.enabled != true)
+        Button("Single Image") { actions?.comparison.close() }
+          .keyboardShortcut("o", modifiers: []).disabled(actions?.comparison.enabled != true)
+        Divider()
+        Button(
+          actions?.workspace.reviewingSelection == true
+            ? "End Selected Review" : "Review Selected Photos"
+        ) {
+          guard let workspace = actions?.workspace else { return }
+          if workspace.reviewingSelection {
+            workspace.endReview()
+          } else {
+            workspace.reviewSelection()
+          }
+        }.disabled(
+          actions?.workspace.reviewingSelection != true
+            && actions?.workspace.selectedIDs.isEmpty != false)
+      }
     }
     CommandMenu("Decisions") {
       if actions?.canDecide == true {

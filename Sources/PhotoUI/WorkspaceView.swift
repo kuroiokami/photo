@@ -5,6 +5,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 private typealias WorkspaceStorage = SwiftUI.State<WorkspaceState>
+private typealias ThumbnailLabelsStorage = SwiftUI.State<[ThumbnailInfoField]>
+private typealias ComparisonStorage = SwiftUI.State<ComparisonSession>
 private typealias WorkflowModelStorage = SwiftUI.State<WorkflowModel>
 private typealias BoolStorage = SwiftUI.State<Bool>
 private typealias ColumnStorage = SwiftUI.State<Int>
@@ -28,6 +30,10 @@ private struct GridLayout: Equatable {
 }
 
 public struct WorkspaceView: View {
+  @ThumbnailLabelsStorage private var thumbnailLabels = ThumbnailInfoField.restored(
+    UserDefaults.standard.stringArray(forKey: "Photo.thumbnailLabels") ?? [])
+  @ComparisonStorage private var comparison = ComparisonSession()
+  @DetailPipelineStorage private var referenceDetails = DetailPipeline()
   @FolderLibraryStorage private var folderLibrary = FolderLibrary()
   @WorkspaceStorage private var workspace: WorkspaceState
   @WorkflowModelStorage private var workflowModel: WorkflowModel
@@ -70,7 +76,8 @@ public struct WorkspaceView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(
               height: showPreview && !workspace.photos.isEmpty
-                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 108 : 88) : nil)
+                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 108 : 88)
+                  + Double(thumbnailLabels.count * 20) : nil)
         }
         Divider()
         statusBar
@@ -107,13 +114,19 @@ public struct WorkspaceView: View {
     .sheet(isPresented: $showingHelp) { CullingHelpView() }
     .task {
       if workspace.directory == nil, let saved = folderLibrary.selected {
-        await workspace.openFolder(saved)
+        await workflowModel.openFolder(saved)
       }
       await folderLibrary.restoreExpanded()
     }
     .onChange(of: workspace.directory) {
       if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
     }
+    .onChange(of: thumbnailLabels) {
+      UserDefaults.standard.set(thumbnailLabels.map(\.rawValue), forKey: "Photo.thumbnailLabels")
+    }
+    .onChange(of: workspace.sessionID) { comparison.close() }
+    .onChange(of: workspace.selectedID) { comparison.resetViewports() }
+    .onChange(of: showPreview) { comparison.resetViewports() }
     .sheet(isPresented: $showingWorkflow) { WorkflowView(model: workflowModel) }
     .focusedSceneValue(
       \.workspaceActions,
@@ -124,7 +137,10 @@ public struct WorkspaceView: View {
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
         workflow: showWorkflow, help: { showingHelp = true },
-        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow && !showingHelp
+        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
+          && !showingHelp,
+        comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
+        canCompare: workspace.photos.count > 1
       )
     )
     .task(id: workspace.sessionID) {
@@ -184,6 +200,9 @@ public struct WorkspaceView: View {
     HStack(spacing: 16) {
       VStack(alignment: .leading, spacing: 3) {
         Text(workspace.title).font(.title3.weight(.semibold)).lineLimit(1)
+        if workspace.reviewingSelection {
+          Text("SELECTED-ONLY REVIEW").font(.caption2).foregroundStyle(Color.accentColor)
+        }
         Text(
           "\(workspace.photos.count) of \(workspace.totalCount) photos"
         )
@@ -209,9 +228,36 @@ public struct WorkspaceView: View {
         }
       }.frame(width: 160)
       if workspace.indexing {
-        Text("EXIF \(workspace.indexedCount)/\(workspace.photos.count)")
+        Text("EXIF \(workspace.indexedCount)/\(workspace.totalCount)")
           .font(.caption).foregroundStyle(.secondary)
       }
+      Menu {
+        Text("Choose up to two extra labels")
+        ForEach(ThumbnailInfoField.allCases) { field in
+          Toggle(
+            field.title,
+            isOn: Binding(
+              get: { thumbnailLabels.contains(field) },
+              set: { included in
+                if included && thumbnailLabels.count < 2 {
+                  thumbnailLabels.append(field)
+                } else if !included {
+                  thumbnailLabels.removeAll { $0 == field }
+                }
+              })
+          )
+          .disabled(!thumbnailLabels.contains(field) && thumbnailLabels.count >= 2)
+        }
+        Divider()
+        Button("Hide Extra Labels") { thumbnailLabels = [] }
+      } label: {
+        Text("Labels")
+      }
+      .menuStyle(.borderlessButton).fixedSize()
+      .accessibilityLabel("Thumbnail information labels")
+      .help(
+        "Choose up to two EXIF labels beneath filenames. Uses indexed metadata; does not decode images."
+      )
       Image(systemName: showPreview ? "rectangle.split.3x1" : "square.grid.3x3").foregroundStyle(
         .secondary)
       Slider(
@@ -267,6 +313,9 @@ public struct WorkspaceView: View {
             Text("Clear the flag and star filters to see all photos in this folder.")
           } actions: {
             Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
+            if workspace.reviewingSelection {
+              Button("End Selected Review") { workspace.endReview() }
+            }
           }
         case .ready where workspace.photos.isEmpty:
           ContentUnavailableView {
@@ -410,6 +459,9 @@ public struct WorkspaceView: View {
   private func thumbnail(_ photo: PhotoItem) -> some View {
     let selected = workspace.selectedIDs.contains(photo.id)
     let decision = workspace.decisions[photo.id] ?? CullingDecision()
+    let information = thumbnailLabels.map { $0.label(workspace.metadata[photo.id]) }
+    let spokenValue = (["\(decision.flag.title), \(decision.rating) stars"] + information).joined(
+      separator: ", ")
     return Button {
       let modifiers = NSApp.currentEvent?.modifierFlags ?? []
       workspace.selectMultiple(
@@ -435,6 +487,7 @@ public struct WorkspaceView: View {
         }
         Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
           .foregroundStyle(selected ? Color.white : Color.secondary)
+        thumbnailInformation(photo)
       }
       .padding(8)
       .background(
@@ -471,9 +524,18 @@ public struct WorkspaceView: View {
       }
     }
     .accessibilityLabel("Select \(photo.filename)")
-    .accessibilityValue("\(decision.flag.title), \(decision.rating) stars")
+    .accessibilityValue(spokenValue)
     .accessibilityAddTraits(selected ? .isSelected : [])
     .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
+  }
+
+  private func thumbnailInformation(_ photo: PhotoItem) -> some View {
+    ForEach(thumbnailLabels) { field in
+      let value = field.label(workspace.metadata[photo.id])
+      Text(value).font(.caption2.monospacedDigit())
+        .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+        .help(field.title + ": " + value)
+    }
   }
 
   private var previewPane: some View {
@@ -482,6 +544,11 @@ public struct WorkspaceView: View {
         Text(workspace.selectedPhoto?.filename ?? "PREVIEW")
           .font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
         Spacer(minLength: 0)
+        Button(comparison.enabled ? "Single Image" : "Compare") { toggleComparison() }
+          .disabled(!comparison.enabled && workspace.photos.count < 2)
+          .help(
+            "Pin a reference and browse another photo beside it (C). Decisions follow the filmstrip selection."
+          )
         Button {
           workspace.moveSelection(by: -1)
           gridFocused = true
@@ -517,13 +584,31 @@ public struct WorkspaceView: View {
         .help("Show the full contact sheet (Space or Escape).")
       }.buttonStyle(.borderless).padding(.horizontal, 12).padding(.top, 8)
       if let photo = workspace.selectedPhoto {
+        if comparison.enabled { comparisonControls }
         HStack(alignment: .top, spacing: 12) {
-          DetailPreviewView(
-            photo: photo, pipeline: previews, detailPipeline: detailPipeline,
-            sessionID: workspace.sessionID
-          )
-          .id("\(workspace.sessionID)-\(photo.id)")
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          if let reference = comparison.reference {
+            VStack(alignment: .leading, spacing: 5) {
+              Text("REFERENCE · " + reference.filename).font(.caption.weight(.semibold))
+                .lineLimit(1).truncationMode(.middle)
+              DetailPreviewView(
+                photo: reference, pipeline: previews, detailPipeline: referenceDetails,
+                sessionID: workspace.sessionID, comparison: comparison, pane: .reference
+              )
+              .id("reference-\(workspace.sessionID)-\(reference.id)")
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
+          }
+          VStack(alignment: .leading, spacing: 5) {
+            if comparison.enabled {
+              Text("ACTIVE · " + photo.filename).font(.caption.weight(.semibold))
+                .lineLimit(1).truncationMode(.middle)
+            }
+            DetailPreviewView(
+              photo: photo, pipeline: previews, detailPipeline: detailPipeline,
+              sessionID: workspace.sessionID, comparison: comparison, pane: .active
+            )
+            .id("active-\(workspace.sessionID)-\(photo.id)")
+          }.frame(maxWidth: .infinity, maxHeight: .infinity)
           if showInspector {
             ScrollView {
               VStack(alignment: .leading, spacing: 8) {
@@ -560,6 +645,64 @@ public struct WorkspaceView: View {
         ContentUnavailableView("Select a photo", systemImage: "photo")
       }
     }.background(Color.black.opacity(0.2))
+  }
+
+  private var comparisonControls: some View {
+    HStack(spacing: 12) {
+      Toggle(
+        "Link Zoom/Pan",
+        isOn: Binding(get: { comparison.linked }, set: { comparison.setLinked($0) })
+      )
+      .toggleStyle(.checkbox)
+      .help(
+        "Link Fit/100% and normalized image centers (L). Full detail is explicit; two panes allow up to 512 MiB retained decoded images plus decoder/GPU memory."
+      )
+      Button("Pin Current") { pinCurrent() }
+        .help(
+          "Use the active photo as the fixed reference (G), then navigate to compare another frame."
+        )
+      Button("Swap") {
+        guard let reference = comparison.reference, let active = workspace.selectedPhoto else {
+          return
+        }
+        comparison.pin(active)
+        workspace.select(reference.id)
+        gridFocused = true
+      }.disabled(!workspace.photos.contains { $0.id == comparison.reference?.id })
+        .help(
+          "Swap reference and active. The reference must be visible in the current review/filter set."
+        )
+      Spacer(minLength: 0)
+      Text("Decisions follow thumbnail selection").font(.caption).foregroundStyle(.secondary)
+        .lineLimit(1)
+    }.controlSize(.small).padding(.horizontal, 12)
+  }
+
+  private func pinCurrent() {
+    guard let photo = workspace.selectedPhoto else { return }
+    comparison.pin(photo)
+    showPreview = true
+    gridFocused = true
+  }
+  private func toggleComparison() {
+    if comparison.enabled {
+      comparison.close()
+      return
+    }
+    guard let current = workspace.selectedPhoto, workspace.photos.count > 1 else { return }
+    let chosen = workspace.photos.filter { workspace.selectedIDs.contains($0.id) }
+    let reference = chosen.first ?? current
+    let candidate =
+      chosen.first { $0.id != reference.id }
+      ?? workspace.photos.dropFirst(
+        (workspace.photos.firstIndex { $0.id == reference.id } ?? 0) + 1
+      ).first
+      ?? workspace.photos.first { $0.id != reference.id }
+    guard let candidate else { return }
+    comparison.pin(reference)
+    workspace.select(candidate.id)
+    showPreview = true
+    gridFocused = true
   }
 
   private func shootingSummary(_ photo: PhotoItem) -> some View {
@@ -648,6 +791,18 @@ public struct WorkspaceView: View {
       Button("Select All") { workspace.selectAllVisible() }.disabled(workspace.photos.isEmpty)
         .help("Select every visible photo (⌘A). Filters limit this selection.")
       Text("\(workspace.selectedIDs.count) selected").monospacedDigit()
+      Button(workspace.reviewingSelection ? "End Review" : "Review Selection") {
+        if workspace.reviewingSelection {
+          workspace.endReview()
+        } else {
+          workspace.reviewSelection()
+          showPreview = true
+        }
+        gridFocused = true
+      }.disabled(!workspace.reviewingSelection && workspace.selectedIDs.isEmpty)
+        .help(
+          "Freeze the selected photos as a review set. Navigation does not change membership; End Review returns to the folder."
+        )
     }.fixedSize(horizontal: true, vertical: false)
   }
   private var autoAdvance: some View {
@@ -758,7 +913,7 @@ public struct WorkspaceView: View {
       }
       folderLibrary.add(url)
       Task {
-        await workspace.openFolder(url)
+        await workflowModel.openFolder(url)
         gridFocused = true
       }
     }
@@ -777,7 +932,7 @@ public struct WorkspaceView: View {
   private func browse(_ folder: URL) {
     folderLibrary.select(folder)
     Task {
-      await workspace.openFolder(folder)
+      await workflowModel.openFolder(folder)
       gridFocused = true
     }
   }
@@ -785,7 +940,7 @@ public struct WorkspaceView: View {
   private func reload() {
     guard let directory = workspace.directory else { return }
     Task {
-      await workspace.openFolder(directory)
+      await workflowModel.openFolder(directory)
       if folderLibrary.expanded.contains(directory.path) { await folderLibrary.refresh(directory) }
       gridFocused = true
     }

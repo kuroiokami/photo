@@ -13,6 +13,22 @@ public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
   public private(set) var selectedIDs: Set<String> = []
   public private(set) var groupPairs = false
+  public private(set) var reviewIDs: Set<String>?
+  public var reviewingSelection: Bool { reviewIDs != nil }
+  /// Freeze membership independently of subsequent navigation/selection.
+  public func reviewSelection() {
+    let ids = Set(operationPhotos.map(\.id))
+    guard !ids.isEmpty else { return }
+    let focus = selectedID
+    reviewIDs = ids
+    rebuildVisible(preferred: focus)
+    select(selectedID)
+  }
+  public func endReview() {
+    let focus = selectedID
+    reviewIDs = nil
+    rebuildVisible(preferred: focus)
+  }
   private var selectionAnchorID: String?
   @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:]
   @ObservationIgnored private var allByID: [String: PhotoItem] = [:]
@@ -112,6 +128,8 @@ public final class WorkspaceState {
   @ObservationIgnored private var metadataAttempted: Set<String> = []
   public private(set) var indexedCount = 0
   public private(set) var indexing = false
+  @ObservationIgnored private var metadataJobs: Set<UUID> = []
+  public private(set) var collectionRevision = 0
   public private(set) var sort: PhotoSort = .filename
   @ObservationIgnored private var allPhotos: [PhotoItem] = []
   public private(set) var selectedIndex: Int?
@@ -144,7 +162,7 @@ public final class WorkspaceState {
     buildFamilies(photos)
   }
 
-  public func openFolder(_ directory: URL) async {
+  public func openFolder(_ directory: URL, verifiedImages: [URL]? = nil) async {
     let previousID = self.directory == directory ? selectedID : nil
     folderTask?.cancel()
     resetDecisions()
@@ -163,9 +181,17 @@ public final class WorkspaceState {
     indicesByID = [:]
     loadState = .loading
     let fileAccess = fileAccess
+    let verified = verifiedImages.map {
+      Set($0.map(PhotoPath.canonical))
+    }
     // Build models and the lookup table away from the main actor as well as IO.
     let task = Task.detached(priority: .userInitiated) {
-      let urls = try await fileAccess.photos(in: directory)
+      var urls = try await fileAccess.photos(in: directory)
+      if let verified {
+        urls = urls.map(PhotoPath.canonical).filter {
+          verified.contains($0)
+        }
+      }
       try Task.checkCancellation()
       let photos = urls.map(PhotoItem.init(fileURL:))
       let indices = Self.makeIndex(photos)
@@ -252,24 +278,80 @@ public final class WorkspaceState {
   public func indexMetadata(using reader: any PhotoMetadataReading, expectedSession: UUID? = nil)
     async
   {
-    guard expectedSession == nil || expectedSession == sessionID else { return }
-    guard loadState == .ready else { return }
-    let session = sessionID
-    let snapshot = allPhotos
+    guard expectedSession == nil || expectedSession == sessionID, loadState == .ready else {
+      return
+    }
+    await indexPhotos(allPhotos, using: reader, session: sessionID)
+  }
+
+  private func indexPhotos(
+    _ snapshot: [PhotoItem], using reader: any PhotoMetadataReading, session: UUID
+  ) async {
+    let job = UUID()
+    metadataJobs.insert(job)
     indexing = true
+    defer {
+      metadataJobs.remove(job)
+      indexing = !metadataJobs.isEmpty
+    }
     for photo in snapshot {
       guard !Task.isCancelled, sessionID == session else { return }
-      // Re-check selection between each low-priority read.
       if let selectedPhoto { await readMetadata(selectedPhoto, using: reader) }
       guard !Task.isCancelled, sessionID == session else { return }
       await readMetadata(photo, using: reader)
       guard !Task.isCancelled, sessionID == session else { return }
-      indexedCount += 1
+      indexedCount = metadataAttempted.count
       await Task.yield()
     }
+    metadataJobs.remove(job)
+    indexing = !metadataJobs.isEmpty
     guard sessionID == session else { return }
-    indexing = false
     await setSort(sort)
+  }
+
+  /// Merge only the explicitly verified arrivals; preserve the current session,
+  /// selection, review set, decision history and image-cache identities.
+  @discardableResult
+  public func publishVerified(_ urls: [URL], in folder: URL, using reader: any PhotoMetadataReading)
+    -> Task<Void, Never>?
+  {
+    guard loadState == .ready,
+      directory.map(PhotoPath.canonical) == PhotoPath.canonical(folder)
+    else { return nil }
+    let parent = PhotoPath.canonical(folder)
+    var known = Set(allPhotos.map(\.id))
+    let added = urls.compactMap { url -> PhotoItem? in
+      let url = PhotoPath.canonical(url)
+      guard PhotoPath.canonical(url.deletingLastPathComponent()) == parent,
+        PhotoFormats.supports(url)
+      else {
+        return nil
+      }
+      let photo = PhotoItem(fileURL: url)
+      return known.insert(photo.id).inserted ? photo : nil
+    }
+    guard !added.isEmpty else { return nil }
+    let focused = selectedID
+    allPhotos += added
+    collectionRevision += 1
+    if sort == .filename || sort == .rating {
+      allPhotos = sort.ordered(
+        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+    }
+    buildFamilies(allPhotos)
+    rebuildVisible(preferred: focused)
+    let session = sessionID
+    return Task { [weak self] in
+      guard let self else { return }
+      await DecisionSaveQueue.shared.flush()
+      for photo in added {
+        guard self.sessionID == session, !Task.isCancelled else { return }
+        await self.loadDecision(photo, session: session)
+      }
+      guard self.sessionID == session else { return }
+      self.rebuildVisible(preferred: self.selectedID)
+      await self.indexPhotos(added, using: reader, session: session)
+    }
   }
 
   public func readMetadata(_ photo: PhotoItem, using reader: any PhotoMetadataReading) async {
@@ -287,13 +369,18 @@ public final class WorkspaceState {
     guard sort == .filename || sort == .rating || !indexing else { return }
     let session = sessionID
     let snapshot = allPhotos
+    let collection = collectionRevision
     let metadata = metadata
     let ratings = decisions.mapValues(\.rating)
     let revision = decisionRevision
     let ordered = await Task.detached(priority: .userInitiated) {
       sort.ordered(snapshot, metadata: metadata, ratings: ratings)
     }.value
-    guard session == sessionID, self.sort == sort else { return }
+    guard session == sessionID, self.sort == sort, !Task.isCancelled else { return }
+    if collection != collectionRevision {
+      await setSort(sort)
+      return
+    }
     if sort == .rating, revision != decisionRevision {
       await setSort(sort)
       return
@@ -332,6 +419,7 @@ public final class WorkspaceState {
   }
 
   private func resetDecisions() {
+    reviewIDs = nil
     decisions = [:]
     selectedIDs = []
     selectionAnchorID = nil
@@ -344,6 +432,8 @@ public final class WorkspaceState {
     fileIdentities = [:]
     undoStack = []
     redoStack = []
+    metadataJobs = []
+    collectionRevision += 1
   }
 
   public func loadDecisions(expectedSession: UUID? = nil) async {
@@ -401,7 +491,15 @@ public final class WorkspaceState {
   private func matches(_ photo: PhotoItem) -> Bool {
     let decision = decisions[photo.id] ?? CullingDecision()
     let representative = !groupPairs || (familyMembers[photo.id]?.first?.id ?? photo.id) == photo.id
-    return representative && flagFilter.includes(decision.flag) && decision.rating >= minimumRating
+    let inReview =
+      reviewIDs.map { ids in
+        ids.contains(photo.id)
+          || (groupPairs && (familyMembers[photo.id]?.contains { ids.contains($0.id) } ?? false))
+      } ?? true
+    let knownDecision =
+      (flagFilter == .all && minimumRating == 0) || decisionsReady.contains(photo.id)
+    return representative && inReview && knownDecision && flagFilter.includes(decision.flag)
+      && decision.rating >= minimumRating
   }
 
   private func visiblePhotos(_ candidates: [PhotoItem]) -> [PhotoItem] {

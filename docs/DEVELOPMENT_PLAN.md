@@ -111,14 +111,14 @@ Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md
 ## Accepted ingest/metadata/camera follow-up — 2026-10-19
 
 - [x] Case-insensitive Canon CR2/CR3/CRW and Olympus/OM System ORF recognition; embedded-only Fit and deliberate Apple RAW detail. Real CR2/CR3/ORF samples verified; real CRW remains acceptance work.
-- [x] Recursive two-destination ingest with streaming checksums, durable incremental/original-name evidence, collision protection and background culling; manual Reload for arrivals.
+- [x] Recursive two-destination ingest with streaming checksums, durable incremental/original-name evidence, collision protection and background culling; automatic verified arrivals (follow-up below).
 - [x] Multi-selection and unique RAW+JPEG representation with independent per-file decision persistence and batch Undo.
 - [x] Reviewed token-based bulk naming, companions, collision checks, original-name journals, Undo and interrupted-operation recovery.
 - [x] Explicit layered IPTC presets, separate created/shown locations, keyword actions/hierarchies, pending local intent, preserving XMP and conflict handling.
 - [x] Optional verified non-reject handoff including XMP/ACR and metadata embedding only in derived JPEG/PNG copies; manual Lightroom Add instructions.
 - [x] Profile CR3 startup and bypass the measured slow ImageIO container path with a bounded embedded-JPEG reader; retain unknown-layout fallback.
 - [ ] Verify Lightroom application round trips, real CRW/broader camera modes, and removable/network storage interruption scenarios.
-- [ ] Add live arrivals, full keyword dictionary import/export/synonyms, automatic ingest metadata/naming presets, metadata Undo and clock correction if prioritized.
+- [ ] Add continuous source watching, full keyword dictionary import/export/synonyms, automatic ingest metadata/naming presets and clock correction if prioritized.
 
 Implemented is distinct from complete release acceptance: keep first-open latency, actual interoperability and minimum-platform coverage explicit in the tracker. Preserve existing image bytes, use disposable copies for all mutation tests, and update evidence with every delivery.
 
@@ -130,7 +130,7 @@ Implemented is distinct from complete release acceptance: keep first-open latenc
 - [x] Preview a single IPTC field from the first selected photo across a group, preserve all other fields and retain selection after applying.
 - [x] Adopt appropriate Photo Mechanic shortcuts, native tooltips and optional Quick Start help; document deliberate shortcut differences.
 - [x] Audit current Camera Bits documentation and record prioritized gaps in PHOTO_MECHANIC_REVIEW.md.
-- [ ] Add first-use walkthrough, rectangle edge auto-scroll, mixed-value summaries and metadata Undo if prioritized.
+- [ ] Add first-use walkthrough, rectangle edge auto-scroll, mixed-value summaries if prioritized.
 
 Test and delivery outcomes are tracked in PROJECT_STATUS.md; the existing Lightroom, latency and release acceptance limits remain open.
 
@@ -159,4 +159,17 @@ Actual tests and measured tradeoffs belong in PROJECT_STATUS.md and PERFORMANCE.
 - [x] Keep selection, multi-selection, filters, decisions and shortcuts shared between views; separate the shooting-information pane from the image.
 - [x] Maintain independent in-session grid/filmstrip sizes and reveal the focused thumbnail after navigation or reordering.
 - [x] Review current Photo Mechanic screen illustrations and rank proposed additions in PHOTO_MECHANIC_REVIEW.md.
-- [ ] Implement pinned comparison, selected-only review and configurable metadata labels as separately scoped follow-ups.
+- [x] Implement pinned comparison, selected-only review and configurable metadata labels in the approved follow-up below.
+
+## Approved comparison and workflow follow-up — 2026-10-20
+
+- [x] Pin reference/active comparison with linked or independent Fit/100% and normalized pan; reset to Fit on photo/view/session changes.
+- [x] Keep RAW detail deliberate; bound each pane to 256 MiB retained detail (512 MiB comparison total), with no speculative rendering or detail cache.
+- [x] Freeze selected physical identities for selected-only review; retain filtering, individual decisions and grouping semantics.
+- [x] Offer up to two remembered EXIF thumbnail rows using existing indexing.
+- [x] Publish complete, dual-verified image families during ingest; merge arrivals without resetting the current browsing session.
+- [x] Commit reviewed metadata batches and owned-field Undo/Redo history atomically to SQLite; retain 20 batches across restart and preserve unrelated metadata.
+- [x] Add regressions for linked routing, review/filter behavior, ingest publication/session races, metadata conflicts, failures, cancellation and restart.
+- [ ] Broaden native comparison/platform/accessibility and real ingest interruption testing; actual outcomes remain in PROJECT_STATUS.md.
+
+This scope implements normal-ingest arrivals, not continuous source watching or ingest naming/metadata automation. Lightroom application interoperability remains unverified.
