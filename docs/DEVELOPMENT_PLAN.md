@@ -152,3 +152,11 @@ Actual tests and measured tradeoffs belong in PROJECT_STATUS.md and PERFORMANCE.
 - [x] Clarify mixed batch decisions, field previews, workflow labels and unavailable actions.
 - [x] Verify native navigator and workflow layouts; record limits in docs/UX_REVIEW.md.
 - [ ] Broaden compact-window, VoiceOver, keyboard-only and minimum-platform verification.
+
+## Preview and filmstrip follow-up — 2026-10-20
+
+- [x] Default to a large preview above a lazy horizontal filmstrip; retain the full contact sheet as an explicit view.
+- [x] Keep selection, multi-selection, filters, decisions and shortcuts shared between views; separate the shooting-information pane from the image.
+- [x] Maintain independent in-session grid/filmstrip sizes and reveal the focused thumbnail after navigation or reordering.
+- [x] Review current Photo Mechanic screen illustrations and rank proposed additions in PHOTO_MECHANIC_REVIEW.md.
+- [ ] Implement pinned comparison, selected-only review and configurable metadata labels as separately scoped follow-ups.
