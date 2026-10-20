@@ -7,7 +7,7 @@ Reviewed the contact sheet, folder sidebar, preview/inspector, zoom controls, na
 | Detail overview | Click to center, drag frame preserving grab offset, clamp edges, quarter/full-view keyboard panning and named accessible actions. Native click/drag/edge/arrow/Center checks passed on a Sony RAW. |
 | Detail controls | Segmented Fit/100% exposes selected mode; Cancel is separate while loading. Stable caption height avoids progressive-stage reflow. Native selected state and finished RAW badge verified. |
 | Small images | Center at actual display-pixel scale without enlargement; native-scroller regression passes. |
-| Batch decisions | Common stars/flags reflect the physical target set independently; mixed values are explicit. Core regression passes. Larger buttons and scope tooltips reduce ambiguity. |
+| Batch decisions | Common stars/flags reflect the physical target set independently; mixed values are explicit. Core regression and native mixed-star feedback checks pass. Larger buttons and scope tooltips reduce ambiguity. |
 | Folder/sidebar | Larger disclosure/remove targets, accurate Expand/Collapse labels, readable Workflow shortcut. Native labels inspected. |
 | Filters/selection | Horizontal controls fall back to two rows. Clear Filters and Select All disable when unavailable. Compact-window native resizing could not be verified reliably. |
 | Ingest/rename | Persistent source/destination/job/template/camera/sequence labels, specific chooser accessibility names, top-aligned rename controls and preview-before-apply. Native layout inspected; no personal files renamed/ingested. |
