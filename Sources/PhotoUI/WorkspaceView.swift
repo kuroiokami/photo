@@ -69,7 +69,8 @@ public struct WorkspaceView: View {
           contactSheet
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(
-              height: showPreview && !workspace.photos.isEmpty ? thumbnailEdge * 0.7 + 88 : nil)
+              height: showPreview && !workspace.photos.isEmpty
+                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 108 : 88) : nil)
         }
         Divider()
         statusBar
