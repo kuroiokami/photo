@@ -1,10 +1,12 @@
 import CSQLite
 import Foundation
 
-private struct SourceReviewItem: Codable {
+struct SourceReviewItem: Codable {
   var decision: CullingDecision
   var edit: PhotoEdit
   var reviewed: Bool
+  var fields: SourceDecisionFields?
+  var revision: Int?
   let baseline: String
   let warning: String?
 }
@@ -23,7 +25,7 @@ extension DecisionStore {
   public func sourceReview(for url: URL) throws -> SourceReviewSession? {
     try sourceProtection.session(for: url)
   }
-  private func validateReview(_ session: SourceReviewSession, image: URL, identity: String?) throws
+  func validateReview(_ session: SourceReviewSession, image: URL, identity: String?) throws
     -> String
   {
     guard try sourceProtection.session(for: image)?.id == session.id else {
@@ -33,7 +35,7 @@ extension DecisionStore {
     guard identity == nil || identity == current else { throw DecisionStoreError.fileChanged }
     return current
   }
-  private func reviewItem(_ session: UUID, identity: String) throws -> SourceReviewItem? {
+  func reviewItem(_ session: UUID, identity: String) throws -> SourceReviewItem? {
     try withDB { db in
       var statement: OpaquePointer?
       guard
@@ -56,7 +58,7 @@ extension DecisionStore {
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
-  private func putReview(_ item: SourceReviewItem, session: UUID, identity: String) throws {
+  func putReview(_ item: SourceReviewItem, session: UUID, identity: String) throws {
     let payload = try JSONEncoder().encode(item)
     try withDB { db in
       var statement: OpaquePointer?
@@ -104,13 +106,13 @@ extension DecisionStore {
     return (
       DecisionEntry(
         decision: item.decision, status: status, identity: identity, reviewed: item.reviewed,
-        sourceReview: session),
+        sourceReview: session, reviewFields: item.fields ?? (item.reviewed ? .all : [])),
       item.edit
     )
   }
   public func saveSourceDecision(
     _ decision: CullingDecision, reviewed: Bool, session: SourceReviewSession, image: URL,
-    identity: String
+    identity: String, fields: SourceDecisionFields? = nil
   ) throws -> DecisionEntry {
     let key = try validateReview(session, image: image, identity: identity)
     guard var item = try reviewItem(session.id, identity: key) else {
@@ -118,10 +120,12 @@ extension DecisionStore {
     }
     item.decision = decision
     item.reviewed = reviewed
+    item.fields = fields ?? (reviewed ? .all : [])
+    item.revision = (item.revision ?? 0) + 1
     try putReview(item, session: session.id, identity: key)
     return DecisionEntry(
       decision: decision, status: "Review saved on this Mac", identity: key, reviewed: reviewed,
-      sourceReview: session)
+      sourceReview: session, reviewFields: item.fields ?? [])
   }
   public func saveSourceEdits(_ writes: [ImageEditWrite], session: SourceReviewSession) throws {
     let items = try writes.map { write -> (ImageEditWrite, SourceReviewItem) in
@@ -130,6 +134,7 @@ extension DecisionStore {
         throw SourceReviewError.unavailable
       }
       item.edit = write.edit
+      item.revision = (item.revision ?? 0) + 1
       return (write, item)
     }
     try withDB { db in

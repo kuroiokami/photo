@@ -21,6 +21,10 @@ Desktop.ini
 !.env.*.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
 
 # Logs and temporary output
 *.log
@@ -56,3 +60,17 @@ __pycache__/
 /catalogs/
 /previews/
 /thumbnails/
+
+# Local databases, Lightroom catalogs and exported app/install packages
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.lrcat
+*.lrcat-*
+*.lrdata/
+*.app/
+*.dmg
+*.pkg
+*.xcarchive/
+*.dSYM/

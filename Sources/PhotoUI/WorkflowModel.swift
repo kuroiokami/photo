@@ -14,8 +14,15 @@ struct MetadataPreset: Codable, Identifiable {
 @Observable
 final class WorkflowModel {
   let workspace: WorkspaceState
+  let mediaOperations: MediaOperations
   var requestedTab = 0
   var sourceReviewLaunch: UUID?
+  var reviewedCopyPlan: ReviewedCopyPlan?
+  var savedReviewCopies: [ReviewedCopyPlan] = []
+  var copiedReviewFolder: URL?
+  var reviewMetadataPending = 0
+  var reviewMetadataPendingImages: [URL] = []
+  var keepSourceVisible = false
   var busy = false
   var backgroundable = false
   var status =
@@ -36,8 +43,9 @@ final class WorkflowModel {
   var handoffFolder: URL?
   @ObservationIgnored var worker: Task<Void, Never>?
 
-  init(workspace: WorkspaceState) {
+  init(workspace: WorkspaceState, mediaOperations: MediaOperations = .shared) {
     self.workspace = workspace
+    self.mediaOperations = mediaOperations
     presets =
       UserDefaults.standard.data(forKey: "Photo.metadataPresets").flatMap {
         try? JSONDecoder().decode([MetadataPreset].self, from: $0)
@@ -82,8 +90,11 @@ final class WorkflowModel {
       metadataUndoSummary = history.undoSummary
       metadataRedoSummary = history.redoSummary
     } catch { status = error.localizedDescription }
-    do { pendingRenames = try await MediaOperations.shared.pendingRenames() } catch {
+    do { pendingRenames = try await mediaOperations.pendingRenames() } catch {
       status = "Rename recovery needs attention: " + error.localizedDescription
+    }
+    do { savedReviewCopies = try await mediaOperations.savedReviewedCopies() } catch {
+      status = "Saved copy lists need attention: " + error.localizedDescription
     }
     currentMetadata = DescriptiveMetadata()
     if let image = workspace.firstSelectedPhoto?.fileURL {
@@ -141,7 +152,7 @@ final class WorkflowModel {
       defer { activeIngestRoot = nil }
       let report: IngestReport
       do {
-        report = try await MediaOperations.shared.ingest(
+        report = try await mediaOperations.ingest(
           source: sourceURL, primary: primaryURL, backup: backupURL
         ) { [weak self] progress in
           await self?.ingestProgress(progress)
@@ -162,9 +173,9 @@ final class WorkflowModel {
         " Verified arrivals appear automatically; browse subfolders for other card directories."
     }
   }
-  private var ingestBrowseFolder: URL?
-  private var activeIngestRoot: URL?
-  private var verifiedArrivals: [URL: Set<URL>] = [:]
+  var ingestBrowseFolder: URL?
+  var activeIngestRoot: URL?
+  var verifiedArrivals: [URL: Set<URL>] = [:]
   @ObservationIgnored private var arrivalTask: Task<Void, Never>?
 
   /// During ingest, opening/reloading a working subfolder excludes files whose
@@ -176,14 +187,19 @@ final class WorkflowModel {
     await workspace.openFolder(
       folder, verifiedImages: limited ? Array(verifiedArrivals[canonical] ?? []) : nil)
   }
-  private func ingestProgress(_ progress: IngestProgress) async {
-    status =
-      "Verified \(progress.completed)/\(progress.total): \(progress.filename). Verified arrivals appear automatically."
+  func ingestProgress(_ progress: IngestProgress) async {
+    status = "Verified \(progress.completed)/\(progress.total): \(progress.filename)."
+    if keepSourceVisible {
+      status += " Source review stays open; choose Review Copied Photos when ready."
+      if copiedReviewFolder == nil, let folder = progress.directory { copiedReviewFolder = folder }
+    } else {
+      status += " Verified arrivals appear automatically."
+    }
     for image in progress.verifiedImages {
       verifiedArrivals[PhotoPath.canonical(image.deletingLastPathComponent()), default: []].insert(
         image)
     }
-    if ingestBrowseFolder == nil, let directory = progress.directory {
+    if !keepSourceVisible, ingestBrowseFolder == nil, let directory = progress.directory {
       ingestBrowseFolder = directory
       await openFolder(directory)
     }
@@ -197,7 +213,7 @@ final class WorkflowModel {
       await self?.flushArrivals()
     }
   }
-  private func flushArrivals() async {
+  func flushArrivals() async {
     arrivalTask?.cancel()
     arrivalTask = nil
     guard let folder = workspace.directory,
@@ -210,7 +226,7 @@ final class WorkflowModel {
       guard let start = Int(sequence) else {
         throw MediaOperationError.invalid("Enter a whole-number sequence.")
       }
-      renamePlan = try await MediaOperations.shared.planRename(
+      renamePlan = try await mediaOperations.planRename(
         images: targets(scope), pattern: pattern, camera: camera, start: start,
         reader: ImageMetadataReader())
       status =
@@ -220,7 +236,7 @@ final class WorkflowModel {
   func applyRename() {
     guard let plan = renamePlan else { return }
     run { [self] in
-      let journal = try await MediaOperations.shared.rename(plan)
+      let journal = try await mediaOperations.rename(plan)
       lastRenameJournal = journal
       nextSequence = plan.nextSequence
       UserDefaults.standard.set(nextSequence, forKey: "Photo.nextSequence")
@@ -234,17 +250,17 @@ final class WorkflowModel {
   func undoRename() {
     guard let journal = lastRenameJournal else { return }
     run { [self] in
-      try await MediaOperations.shared.undoRename(journal: journal)
+      try await mediaOperations.undoRename(journal: journal)
       if let directory = workspace.directory { await workspace.openFolder(directory) }
       status = "Restored the previous filenames."
     }
   }
   func recover() {
     run { [self] in
-      for journal in try await MediaOperations.shared.pendingRenames() {
-        try await MediaOperations.shared.undoRename(journal: journal)
+      for journal in try await mediaOperations.pendingRenames() {
+        try await mediaOperations.undoRename(journal: journal)
       }
-      pendingRenames = try await MediaOperations.shared.pendingRenames()
+      pendingRenames = try await mediaOperations.pendingRenames()
       if let directory = workspace.directory { await workspace.openFolder(directory) }
       status = "Incomplete renames recovered to their original names."
     }
@@ -349,7 +365,7 @@ final class WorkflowModel {
         }
       }
       let destination = try Self.path(destination)
-      let count = try await MediaOperations.shared.prepareHandoff(
+      let count = try await mediaOperations.prepareHandoff(
         images: files, destination: destination
       ) { [weak self] progress in
         await MainActor.run {
@@ -379,7 +395,7 @@ final class WorkflowModel {
         "Prepared \(count) non-rejected photos plus their XMP/ACR companions. Ready for delivery or an editor. The source folder is unchanged."
     }
   }
-  private static func path(_ text: String) throws -> URL {
+  static func path(_ text: String) throws -> URL {
     guard text.hasPrefix("/"), !text.isEmpty else {
       throw MediaOperationError.invalid("Use Choose to select a folder.")
     }

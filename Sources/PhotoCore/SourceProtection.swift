@@ -12,7 +12,7 @@ public enum SourceReviewError: LocalizedError {
     case .unavailable:
       "Source protection could not be read. No files were changed. Restore Photo’s local protection data before trying again."
     case .copyNotReady:
-      "Copying a protected review is not available yet. Your review is saved on this Mac."
+      "This source has a protected review. Use Copy Reviewed Photos in Workflow → Ingest so its choices and image edits are carried to the copies."
     case .identityUnavailable:
       "This folder cannot be identified safely. Use a local photo folder or mounted card for source review."
     case .localData: "Choose a source outside Photo’s local application data."

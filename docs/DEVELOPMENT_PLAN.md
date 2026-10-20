@@ -106,7 +106,7 @@ Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFO
 - [ ] Add other Sony models, real diverse EXIF at large scale, native frame-time measurements and other storage media.
 - [ ] Verify application-level Lightroom round trips in an isolated catalog; the prior import UI attempt remains unverified.
 
-Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing, minimum-macOS/Intel and licensing limits remain open.
+Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing and minimum-macOS/Intel limits remain open; Apache-2.0 is now selected.
 
 ## Accepted ingest/metadata/camera follow-up — 2026-10-19
 
@@ -195,24 +195,24 @@ The user clarified two primary workflows: wire/news photographers delivering pro
 - [x] Add remembered Photo Home as the first browsable sidebar folder; retain other saved folders and load subfolders on demand. Changing Home never moves photos.
 - [x] Present copy setup in numbered steps and make Deliver / Edit independent of Lightroom in the interface and guides.
 - [ ] Add guided source review before copying: local-only decisions, no source-sidecar writes, restart/reconnect protection and an explicit reviewed copy scope. Reuse verified copying and image-family publication; do not weaken source identity checks or backup verification.
-- [ ] Carry reviewed decisions and metadata to new copy identities safely; verify source/sidecar hashes unchanged and correct family/selection scope after filtering.
+- [x] Carry reviewed decisions and metadata to new copy identities safely; verify source/sidecar hashes unchanged and correct family/selection scope after filtering.
 - [ ] Add a publication output route: reviewed keeper scope, caption/rights checks, derived JPEG rendering with orientation/crop/color validation, named output presets and an external editor option. Upload/FTP remains separate scope.
 - [ ] Provide a resumable guided flow connecting source → optional review → copy destinations → organization → publication/editor, without blocking direct folder browsing or keyboard culling.
 - [ ] Benchmark representative 10k/40k collections: first preview, metadata/decision indexing, scrolling, filtering, sorting, memory and large batch save/cancel/recovery. Full detail remains deliberate.
 
-Current source browsing still uses normal XMP synchronization; it must not be presented as a safe card-culling wizard. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).
+Ordinary source browsing still uses normal XMP synchronization. Explicit Review Before Copying now supports protected local review and frozen reviewed copying with verified decision handover. Physical card/reconnect and representative scale acceptance remain separate; do not imply they are measured. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).
 
 
 ## Pre-copy review and installable distribution design — 2026-10-20
 
-Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decisions/0016-protected-source-review.md) and [distribution](DISTRIBUTION.md). The first protected review-only chunk is now implemented; copying/handover and distribution remain implementation/release designs.
+Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decisions/0016-protected-source-review.md) and [distribution](DISTRIBUTION.md). Protected review, reviewed scope planning and verified handover are implemented; packaging/distribution remains a release design.
 
 - [x] Audit current decision writes, ingest scope/manifests and app packaging; define the review boundary, frozen scopes, destination identity transfer and recovery requirements.
 - [x] Implement review-only store/context and source mutation guards, including queued retries/history, second windows, child folders and relaunch. Automated writable-source preservation coverage passes; exact native acceptance is in the tracker.
-- [ ] Implement explicit source-wide copy choices, reviewed/unreviewed counts, pair expansion/conflicts and immutable file/family plans.
-- [ ] Implement journaled two-destination decision/edit handover and destination-only XMP, preserving provenance and later destination edits across interruption/retry.
+- [x] Implement explicit source-wide copy choices, reviewed/unreviewed counts, pair expansion/conflicts and immutable file/family plans.
+- [x] Implement journaled two-destination decision/edit handover and destination-only XMP, preserving provenance and later destination edits across interruption/retry.
 - [ ] Complete guided review/copy/resume native acceptance and representative 10k/40k concurrent-copy measurements before claiming that scale.
-- [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, license and hardware support before publishing.
+- [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, inclusion of Apache-2.0 notices and hardware support before publishing.
 - [ ] With owner-provided Developer ID/notarization setup, produce and validate a stapled app/DMG on a clean recipient Mac, including upgrade/local-data persistence and offline launch.
 - [ ] Publish only an explicitly authorized, accepted beta artifact with checksum, installation instructions and tested platform/camera limits. Intel/universal builds, automatic updating and App Store distribution remain separate acceptance work.
 
@@ -224,4 +224,36 @@ Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decis
 - [x] Install protection before draining queued saves; restore context on child navigation/relaunch and refresh affected windows.
 - [x] Expose Review Before Copying and an explicit review-only banner/status. Block copy/handoff until reviewed scope and transfer are implemented.
 - [ ] Complete native/platform/removable-card/performance acceptance; exact observed checks are in PROJECT_STATUS.md.
-- [ ] Implement reviewed copy choices and durable handover as the next chunk; retain source bytes, XMP preservation, destination identity binding and two-copy verification.
+- [x] Implement reviewed copy choices and durable handover; retain source bytes, XMP preservation, destination identity binding and two-copy verification.
+
+
+## Workflow guidance — 2026-10-20
+
+- [x] Add a non-blocking Ingest introduction and five-step walkthrough with concrete deadline/large-shoot examples, navigation and plain language.
+- [x] Remember explicit permanent dismissal; retain Help/workflow access and allow re-enabling. Keep operational protection/error banners independent.
+- [x] Explain current protected-review copying and local-image-edit limits before relying on them; recommend verified-copy/early-culling for current output.
+- [x] Connect reviewed-copy/resume implementation to guidance and explain selection versus source-wide scopes, frozen revisions and metadata readiness. Full removable-card/scale acceptance remains separately tracked.
+
+See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained in the tracker.
+
+
+## Complete reviewed copying — 2026-10-20
+
+- [x] Expose all/picks/non-rejected/physical-selection scopes, explicit unreviewed counts and companion additions/conflicts before copying.
+- [x] Freeze source identities, per-field decision ownership/revision, composition, sidecar baselines and destination layout without decoding pixels.
+- [x] Verify two destinations, persist append-only original provenance and transactionally seed both destination identities before publication.
+- [x] Resume saved plans idempotently across bytes/local-intent/XMP boundaries; preserve later destination decisions, composition and descriptive/develop metadata.
+- [x] Keep the source visible and protected; explicitly navigate to verified working copies. Update walkthrough and guides together.
+- [ ] Finish physical removable-card, broad VoiceOver/compact-display and representative 10k/40k concurrent-copy acceptance; exact automated/native evidence belongs in the tracker.
+
+[ADR 0019](decisions/0019-reviewed-copy-handover.md) records implementation choices and limits. A new transfer of later source decisions needs a fresh list/shoot folder; replay over existing destination work is deliberately refused.
+
+## Public repository standards — 2026-10-20
+
+- [x] Adopt owner-selected Apache-2.0 with NOTICE, contributor/support/security/conduct policies and issue/PR templates.
+- [x] Add changelog, CODEOWNERS, pinned least-privilege CI, Actions dependency updates and automated repository hygiene/secret checks.
+- [x] Audit reachable history and repository metadata before public visibility; retain only intentional fixtures and preserve unrelated local edits.
+- [x] Verify public visibility and GitHub protections/security settings; record actual settings in PROJECT_STATUS.md.
+- [x] Validate the combined implementation/standards tree in public CI; deliver through PR #14 with final-head required checks. Exact check/merge evidence is recorded in the PR and tracker.
+
+Signed/notarized app distribution and broader platform/native acceptance remain separate milestones.

@@ -2,11 +2,13 @@
 
 For setup, read [Installation](INSTALLATION.md). For the complete interface/control reference, read [Usage](USAGE.md).
 
-Implemented development workflow, updated 2026-10-20. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. Photo works with local files for publication or an editor. Lightroom **Classic** is an optional, documented interchange target; cloud Lightroom is not equivalent. See the [job routes and planned source review](USAGE.md#choose-a-route-for-the-job).
+Implemented development workflow, updated 2026-10-20. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. Photo works with local files for publication or an editor. Lightroom **Classic** is an optional, documented interchange target; cloud Lightroom is not equivalent. See the [job routes and source review](USAGE.md#choose-a-route-for-the-job).
 
-## Review-only before copying
+## Review before copying
 
-Workflow → Ingest → choose a source → **Review Before Copying** protects its files/sidecars and saves stars, flags and Photo-local edits on this Mac. Child folders, Reload and relaunch retain the mode. This first chunk cannot yet copy/transfer reviews: normal ingest/handoff refuse protected sources, and metadata/rename tools are disabled there. Use the ordinary sequence below for copied output today. See [Usage](USAGE.md#review-a-source-before-copying) and [the remaining handover plan](PRE_COPY_CULLING.md).
+Workflow → Ingest → choose a source → **Review Before Copying** protects its files/sidecars and saves decisions locally. Use **Copy Reviewed Photos…** in the source banner to choose All Photos, Picks Only, Everything Except Rejects or Current Selection. Prepare and review a frozen list, verify two destinations, and transfer independent stars/flags and Photo-local composition before publishing each image family. **Review Copied Photos** explicitly switches to working copies. The source stays protected.
+
+The saved plan survives restart. **Resume Saved Copy** rechecks original bytes/identities and retries handover while preserving newer destination decisions and metadata. Both destinations receive durable original-source provenance; edited XMP is not described as source-identical. Pending/conflicting metadata is explicit and must be resolved before delivery. New source decisions need a new reviewed list and fresh shoot folder. See [Usage](USAGE.md#review-a-source-before-copying), [safety design](PRE_COPY_CULLING.md) and [ADR 0019](decisions/0019-reviewed-copy-handover.md).
 
 ## Recommended order
 
@@ -105,3 +107,16 @@ Sidecar writes remain coordinated atomic replacements per file, not a multi-file
 ## Photo-local composition edits
 
 Rotate/mirror/crop can now be used in the contact sheet or preview; see the [editing guide](USAGE.md#8-rotate-mirror-and-crop). They are saved in the local SQLite database and rendered consistently without rewriting image bytes. They are not yet written to Adobe crop/orientation fields, imported from external crop settings or baked into handoff copies. Lightroom handoff continues to carry originals plus existing companions/prepared descriptive metadata. Do not expect Photo-local composition to appear in Lightroom yet. Ratings, flags, IPTC and keywords retain their separate preserving XMP workflow.
+
+
+## Recommended pace and in-app walkthrough
+
+Open **Workflow → Ingest → Show Walkthrough** for examples. **Don’t Show Again** persists across launches; **Help → Photo Quick Start & Shortcuts → Workflow Walkthrough** always reopens it. Unchecking its dismissal checkbox restores the introduction. Normal browsing remains uninterrupted.
+
+Choose **ordinary verified ingest → Continue Browsing** when you want the complete shoot copied while you cull. Or review the source first and use the reviewed-copy route when choosing what to copy matters. For a deadline, choose the essential moments in Fit, check focus only on the shortlist, caption/credit those frames accurately and prepare delivery copies. Finish required pixel processing and submission outside Photo. Lightroom is optional. Do not delay a small first delivery to rank every frame.
+
+For a large shoot, preserve the complete verified shoot and independent backup, then make a fast flag pass, compare ambiguous bursts, rank survivors with stars, apply shared metadata and rename before editor import. The 10k/40k performance target still needs representative acceptance measurements. Later decisions/metadata/renames do not mirror themselves to the initial backup.
+
+For an urgent first delivery, **Review Before Copying → Current Selection** avoids a whole-source inventory before copying the first chosen set. Check its companions and keep the source until both copies verify. Photo-local crops/rotation still require an editor for rendered delivery output; source protection remains after copying.
+
+This recommendation combines the app’s measured embedded-preview approach and current verified-arrival behavior with Camera Bits’ [ingest documentation](https://camerabits.freshdesk.com/support/solutions/articles/48000207409-ingesting-photos) and [workflow handout](https://home.camerabits.com/wp-content/uploads/2023/06/Photo_Mechanic_101_Notes.pdf), plus Adobe’s [independent flags and ratings](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html). It is a workflow recommendation, not a comparative speed benchmark or verified editor round trip.

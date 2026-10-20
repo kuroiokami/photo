@@ -2,7 +2,7 @@
 
 Photo is a native, folder-first culling app. This guide covers getting the source, building an optimized app, putting it in Applications, updating it, and troubleshooting installation.
 
-**Current delivery:** a local development build. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. A license has not been selected. For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
+**Current delivery:** a local development build. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. Photo is licensed under [Apache-2.0](../LICENSE); see [NOTICE](../NOTICE). For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
 
 ## Contents
 
@@ -178,12 +178,12 @@ For read-only performance measurements, use the commands and interpretation limi
 
 ## 10. Local data and uninstalling
 
-Protected source reviews use both `decisions.sqlite` and `source-protection.json` under Application Support/Photo. Back up both; deleting local Photo data removes reviews and source protection. The app bundle is separate from this data.
+Protected source reviews use both `decisions.sqlite` and `source-protection.json` under Application Support/Photo. Back up both plus the `Operations` folder for saved reviewed-copy plans/recovery; deleting local Photo data removes reviews, source protection and recovery records. The app bundle is separate from this data.
 
 | Location | Contents |
 | --- | --- |
 | `~/Library/Application Support/Photo/decisions.sqlite` | Decisions, descriptive intent, metadata batch history and Photo-local image edits |
-| `~/Library/Application Support/Photo/Operations` | Rename/recovery journals |
+| `~/Library/Application Support/Photo/Operations` | Rename journals and saved reviewed-copy plans/verification events |
 | App preferences | Folder shortcuts, last folder, auto-advance, EXIF labels, saved presets and naming preferences |
 | Beside photos | XMP/ACR companions and ingest/handoff manifests where those operations created them |
 | Repository `.build` | Generated executables, app bundle and build products |

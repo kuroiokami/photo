@@ -44,14 +44,14 @@ public struct IngestReport: Sendable {
   public let sameVolumeBackup: Bool
   public let preservedMetadataCount: Int
 }
-private struct IngestRecord: Codable {
+struct IngestRecord: Codable {
   let relativePath: String
   let originalFilename: String
   let source: URL
   let sha256: String
   let verifiedDestinations: [URL]
 }
-private struct IngestManifest: Codable {
+struct IngestManifest: Codable {
   var records: [String: IngestRecord] = [:]
 }
 
@@ -76,10 +76,10 @@ public struct RenamePlan: Codable, Sendable {
 /// are read, never rewritten; rename changes directory entries only.
 public actor MediaOperations {
   public static let shared = MediaOperations()
-  private let journalDirectory: URL
-  private let sourceProtection: SourceProtection
-  private var operationInProgress = false
-  private func beginOperation() throws {
+  let journalDirectory: URL
+  let sourceProtection: SourceProtection
+  var operationInProgress = false
+  func beginOperation() throws {
     guard !operationInProgress else {
       throw MediaOperationError.invalid(
         "Another file operation is running. Wait for it to finish before starting this operation.")
@@ -586,7 +586,7 @@ public actor MediaOperations {
     }
     return digest.finalize().map { String(format: "%02x", $0) }.joined()
   }
-  private func ingestFiles(in source: URL) throws -> [URL] {
+  func ingestFiles(in source: URL) throws -> [URL] {
     let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey, .isDirectoryKey]
     var enumerationFailure: (any Error)?
     guard
@@ -644,12 +644,12 @@ public actor MediaOperations {
     return files
   }
 
-  private func copyVerified(_ source: URL, to target: URL, expected: String) throws -> Bool {
+  func copyVerified(_ source: URL, to target: URL, expected: String) throws -> Bool {
     try sourceProtection.withWritable([target]) {}
     try safeDirectory(target.deletingLastPathComponent())
     if FileManager.default.fileExists(atPath: target.path) {
-      _ = try FileFingerprint.read(target)
-      guard try Self.checksum(target) == expected else {
+      let before = try FileFingerprint.read(target)
+      guard try Self.checksum(target) == expected, try FileFingerprint.read(target) == before else {
         throw MediaOperationError.invalid(
           "Destination collision: \(target.lastPathComponent). Existing data was left untouched.")
       }
@@ -686,10 +686,11 @@ public actor MediaOperations {
     }
     try sourceProtection.withWritable([temporary, target]) {
       try FileManager.default.moveItem(at: temporary, to: target)
+      try syncDirectory(target.deletingLastPathComponent())
     }
     return true
   }
-  private func directory(_ url: URL) throws -> URL {
+  func directory(_ url: URL) throws -> URL {
     let url = url.standardizedFileURL
     let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
     guard values.isDirectory == true, values.isSymbolicLink != true else {
@@ -704,7 +705,7 @@ public actor MediaOperations {
     }
     return url.standardizedFileURL
   }
-  private func safeDirectory(_ url: URL) throws {
+  func safeDirectory(_ url: URL) throws {
     return try sourceProtection.withWritable([url]) {
       for component in sequence(
         first: url.standardizedFileURL,
@@ -727,7 +728,7 @@ public actor MediaOperations {
 
     }
   }
-  private static func contains(_ parent: URL, _ child: URL) -> Bool {
+  static func contains(_ parent: URL, _ child: URL) -> Bool {
     let a = parent.standardizedFileURL.resolvingSymlinksInPath().path.lowercased()
     let b = child.standardizedFileURL.resolvingSymlinksInPath().path.lowercased()
     return a == b || b.hasPrefix(a + "/")
@@ -739,12 +740,12 @@ public actor MediaOperations {
         "/:\\{}".contains($0) || $0.isNewline || $0.asciiValue.map { $0 < 32 } == true
       })
   }
-  private func readManifest(_ url: URL) throws -> IngestManifest {
+  func readManifest(_ url: URL) throws -> IngestManifest {
     guard FileManager.default.fileExists(atPath: url.path) else { return IngestManifest() }
     _ = try FileFingerprint.read(url)
     return try JSONDecoder().decode(IngestManifest.self, from: Data(contentsOf: url))
   }
-  private func durableJSON<T: Encodable>(_ value: T, at url: URL) throws {
+  func durableJSON<T: Encodable>(_ value: T, at url: URL) throws {
     return try sourceProtection.withWritable([url]) {
       if FileManager.default.fileExists(atPath: url.path) { _ = try FileFingerprint.read(url) }
       let encoder = JSONEncoder()
@@ -753,7 +754,19 @@ public actor MediaOperations {
       let file = try FileHandle(forWritingTo: url)
       try file.synchronize()
       try file.close()
-
+      try syncDirectory(url.deletingLastPathComponent())
+    }
+  }
+  private func syncDirectory(_ folder: URL) throws {
+    let handle = Darwin.open(folder.path, O_RDONLY)
+    guard handle >= 0 else {
+      throw MediaOperationError.invalid(
+        "A copy record could not be saved safely. Retry the operation.")
+    }
+    defer { Darwin.close(handle) }
+    guard fsync(handle) == 0 else {
+      throw MediaOperationError.invalid(
+        "A copy record could not be synchronized. Retry the operation.")
     }
   }
 }

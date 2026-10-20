@@ -1,0 +1,23 @@
+name: Feature request
+description: Describe a photographer's workflow that Photo should improve.
+title: "Feature: "
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow and problem
+      description: "Who needs this, what are they trying to deliver, and what slows them down?"
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: "Describe a concrete before/after example, including keyboard use if relevant."
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Alternatives and constraints
+      description: "Consider RAW preview speed, original-file safety, metadata interoperability and accessibility."

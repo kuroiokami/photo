@@ -1,6 +1,11 @@
 # Photo
 
+[![Swift checks](https://github.com/kuroiokami/photo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/ci.yml)
+[![Repository standards](https://github.com/kuroiokami/photo/actions/workflows/repository.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/repository.yml)
+
 A native macOS app for fast folder browsing, culling and organization for publication or an editing workflow. Built with SwiftUI and Swift Package Manager; normal RAW browsing prioritizes embedded JPEG previews.
+
+**Development preview:** build from source; a signed/notarized download has not been released. See the [changelog](CHANGELOG.md) and [tracker](PROJECT_STATUS.md) for status and verification limits.
 
 ## Start here
 
@@ -9,7 +14,7 @@ A native macOS app for fast folder browsing, culling and organization for public
 | **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
 | **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
 | [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
-| [Review before copying](docs/PRE_COPY_CULLING.md) | Local-only source review is implemented; reviewed copying and decision transfer are next |
+| [Review before copying](docs/PRE_COPY_CULLING.md) | Protected source review, selective copying, decision transfer and recovery |
 | [Distribution plan](docs/DISTRIBUTION.md) | Path to a signed, notarized download other people can install |
 | [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
 
@@ -34,8 +39,9 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 - Async EXIF indexing, numeric sorting, optional inspector and configurable thumbnail labels.
 - Fit, genuine physical-pixel 100%, trackpad magnification, pan/navigator and pinned comparison.
 - Selected-only review and RAW+JPEG grouping.
-- Protected review before copying: stars, flags, Undo and Photo-local edits stay on this Mac; copying this review is not available yet.
+- Protected review before copying, explicit all/picks/non-rejected/selection scopes, verified copying with decisions/Photo-local edits at both destinations, and saved-list resume.
 - Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
+- Dismissible ingest introduction and a reopenable five-step workflow walkthrough with deadline/large-shoot examples.
 - Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.
 - Field-specific IPTC patches, presets, hierarchical keywords, persistent metadata batch Undo and preserving XMP synchronization.
 - Verified delivery copies with metadata for publication, Lightroom Classic or another editor.
@@ -61,4 +67,6 @@ Read [CONTRIBUTING](CONTRIBUTING.md), [AGENTS](AGENTS.md) and [development miles
 
 ## License and distribution
 
-No license has been selected. Choose one before external distribution or outside contributions. Builds, personal libraries and local catalogs are excluded from Git.
+Licensed under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE). Builds, private libraries, catalogs and signing material are excluded from Git. Photo is an independent project; other product names describe workflow references or interoperability targets.
+
+Contributions follow [CONTRIBUTING](CONTRIBUTING.md) and the [repository standards](docs/REPOSITORY_STANDARDS.md). For help use [SUPPORT](SUPPORT.md); for vulnerabilities use [SECURITY](SECURITY.md). Follow the [community conduct](CODE_OF_CONDUCT.md).
