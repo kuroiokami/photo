@@ -78,12 +78,15 @@ struct WorkflowView: View {
       Text(model.status).font(.callout).textSelection(.enabled).frame(
         maxWidth: .infinity, alignment: .leading)
     }
-    .padding(20).frame(width: 880, height: 720)
+    .padding(20).frame(width: 880, height: panelHeight)
     .interactiveDismissDisabled(model.busy && !model.backgroundable)
     .task {
+      model.renamePlan = nil
+      model.metadataPlan = []
       await model.refresh()
       fieldValues = model.currentMetadata.fields
     }
+    .onChange(of: tab) { model.requestedTab = tab }
     .onChange(of: pattern) { model.renamePlan = nil }
     .onChange(of: camera) { model.renamePlan = nil }
     .onChange(of: sequence) { model.renamePlan = nil }
@@ -101,6 +104,10 @@ struct WorkflowView: View {
     .onChange(of: keywordText) { model.metadataPlan = [] }
     .onChange(of: model.nextSequence) { sequence = String(model.nextSequence) }
   }
+  private var panelHeight: CGFloat {
+    let available = (NSApp.keyWindow?.screen ?? NSScreen.main)?.visibleFrame.height ?? 840
+    return max(500, min(720, available - 100))
+  }
   private var scopePicker: some View {
     Picker("Apply to", selection: $scope) {
       Text("Selection").tag("Selection")
@@ -116,7 +123,13 @@ struct WorkflowView: View {
       pathRow("Card / source", path: $source)
       pathRow("Working root", path: $primary)
       pathRow("Backup root", path: $backup)
-      TextField("Job folder, e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
+      HStack {
+        Text("Job folder").frame(width: 125, alignment: .leading)
+        TextField("e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
+          .help(
+            "A single shoot folder name. Both destinations receive this folder with an Originals subfolder."
+          )
+      }
       Button("Remember Destination Roots") {
         UserDefaults.standard.set(primary, forKey: "Photo.ingestWorkingRoot")
         UserDefaults.standard.set(backup, forKey: "Photo.ingestBackupRoot")
@@ -143,11 +156,14 @@ struct WorkflowView: View {
       Text(
         "Rename before Lightroom import. A unique RAW+JPEG pair consumes one sequence; matching XMP and ACR files follow it. Camera times without offsets are interpreted consistently as wall-clock time; offset-tagged times use UTC."
       ).font(.caption).foregroundStyle(.secondary)
-      TextField("Naming template", text: $pattern).textFieldStyle(.roundedBorder)
+      LabeledContent("Naming template") {
+        TextField("Naming template", text: $pattern).textFieldStyle(.roundedBorder)
+      }
       Text("Tokens: {date} {time} {camera} {original} {sequence}").font(.caption.monospaced())
       HStack {
-        TextField("Camera label", text: $camera)
-        TextField("Start sequence", text: $sequence)
+        LabeledContent("Camera") { TextField("Camera label", text: $camera).frame(width: 100) }
+        LabeledContent("Sequence") { TextField("Start sequence", text: $sequence).frame(width: 90) }
+          .help("A whole number starting at 1; unique RAW+JPEG pairs share a number.")
         Button("Save Template") {
           UserDefaults.standard.set(pattern, forKey: "Photo.renamePattern")
           model.status = "Naming template saved."
@@ -156,7 +172,8 @@ struct WorkflowView: View {
       HStack {
         Button("Preview Names") {
           model.previewRename(scope: scope, pattern: pattern, camera: camera, sequence: sequence)
-        }
+        }.disabled(model.targets(scope).isEmpty || pattern.isEmpty || (Int(sequence) ?? 0) < 1)
+          .help("Review every filename and companion before changing names.")
         Button("Apply Reviewed Rename") { model.applyRename() }.disabled(
           model.renamePlan?.entries.isEmpty != false)
         Button("Undo Last Rename") { model.undoRename() }.disabled(model.lastRenameJournal == nil)
@@ -173,24 +190,37 @@ struct WorkflowView: View {
         }
       } else {
         ContentUnavailableView("Preview a rename first", systemImage: "character.cursor.ibeam")
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
-    }.padding()
+    }.padding().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
   }
   private var metadata: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    let targetCount = model.targets(scope).count
+    let targetDescription = "\(targetCount) target " + (targetCount == 1 ? "file" : "files")
+    let validKeywords =
+      keywordAction == .leave || keywordAction == .clear
+      || !keywordText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    return VStack(alignment: .leading, spacing: 10) {
       scopePicker
       HStack {
         Menu("Load Preset") {
           ForEach(model.presets) { preset in Button(preset.name) { load(preset.patch) } }
-        }
+        }.frame(width: 140).disabled(model.presets.isEmpty).help(
+          "Load shared fields from a saved metadata preset.")
         TextField("Preset name", text: $presetName)
         Button("Save Preset") { model.savePreset(name: presetName, patch: patch) }
+          .disabled(
+            presetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+              || (patch.fields.isEmpty && keywordAction == .leave) || !validKeywords
+          )
+          .help(
+            "Save the checked fields and keyword action for reuse; unselected fields are excluded.")
       }
       Text(
         "Only checked, nonempty fields change. Choose Clear to remove a value. Other properties and develop settings are preserved; source image bytes are never edited. JPEG/PNG sidecar recognition varies by application."
       ).font(.caption).foregroundStyle(.secondary)
       Text(
-        "Values from: \(model.workspace.firstSelectedPhoto?.filename ?? "No selected photo") · \(model.targets(scope).count) target files. Other photos may have different values."
+        "Values from: \(model.workspace.firstSelectedPhoto?.filename ?? "No selected photo") · \(targetDescription). Other photos may have different values."
       )
       .font(.caption).foregroundStyle(.secondary)
       ScrollView {
@@ -218,11 +248,14 @@ struct WorkflowView: View {
                   field, value: fieldValues[field] ?? "", clear: cleared.contains(field),
                   scope: scope)
               } label: {
-                Image(systemName: "rectangle.on.rectangle")
+                Label("Preview Field", systemImage: "eye")
               }
+              .disabled(
+                targetCount == 0 || (!cleared.contains(field) && (fieldValues[field] ?? "").isEmpty)
+              )
               .accessibilityLabel("Preview only " + field.rawValue)
               .help(
-                "Preview only \(field.rawValue) for \(model.targets(scope).count) target files. Every other field stays unchanged, including other checked fields."
+                "Preview only \(field.rawValue) for \(targetDescription). Every other field stays unchanged, including other checked fields."
               )
             }
           }
@@ -238,12 +271,26 @@ struct WorkflowView: View {
                   if keywordAction == .leave { keywordAction = .append }
                 }
               }
-            }
+            }.disabled(model.vocabulary.isEmpty)
           }
           Text(
             "One keyword or hierarchy per line, e.g. Wildlife|Birds|Herons|Great Blue Heron. Append preserves existing tags; Replace/Clear are explicit."
           ).font(.caption)
           TextEditor(text: $keywordText).font(.body.monospaced()).frame(minHeight: 75)
+            .disabled(keywordAction == .leave || keywordAction == .clear)
+            .overlay(alignment: .topLeading) {
+              if keywordAction == .leave || keywordAction == .clear {
+                Text(
+                  keywordAction == .leave
+                    ? "Choose a keyword action to edit tags."
+                    : "Existing keywords will be cleared after review."
+                )
+                .font(.caption).foregroundStyle(.secondary).padding(6).allowsHitTesting(false)
+              }
+            }
+            .help(
+              "Choose Append, Replace or Remove and enter keywords. Choose Clear explicitly to remove all keywords."
+            )
           Text("Current keywords: \(model.currentMetadata.keywords.joined(separator: ", "))").font(
             .caption)
           ForEach(model.metadataPlan) { plan in
@@ -284,7 +331,14 @@ struct WorkflowView: View {
       }
       HStack {
         Button("Preview Metadata Changes") { model.previewMetadata(patch, scope: scope) }
-        Button("Apply Reviewed Fields to \(model.metadataPlan.count) Photos") {
+          .disabled(
+            targetCount == 0 || (patch.fields.isEmpty && keywordAction == .leave) || !validKeywords
+          )
+          .help("Review exactly the checked fields and explicit keyword action before writing.")
+        Button(
+          model.metadataPlan.isEmpty
+            ? "Apply Reviewed Fields" : "Apply to \(model.metadataPlan.count) Files"
+        ) {
           model.applyMetadata()
         }.disabled(
           model.metadataPlan.isEmpty)
@@ -298,39 +352,42 @@ struct WorkflowView: View {
     }.padding()
   }
   private var handoff: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text(
-        "Prepare a verified copy of all non-rejected photos in the current folder, including their XMP/ACR companions. This optional handoff uses extra disk space and leaves the source library in place."
-      )
-      pathRow("New handoff folder", path: $destination)
-      Toggle("Embed metadata in derived JPEG/PNG handoff copies", isOn: $embedMetadata).toggleStyle(
-        .checkbox)
-      Text(
-        "This changes metadata bytes in the handoff copies, preserving their image data. Source JPEG/PNG files stay untouched. RAW files continue to use XMP sidecars."
-      ).font(.caption).foregroundStyle(.secondary)
-      Button("Verify Metadata & Copy Non-Rejected Photos") {
-        model.prepareLightroom(destination: destination, embedMetadata: embedMetadata)
-      }.disabled(destination.isEmpty)
-      if let folder = model.handoffFolder {
-        Button("Reveal Prepared Folder") {
-          NSWorkspace.shared.activateFileViewerSelecting([folder])
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        Text(
+          "Prepare a verified copy of all non-rejected photos in the current folder, including their XMP/ACR companions. This optional handoff uses extra disk space and leaves the source library in place."
+        )
+        pathRow("New handoff folder", path: $destination)
+        Toggle("Embed metadata in derived JPEG/PNG handoff copies", isOn: $embedMetadata)
+          .toggleStyle(
+            .checkbox)
+        Text(
+          "This changes metadata bytes in the handoff copies, preserving their image data. Source JPEG/PNG files stay untouched. RAW files continue to use XMP sidecars."
+        ).font(.caption).foregroundStyle(.secondary)
+        Button("Verify Metadata & Copy Non-Rejected Photos") {
+          model.prepareLightroom(destination: destination, embedMetadata: embedMetadata)
+        }.disabled(destination.isEmpty)
+        if let folder = model.handoffFolder {
+          Button("Reveal Prepared Folder") {
+            NSWorkspace.shared.activateFileViewerSelecting([folder])
+          }
         }
-      }
-      Divider()
-      Text("In Lightroom Classic").font(.headline)
-      Text(
-        "1. Import the prepared folder with Add.\n2. Use Embedded & Sidecar previews for fast initial browsing.\n3. Avoid an import preset that overwrites prepared metadata.\n4. Verify stars, flags, captions and keyword hierarchy on a small set.\n5. After import, rename/move photos inside Lightroom. Save Lightroom metadata before any intentional external round trip."
-      )
-      Text(
-        "Lightroom Classic 13.2+ can store flags in XMP; 15+ may also use ACR sidecars. Actual application-level interchange remains a verification task. This app does not modify a Lightroom catalog or automate its import."
-      ).font(.caption).foregroundStyle(.secondary)
-      Spacer()
-    }.padding()
+        Divider()
+        Text("In Lightroom Classic").font(.headline)
+        Text(
+          "1. Import the prepared folder with Add.\n2. Use Embedded & Sidecar previews for fast initial browsing.\n3. Avoid an import preset that overwrites prepared metadata.\n4. Verify stars, flags, captions and keyword hierarchy on a small set.\n5. After import, rename/move photos inside Lightroom. Save Lightroom metadata before any intentional external round trip."
+        )
+        Text(
+          "Lightroom Classic 13.2+ can store flags in XMP; 15+ may also use ACR sidecars. Actual application-level interchange remains a verification task. This app does not modify a Lightroom catalog or automate its import."
+        ).font(.caption).foregroundStyle(.secondary)
+      }.padding().frame(maxWidth: .infinity, alignment: .leading)
+    }
   }
   private func pathRow(_ label: String, path: Binding<String>) -> some View {
     HStack {
       Text(label).frame(width: 125, alignment: .leading)
       TextField("Absolute folder path", text: path).textFieldStyle(.roundedBorder)
+        .accessibilityLabel(label + " folder path")
       Button("Choose…") {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.folder]
@@ -339,7 +396,7 @@ struct WorkflowView: View {
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url { path.wrappedValue = url.path }
-      }
+      }.accessibilityLabel("Choose " + label + " folder")
     }
   }
   private func membership(_ field: MetadataField, in set: Binding<Set<MetadataField>>) -> Binding<

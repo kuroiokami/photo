@@ -72,7 +72,13 @@ public struct WorkspaceView: View {
     .navigationTitle("Photo")
     .toolbar {
       ToolbarItemGroup {
-        Button("Workflow…") { showingWorkflow = true }.disabled(choosingFolder)
+        Button {
+          showingWorkflow = true
+        } label: {
+          Label("Workflow…", systemImage: "arrow.triangle.branch")
+        }
+        .labelStyle(.titleOnly).disabled(choosingFolder).help(
+          "Ingest, bulk rename, IPTC/keywords and Lightroom handoff.")
         Button(action: openFolder) { Label("Open Folder", systemImage: "folder.badge.plus") }
           .disabled(choosingFolder).help("Open Folder (⌘O)")
         Button(action: reload) { Label("Reload", systemImage: "arrow.clockwise") }
@@ -141,7 +147,8 @@ public struct WorkspaceView: View {
           if folderLibrary.selected == nil { workspace.showSamples() }
         })
       Button("Open Folder…", action: openFolder).disabled(choosingFolder)
-      Button("Ingest, Rename & Metadata…") { showingWorkflow = true }
+      Button("Workflow…") { showingWorkflow = true }
+        .help("Ingest, bulk rename, IPTC/keywords and Lightroom handoff.")
       if workspace.directory != nil {
         Button("Show Sample Collection") {
           workspace.showSamples()
@@ -438,13 +445,15 @@ public struct WorkspaceView: View {
           Image(systemName: "info.circle")
         }
         .buttonStyle(.plain).accessibilityLabel("Show shooting information")
+        .help("Show or hide camera, lens, capture time and image dimensions.")
         Button {
           showPreview = false
           gridFocused = true
         } label: {
           Image(systemName: "xmark")
         }
-        .buttonStyle(.plain).accessibilityLabel("Close preview")
+        .buttonStyle(.plain).accessibilityLabel("Close preview").help(
+          "Hide preview (Space or Escape).")
       }.padding(16)
       if let photo = workspace.selectedPhoto {
         DetailPreviewView(
@@ -500,75 +509,115 @@ public struct WorkspaceView: View {
 
   private var filterBar: some View {
     VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Picker(
-          "Flags",
-          selection: Binding(
-            get: { workspace.flagFilter },
-            set: {
-              workspace.setFilter($0, minimumRating: workspace.minimumRating)
-            })
-        ) {
-          ForEach(FlagFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-        }.frame(width: 150)
-        Picker(
-          "Stars",
-          selection: Binding(
-            get: { workspace.minimumRating },
-            set: {
-              workspace.setFilter(workspace.flagFilter, minimumRating: $0)
-            })
-        ) {
-          Text("All stars").tag(0)
-          ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
-        }.frame(width: 150)
-        Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
-        Toggle(
-          "RAW+JPEG",
-          isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
-        ).toggleStyle(.checkbox)
-        Button("Select All") { workspace.selectAllVisible() }
-        Text("\(workspace.selectedIDs.count) selected").font(.caption)
-        Spacer()
-        Toggle(
-          "Auto-advance",
-          isOn: Binding(get: { workspace.autoAdvance }, set: { workspace.autoAdvance = $0 })
-        )
-        .toggleStyle(.checkbox).help(
-          "Move to the next photo after a decision; Shift always advances")
+      ViewThatFits(in: .horizontal) {
+        HStack {
+          filters
+          selectionTools
+          Spacer(minLength: 0)
+          autoAdvance
+        }
+        VStack(alignment: .leading, spacing: 8) {
+          HStack {
+            filters
+            Spacer(minLength: 0)
+          }
+          HStack {
+            selectionTools
+            Spacer(minLength: 0)
+            autoAdvance
+          }
+        }
       }
       HStack {
         ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
           Button {
             workspace.applyDecision(flag: flag)
           } label: {
-            Label(flag.title + " Selection", systemImage: flag.symbol)
+            Label(
+              flag == .unflagged ? "Clear Flags" : flag.title + " Selection",
+              systemImage: flag.symbol)
           }.disabled(!workspace.decisionSelectionReady)
             .help(
-              "Apply this flag to every selected photo, preserving stars. Reject does not delete files."
+              "Apply to all selected files, preserving stars. P picks, X rejects, U clears flags. Reject never deletes files."
             )
         }
         Button("Edit Selected IPTC…") { showWorkflow(2) }.disabled(workspace.selectedIDs.isEmpty)
-          .help(
-            "Copy one field from the first selected photo to the selection, or review several checked fields."
-          )
-        Spacer()
+          .help("Edit one field or review several checked fields across the selection.")
+        Spacer(minLength: 0)
       }
     }.font(.caption).padding(.horizontal, 20).padding(.bottom, 10)
   }
+  private var filters: some View {
+    HStack {
+      Picker(
+        "Flags",
+        selection: Binding(
+          get: { workspace.flagFilter },
+          set: {
+            workspace.setFilter($0, minimumRating: workspace.minimumRating)
+          })
+      ) {
+        ForEach(FlagFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+      }.frame(width: 150).help("Filter photos by their pick/reject flag.")
+      Picker(
+        "Stars",
+        selection: Binding(
+          get: { workspace.minimumRating },
+          set: {
+            workspace.setFilter(workspace.flagFilter, minimumRating: $0)
+          })
+      ) {
+        Text("All stars").tag(0)
+        ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
+      }.frame(width: 150).help("Show photos with at least this many stars.")
+      Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
+        .disabled(workspace.flagFilter == .all && workspace.minimumRating == 0)
+    }.fixedSize(horizontal: true, vertical: false)
+  }
+  private var selectionTools: some View {
+    HStack {
+      Toggle(
+        "RAW+JPEG", isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
+      )
+      .toggleStyle(.checkbox).help(
+        "Show each unique RAW+JPEG pair once. Decisions and metadata target both files.")
+      Button("Select All") { workspace.selectAllVisible() }.disabled(workspace.photos.isEmpty)
+        .help("Select every visible photo (⌘A). Filters limit this selection.")
+      Text("\(workspace.selectedIDs.count) selected").monospacedDigit()
+    }.fixedSize(horizontal: true, vertical: false)
+  }
+  private var autoAdvance: some View {
+    Toggle(
+      "Auto-advance",
+      isOn: Binding(get: { workspace.autoAdvance }, set: { workspace.autoAdvance = $0 })
+    )
+    .toggleStyle(.checkbox).fixedSize()
+    .help(
+      "Advance after single-photo decisions. Shift also advances. Group decisions keep the selection."
+    )
+  }
 
   private func decisionControls(_ photo: PhotoItem) -> some View {
-    let decision = workspace.decisions[photo.id] ?? CullingDecision()
+    let summary = workspace.selectionSummary
     return VStack(spacing: 8) {
-      HStack(spacing: 10) {
+      if summary.fileCount > 1 {
+        Text(
+          "Editing \(summary.fileCount) files" + (summary.flag == nil ? " · Mixed flags" : "")
+            + (summary.rating == nil ? " · Mixed stars" : "")
+        )
+        .font(.caption).foregroundStyle(.secondary)
+      }
+      HStack(spacing: 4) {
         ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
           Button {
             workspace.applyDecision(flag: flag)
             gridFocused = true
           } label: {
             Image(systemName: flag.symbol)
-              .foregroundStyle(decision.flag == flag ? Color.accentColor : Color.secondary)
-          }.help(flag.title).accessibilityLabel(flag.title)
+              .foregroundStyle(summary.flag == flag ? Color.accentColor : Color.secondary)
+          }.frame(minWidth: 22, minHeight: 26)
+            .help((flag == .unflagged ? "Clear flags" : flag.title) + " for all selected files.")
+            .accessibilityLabel(flag == .unflagged ? "Clear flags" : flag.title)
         }
         Divider().frame(height: 16)
         ForEach(1...5, id: \.self) { rating in
@@ -576,15 +625,20 @@ public struct WorkspaceView: View {
             workspace.applyDecision(rating: rating)
             gridFocused = true
           } label: {
-            Image(systemName: rating <= decision.rating ? "star.fill" : "star")
+            Image(systemName: rating <= (summary.rating ?? 0) ? "star.fill" : "star")
           }
           .accessibilityLabel("Set \(rating) stars")
-          .accessibilityValue(rating <= decision.rating ? "Selected" : "Not selected")
+          .frame(minWidth: 22, minHeight: 26)
+          .help("Set \(rating) stars for all selected files (\(rating)). Flags are preserved.")
+          .accessibilityValue(
+            summary.rating == nil
+              ? "Mixed ratings" : rating <= (summary.rating ?? 0) ? "Selected" : "Not selected")
         }
         Button("0") {
           workspace.applyDecision(rating: 0)
           gridFocused = true
-        }.help("Clear stars")
+        }.frame(minWidth: 22, minHeight: 26).help(
+          "Clear stars for all selected files (0). Flags are preserved.")
       }.buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
       if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
         Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

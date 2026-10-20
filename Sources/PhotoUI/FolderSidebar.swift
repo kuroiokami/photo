@@ -23,9 +23,12 @@ struct FolderSidebar: View {
                   systemName: library.expanded.contains(row.directory.path)
                     ? "chevron.down" : "chevron.right"
                 )
-                .font(.caption2).frame(width: 16, height: 24)
+                .font(.caption2).frame(width: 20, height: 28)
               }.buttonStyle(.plain)
-                .accessibilityLabel("Expand subfolders of \(row.directory.lastPathComponent)")
+                .accessibilityLabel(
+                  (library.expanded.contains(row.directory.path) ? "Collapse" : "Expand")
+                    + " subfolders of " + row.directory.lastPathComponent
+                )
                 .help(
                   "Expand or collapse immediate subfolders. Photos load only when you select a folder."
                 )
@@ -37,12 +40,14 @@ struct FolderSidebar: View {
                     maxWidth: .infinity, alignment: .leading)
               }.buttonStyle(.plain).help(
                 row.directory.path + "\nClick to display this folder's photos.")
-              if library.loading.contains(row.directory.path) { ProgressView().controlSize(.mini) }
+              if library.loading.contains(row.directory.path) {
+                ProgressView().controlSize(.mini).accessibilityLabel("Loading subfolders")
+              }
               if row.isRoot {
                 Button {
                   remove(row.root)
                 } label: {
-                  Image(systemName: "xmark").font(.caption2)
+                  Image(systemName: "xmark").font(.caption2).frame(width: 22, height: 28)
                 }
                 .buttonStyle(.plain).accessibilityLabel(
                   "Remove \(row.root.lastPathComponent) from sidebar"

@@ -40,6 +40,9 @@ public final class WorkspaceState {
   public var firstSelectedPhoto: PhotoItem? {
     photos.first { selectedIDs.contains($0.id) } ?? selectedPhoto
   }
+  public var selectionSummary: DecisionSelectionSummary {
+    DecisionSelectionSummary(operationPhotos.map { decisions[$0.id] ?? CullingDecision() })
+  }
   public var decisionSelectionReady: Bool {
     let targets = operationPhotos
     return !targets.isEmpty && targets.allSatisfy { decisionsReady.contains($0.id) }

@@ -92,4 +92,21 @@ struct WorkspaceStateTests {
     #expect(state.selectedIDs == Set(photos.prefix(2).map(\.id)))
   }
 
+  @Test func mixedDecisionSummaryDoesNotReportOnePhotosValuesForTheGroup() {
+    let mixed = DecisionSelectionSummary([
+      CullingDecision(rating: 2, flag: .pick), CullingDecision(rating: 4, flag: .reject),
+    ])
+    #expect(mixed.fileCount == 2)
+    #expect(mixed.rating == nil && mixed.flag == nil)
+    let sameStars = DecisionSelectionSummary([
+      CullingDecision(rating: 3, flag: .pick), CullingDecision(rating: 3),
+    ])
+    #expect(sameStars.rating == 3 && sameStars.flag == nil)
+    let sameFlag = DecisionSelectionSummary([
+      CullingDecision(rating: 1, flag: .pick), CullingDecision(rating: 4, flag: .pick),
+    ])
+    #expect(sameFlag.flag == .pick && sameFlag.rating == nil)
+    #expect(DecisionSelectionSummary([]).fileCount == 0)
+  }
+
 }

@@ -13,6 +13,7 @@ private struct DetailPresentation {
   var focal = CGPoint(x: 0.5, y: 0.5)
   var visible = CGRect(x: 0, y: 0, width: 1, height: 1)
   var error: String?
+  var navigation: DetailNavigationRequest?
   var display: (image: CGImage, size: CGSize, bounds: CGRect)? {
     if let image {
       let size = CGSize(width: image.decodedWidth, height: image.decodedHeight)
@@ -40,20 +41,30 @@ struct DetailPreviewView: View {
   var body: some View {
     VStack(spacing: 8) {
       HStack {
-        Button(state.zoom && state.image == nil ? "Cancel" : "Fit") { fit() }.disabled(!state.zoom)
-          .help("Return to Fit and cancel outstanding detail work. Decoded detail is released.")
-        Button("100%") {
-          state.error = nil
-          state.zoom = true
-        }.disabled(state.zoom)
+        Picker(
+          "Zoom",
+          selection: Binding(
+            get: { state.zoom },
+            set: { zoom in
+              if zoom {
+                state.error = nil
+                state.zoom = true
+              } else {
+                fit()
+              }
+            })
+        ) {
+          Text("Fit").tag(false)
+          Text("100%").tag(true)
+        }.pickerStyle(.segmented).labelsHidden().frame(width: 128)
           .help(
-            "Inspect one image pixel per display pixel. RAW focus detail appears first; the full image follows at the same quality."
+            "Fit shows the whole photo. 100% maps one image pixel to one display pixel; RAW focus detail appears first."
           )
         Spacer()
         if state.zoom, state.image == nil, state.error == nil {
           ProgressView().controlSize(.small)
-          Text(state.region == nil ? "Loading 100% detail…" : "Finishing full image…").font(
-            .caption)
+          Text(state.region == nil ? "Loading…" : "Finishing…").font(.caption).lineLimit(1)
+          Button("Cancel") { fit() }.help("Cancel detail loading and return to Fit.")
         }
       }.buttonStyle(.borderless)
       GeometryReader { geometry in
@@ -61,7 +72,7 @@ struct DetailPreviewView: View {
           if state.zoom, let display = state.display {
             PixelScrollView(
               image: display.image, focal: state.focal,
-              canvasSize: display.size, imageBounds: display.bounds,
+              canvasSize: display.size, imageBounds: display.bounds, navigation: state.navigation,
               visible: $state.visible, onFit: fit)
             if let thumbnail = state.fitPreview?.image ?? state.image?.image {
               navigator(thumbnail, width: Int(display.size.width), height: Int(display.size.height))
@@ -93,15 +104,16 @@ struct DetailPreviewView: View {
         }
         .onChange(of: geometry.size, initial: true) { state.viewport = geometry.size }
       }
-      if state.zoom, state.image == nil, state.region != nil {
-        Text("Rendered RAW · 100% focus region · surrounding detail is still loading")
-          .font(.caption).foregroundStyle(.secondary)
-      }
-      if let detail = state.image {
+      if state.zoom {
         Text(
-          "\(detail.sourceKind.rawValue) · 100% · \(detail.decodedWidth) × \(detail.decodedHeight)"
+          state.image.map {
+            "\($0.sourceKind.rawValue) · 100% · \($0.decodedWidth) × \($0.decodedHeight)"
+          }
+            ?? (state.region != nil
+              ? "Rendered RAW · 100% focus region · surrounding detail is loading"
+              : "Preparing 100% detail…")
         )
-        .font(.caption).foregroundStyle(.secondary)
+        .font(.caption).foregroundStyle(.secondary).lineLimit(2).frame(height: 28)
       }
       if let error = state.error {
         Text(error).font(.caption).foregroundStyle(.secondary)
@@ -147,33 +159,30 @@ struct DetailPreviewView: View {
     state.image = nil
     state.region = nil
     state.error = nil
+    state.navigation = nil
   }
 
   private func navigator(_ image: CGImage, width imageWidth: Int, height imageHeight: Int)
     -> some View
   {
-    let width: CGFloat = 120
-    let height = width * CGFloat(imageHeight) / CGFloat(imageWidth)
-    return ZStack(alignment: .topLeading) {
-      Image(decorative: image, scale: 1).resizable()
-      Rectangle().stroke(.white, lineWidth: 1)
-        .frame(width: width * state.visible.width, height: height * state.visible.height)
-        .offset(x: width * state.visible.minX, y: height * state.visible.minY)
-    }.frame(width: width, height: height)
-      .background(.black).border(.gray).padding(12)
-      .allowsHitTesting(false)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel("Navigator showing the visible full-detail region")
+    DetailNavigator(
+      image: image, imageSize: CGSize(width: imageWidth, height: imageHeight),
+      visible: state.visible
+    ) { point in
+      state.navigation = DetailNavigationRequest(center: point)
+    }
+
   }
 }
 
 /// NSScrollView supplies native trackpad/wheel scrolling and drag panning.
 /// Document dimensions are pixels / backingScaleFactor, never SwiftUI points = pixels.
-private struct PixelScrollView: NSViewRepresentable {
+struct PixelScrollView: NSViewRepresentable {
   let image: CGImage
   let focal: CGPoint
   let canvasSize: CGSize
   let imageBounds: CGRect
+  let navigation: DetailNavigationRequest?
   @Binding var visible: CGRect
   let onFit: () -> Void
 
@@ -204,6 +213,7 @@ private struct PixelScrollView: NSViewRepresentable {
     view.pixelSize = canvasSize
     view.imageBounds = imageBounds
     view.updateScale()
+    if let navigation { view.navigate(navigation) }
   }
 }
 
@@ -257,7 +267,22 @@ private final class BoundsObserver: @unchecked Sendable {
   deinit { NotificationCenter.default.removeObserver(token) }
 }
 
-private final class PixelScroller: NSScrollView {
+private final class CenteredPixelClipView: NSClipView {
+  override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
+    var result = super.constrainBoundsRect(proposedBounds)
+    if let documentView {
+      if documentView.frame.width < result.width {
+        result.origin.x = (documentView.frame.width - result.width) / 2
+      }
+      if documentView.frame.height < result.height {
+        result.origin.y = (documentView.frame.height - result.height) / 2
+      }
+    }
+    return result
+  }
+}
+
+final class PixelScroller: NSScrollView {
   var pixelImage: CGImage?
   var pixelSize = CGSize.zero
   var imageBounds = CGRect.zero
@@ -267,9 +292,11 @@ private final class PixelScroller: NSScrollView {
   private let canvas = PixelCanvas()
   private var scale: CGFloat = 0
   private var initialPosition = false
+  private var lastNavigation: UUID?
   private var observer: BoundsObserver?
   override init(frame: NSRect) {
     super.init(frame: frame)
+    contentView = CenteredPixelClipView(frame: contentView.frame)
     documentView = canvas
     observer = BoundsObserver(
       NotificationCenter.default.addObserver(
@@ -315,11 +342,23 @@ private final class PixelScroller: NSScrollView {
     if !initialPosition, contentSize.width > 0, contentSize.height > 0 {
       initialPosition = true
       contentView.scroll(
-        to: CGPoint(
-          x: canvas.frame.width * focal.x - contentSize.width / 2,
-          y: canvas.frame.height * focal.y - contentSize.height / 2))
+        to: NavigatorGeometry.origin(center: focal, image: canvas.frame.size, viewport: contentSize)
+      )
       reflectScrolledClipView(contentView)
     }
+  }
+  func navigate(_ request: DetailNavigationRequest) {
+    guard request.id != lastNavigation, contentSize.width > 0, contentSize.height > 0 else {
+      return
+    }
+    lastNavigation = request.id
+    initialPosition = true
+    contentView.scroll(
+      to: NavigatorGeometry.origin(
+        center: request.center,
+        image: canvas.bounds.size, viewport: contentSize))
+    reflectScrolledClipView(contentView)
+    reportVisible()
   }
   private func reportVisible() {
     let size = canvas.bounds.size
