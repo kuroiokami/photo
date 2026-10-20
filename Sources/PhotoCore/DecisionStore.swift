@@ -5,15 +5,17 @@ public struct DecisionEntry: Sendable {
   public let decision: CullingDecision
   public let status: String
   public let identity: String?
+  public let reviewFields: SourceDecisionFields
   public let reviewed: Bool
   public let sourceReview: SourceReviewSession?
   public init(
     decision: CullingDecision, status: String, identity: String? = nil, reviewed: Bool = false,
-    sourceReview: SourceReviewSession? = nil
+    sourceReview: SourceReviewSession? = nil, reviewFields: SourceDecisionFields = []
   ) {
     self.decision = decision
     self.status = status
     self.identity = identity
+    self.reviewFields = reviewFields
     self.reviewed = reviewed
     self.sourceReview = sourceReview
   }
@@ -24,6 +26,8 @@ struct StoredDecision: Codable {
   var decision: CullingDecision
   var pending: Bool
   var baseline: String
+  // Nil is legacy/unknown intent; only explicit false is a read-only cache seed.
+  var userModified: Bool?
 }
 
 public enum DecisionStoreError: LocalizedError {
@@ -97,7 +101,7 @@ public actor DecisionStore {
     guard
       sqlite3_exec(
         db,
-        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS image_edits (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS source_review_items (session TEXT NOT NULL, identity TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(session,identity)); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
+        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS image_edits (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS review_copy_receipts (receipt TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS source_review_items (session TEXT NOT NULL, identity TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(session,identity)); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
         nil, nil, nil) == SQLITE_OK
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
@@ -150,7 +154,7 @@ public actor DecisionStore {
     }
   }
 
-  private func pathIdentity(_ image: URL, update: String? = nil) throws -> String? {
+  func pathIdentity(_ image: URL, update: String? = nil) throws -> String? {
     try withDB { db in
       var statement: OpaquePointer?
       let sql =
@@ -239,7 +243,9 @@ public actor DecisionStore {
           try XMPSidecar.read(data) == local.decision
         {
           try write(
-            StoredDecision(decision: local.decision, pending: false, baseline: digest),
+            StoredDecision(
+              decision: local.decision, pending: false, baseline: digest,
+              userModified: local.userModified),
             key: identity)
           return DecisionEntry(decision: local.decision, status: "Saved")
         }
@@ -253,7 +259,10 @@ public actor DecisionStore {
         return DecisionEntry(decision: local.decision, status: "Saved")
       }
       let decision = try data.map(XMPSidecar.read) ?? local?.decision ?? CullingDecision()
-      try write(StoredDecision(decision: decision, pending: false, baseline: digest), key: identity)
+      try write(
+        StoredDecision(
+          decision: decision, pending: false, baseline: digest,
+          userModified: local == nil ? false : local?.userModified), key: identity)
       return DecisionEntry(decision: decision, status: "Saved")
     } catch {
       if let local {
@@ -278,7 +287,8 @@ public actor DecisionStore {
       let local = try read(identity)
       // Baseline must come from load: an external edit after loading is a conflict.
       let baseline = local?.baseline ?? "absent"
-      var record = StoredDecision(decision: decision, pending: true, baseline: baseline)
+      var record = StoredDecision(
+        decision: decision, pending: true, baseline: baseline, userModified: true)
       try write(record, key: identity)
       do {
         var coordinationError: NSError?
@@ -323,7 +333,8 @@ public actor DecisionStore {
       let data = try sidecarData(image)
       let decision = try data.map(XMPSidecar.read) ?? CullingDecision()
       try write(
-        StoredDecision(decision: decision, pending: false, baseline: XMPSidecar.digest(data)),
+        StoredDecision(
+          decision: decision, pending: false, baseline: XMPSidecar.digest(data), userModified: true),
         key: key(for: image))
       return DecisionEntry(decision: decision, status: "Saved")
 

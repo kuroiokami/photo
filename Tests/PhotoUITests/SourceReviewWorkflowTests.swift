@@ -86,4 +86,63 @@ struct SourceReviewWorkflowTests {
     }
     #expect(try Data(contentsOf: image) == Data("fixture".utf8))
   }
+  @Test func completeReviewedWorkflowRetainsSourceUntilExplicitDestinationNavigation() async throws
+  {
+    await WorkflowOperationBarrier.shared.flush()
+    let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+      .appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let card = root.appendingPathComponent("Card")
+    try FileManager.default.createDirectory(at: card, withIntermediateDirectories: true)
+    let bytes = try Data(contentsOf: #require(SampleResources.url(for: SampleLibrary.photos[0])))
+    let image = card.appendingPathComponent("a.png")
+    try bytes.write(to: image)
+    try bytes.write(to: card.appendingPathComponent("b.png"))
+    let policy = SourceProtection(registryURL: root.appendingPathComponent("Local/sources.json"))
+    let store = DecisionStore(
+      databaseURL: root.appendingPathComponent("Local/state.sqlite"), sourceProtection: policy)
+    let operations = MediaOperations(
+      journalDirectory: root.appendingPathComponent("Local/Operations"), sourceProtection: policy)
+    _ = try await store.beginSourceReview(card)
+    let workspace = WorkspaceState(decisionStore: store)
+    await workspace.openFolder(card)
+    await workspace.loadDecisions()
+    workspace.applyDecision(flag: .unflagged)
+    await DecisionSaveQueue.shared.flush()
+    #expect(try await store.load(for: image).reviewFields == .flag)
+    workspace.applyDecision(rating: 4)
+    await DecisionSaveQueue.shared.flush()
+    #expect(try await store.load(for: image).reviewFields == .all)
+    workspace.undoDecision()
+    await DecisionSaveQueue.shared.flush()
+    #expect(try await store.load(for: image).reviewFields == .flag)
+    workspace.redoDecision()
+    workspace.applyDecision(flag: .pick)
+    await DecisionSaveQueue.shared.flush()
+    let selected = workspace.selectedIDs
+    let model = WorkflowModel(workspace: workspace, mediaOperations: operations)
+    model.prepareReviewedCopy(
+      source: card.path, scope: .picks,
+      primary: root.appendingPathComponent("Photos").path,
+      backup: root.appendingPathComponent("Backup").path, job: "Test",
+      keepPairs: true, acceptMetadataChanges: false)
+    await model.worker?.value
+    let plan = try #require(model.reviewedCopyPlan)
+    #expect(plan.images.count == 1 && plan.sourcePhotoCount == 2)
+    model.copyReviewed(plan, includeOpposingPairs: false)
+    await model.worker?.value
+    #expect(!model.busy && model.reviewMetadataPending == 0)
+    #expect(workspace.isSourceReview && workspace.selectedIDs == selected)
+    #expect(model.copiedReviewFolder != nil && model.savedReviewCopies.count == 1)
+    #expect(model.status.contains("Review metadata is ready on both copies"))
+    model.reviewCopiedPhotos()
+    await WorkflowOperationBarrier.shared.flush()
+    await workspace.loadDecisions()
+    #expect(!workspace.isSourceReview && workspace.firstSelectedPhoto?.filename == "a.png")
+    #expect(workspace.decisions.values.contains(CullingDecision(rating: 4, flag: .pick)))
+    #expect(try await store.sourceReview(for: card) != nil)
+    #expect(try Data(contentsOf: image) == bytes)
+    #expect(!FileManager.default.fileExists(atPath: XMPSidecar.url(for: image).path))
+  }
+
 }

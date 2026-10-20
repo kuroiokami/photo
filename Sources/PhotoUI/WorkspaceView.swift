@@ -76,13 +76,17 @@ public struct WorkspaceView: View {
             Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
               .font(.callout.bold())
             Text(
-              "Stars, flags and image edits stay on this Mac. Copying this review is not available yet."
+              "Stars, flags and image edits stay on this Mac until copied. Open Workflow → Ingest to choose and copy photos with their review decisions."
             )
             .font(.caption).foregroundStyle(.secondary)
             Text(
               "\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) files reviewed in this folder"
             )
             .font(.caption.monospacedDigit())
+            Button("Copy Reviewed Photos…") { showWorkflow(0) }
+              .help(
+                "Prepare an explicit copy list and two verified destinations. The source stays unchanged."
+              )
           }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
             .background(Color.accentColor.opacity(0.10))
         }

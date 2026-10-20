@@ -20,6 +20,15 @@ public enum PhotoFlag: Int, Codable, CaseIterable, Sendable {
   }
 }
 
+/// Which fields the source review explicitly owns, independently of their values.
+public struct SourceDecisionFields: OptionSet, Codable, Equatable, Sendable {
+  public let rawValue: Int
+  public init(rawValue: Int) { self.rawValue = rawValue }
+  public static let rating = Self(rawValue: 1)
+  public static let flag = Self(rawValue: 2)
+  public static let all: Self = [.rating, .flag]
+}
+
 public struct CullingDecision: Codable, Equatable, Sendable {
   public var rating: Int
   public var flag: PhotoFlag

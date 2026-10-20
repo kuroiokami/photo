@@ -9,7 +9,7 @@ A native macOS app for fast folder browsing, culling and organization for public
 | **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
 | **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
 | [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
-| [Review before copying](docs/PRE_COPY_CULLING.md) | Local-only source review is implemented; reviewed copying and decision transfer are next |
+| [Review before copying](docs/PRE_COPY_CULLING.md) | Protected source review, selective copying, decision transfer and recovery |
 | [Distribution plan](docs/DISTRIBUTION.md) | Path to a signed, notarized download other people can install |
 | [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
 
@@ -34,7 +34,7 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 - Async EXIF indexing, numeric sorting, optional inspector and configurable thumbnail labels.
 - Fit, genuine physical-pixel 100%, trackpad magnification, pan/navigator and pinned comparison.
 - Selected-only review and RAW+JPEG grouping.
-- Protected review before copying: stars, flags, Undo and Photo-local edits stay on this Mac; copying this review is not available yet.
+- Protected review before copying, explicit all/picks/non-rejected/selection scopes, verified copying with decisions/Photo-local edits at both destinations, and saved-list resume.
 - Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
 - Dismissible ingest introduction and a reopenable five-step workflow walkthrough with deadline/large-shoot examples.
 - Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.

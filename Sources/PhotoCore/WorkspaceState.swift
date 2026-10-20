@@ -15,7 +15,15 @@ public final class WorkspaceState {
   public private(set) var groupPairs = false
   public private(set) var sourceReview: SourceReviewSession?
   public var isSourceReview: Bool { sourceReview != nil }
+  public var selectedFileIdentities: [URL: String] {
+    Dictionary(
+      uniqueKeysWithValues: operationPhotos.compactMap { photo in
+        guard let url = photo.fileURL, let identity = fileIdentities[photo.id] else { return nil }
+        return (url, identity)
+      })
+  }
   public private(set) var sourceReviewedIDs: Set<String> = []
+  private var sourceFields: [String: SourceDecisionFields] = [:]
   public private(set) var reviewIDs: Set<String>?
   public var reviewingSelection: Bool { reviewIDs != nil }
   /// Freeze membership independently of subsequent navigation/selection.
@@ -426,6 +434,8 @@ public final class WorkspaceState {
     let photo: PhotoItem
     let before: CullingDecision
     let after: CullingDecision
+    let beforeFields: SourceDecisionFields
+    let afterFields: SourceDecisionFields
     let beforeReviewed: Bool
     let afterReviewed: Bool
   }
@@ -453,6 +463,7 @@ public final class WorkspaceState {
   private func resetDecisions() {
     sourceReview = nil
     sourceReviewedIDs = []
+    sourceFields = [:]
     reviewIDs = nil
     imageEdits = [:]
     editStatus = ""
@@ -524,6 +535,7 @@ public final class WorkspaceState {
     fileIdentities[photo.id] = entry.identity
     decisionRevision += 1
     decisions[photo.id] = entry.decision
+    sourceFields[photo.id] = entry.reviewFields
     if entry.reviewed { sourceReviewedIDs.insert(photo.id) }
     saveStatus[photo.id] = entry.status
     decisionsReady.insert(photo.id)
@@ -580,10 +592,17 @@ public final class WorkspaceState {
       let before = decisions[target.id] ?? CullingDecision()
       let after = CullingDecision(rating: rating ?? before.rating, flag: flag ?? before.flag)
       let reviewed = sourceReviewedIDs.contains(target.id)
-      return before == after && (!isSourceReview || reviewed)
+      let beforeFields = sourceFields[target.id] ?? []
+      var afterFields = beforeFields
+      if isSourceReview {
+        if rating != nil { afterFields.insert(.rating) }
+        if flag != nil { afterFields.insert(.flag) }
+      }
+      return before == after && (!isSourceReview || (reviewed && beforeFields == afterFields))
         ? nil
         : DecisionItemChange(
           photo: target, before: before, after: after,
+          beforeFields: beforeFields, afterFields: afterFields,
           beforeReviewed: reviewed, afterReviewed: isSourceReview)
     }
     if !changes.isEmpty {
@@ -593,6 +612,7 @@ public final class WorkspaceState {
       for change in changes {
         decisions[change.photo.id] = change.after
         if change.afterReviewed { sourceReviewedIDs.insert(change.photo.id) }
+        sourceFields[change.photo.id] = change.afterFields
         persist(change.photo, change.after, reviewed: change.afterReviewed)
       }
       if sort == .rating {
@@ -738,6 +758,7 @@ public final class WorkspaceState {
       } else {
         sourceReviewedIDs.remove(item.photo.id)
       }
+      sourceFields[item.photo.id] = undo ? item.beforeFields : item.afterFields
       persist(item.photo, value, reviewed: reviewed)
     }
     if sort == .rating {
@@ -757,6 +778,7 @@ public final class WorkspaceState {
     decisionVersions[photo.id] = version
     saveStatus[photo.id] = isSourceReview ? "Saving review…" : "Saving…"
     let review = sourceReview
+    let fields = sourceFields[photo.id] ?? []
     let store = decisionStore
     let identity = fileIdentities[photo.id]
     DecisionSaveQueue.shared.enqueue { [weak self] in
@@ -766,7 +788,7 @@ public final class WorkspaceState {
           guard let identity else { throw SourceReviewError.unavailable }
           status = try await store.saveSourceDecision(
             decision, reviewed: reviewed,
-            session: review, image: url, identity: identity
+            session: review, image: url, identity: identity, fields: fields
           ).status
         } else {
           status = try await store.save(

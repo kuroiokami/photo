@@ -14,6 +14,11 @@ struct WorkflowView: View {
   @WorkflowStorage private var tab = 0
   @WorkflowStorage private var scope = "Selection"
   @WorkflowStorage private var source = ""
+  @WorkflowStorage private var reviewedScope = ReviewedCopyScope.all
+  @WorkflowStorage private var keepReviewPairs = true
+  @WorkflowStorage private var acceptSourceMetadataChanges = false
+  @WorkflowStorage private var includeOpposingPairs = false
+  @WorkflowStorage private var resumePlan: ReviewedCopyPlan?
   @WorkflowStorage private var primary =
     UserDefaults.standard.string(forKey: "Photo.ingestWorkingRoot")
     ?? UserDefaults.standard.string(forKey: "Photo.folders.home") ?? ""
@@ -38,6 +43,7 @@ struct WorkflowView: View {
   init(model: WorkflowModel) {
     _model = State(initialValue: model)
     _tab = State(initialValue: model.requestedTab)
+    _source = State(initialValue: model.workspace.sourceReview?.root.path ?? "")
   }
   private var patch: MetadataPatch {
     var value = MetadataPatch()
@@ -53,11 +59,33 @@ struct WorkflowView: View {
     return value
   }
   var body: some View {
+    configuredContent
+      .onChange(of: pattern) { model.renamePlan = nil }
+      .onChange(of: camera) { model.renamePlan = nil }
+      .onChange(of: sequence) { model.renamePlan = nil }
+      .onChange(of: scope) {
+        model.renamePlan = nil
+        model.metadataPlan = []
+      }
+      .onChange(of: fieldValues) { model.metadataPlan = [] }
+      .onChange(of: enabled) { model.metadataPlan = [] }
+      .onChange(of: cleared) {
+        enabled.formUnion(cleared)
+        model.metadataPlan = []
+      }
+      .onChange(of: keywordAction) { model.metadataPlan = [] }
+      .onChange(of: keywordText) { model.metadataPlan = [] }
+      .onChange(of: model.nextSequence) { sequence = String(model.nextSequence) }
+  }
+  private var configuredContent: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
         Text("Photo workflow").font(.title2.bold())
         Spacer()
         Button("Workflow Walkthrough") { showingWalkthrough = true }.disabled(model.busy)
+        if model.copiedReviewFolder != nil {
+          Button("Review Copied Photos") { model.reviewCopiedPhotos() }
+        }
         if model.busy {
           ProgressView().controlSize(.small)
           Button("Cancel Operation") { model.worker?.cancel() }
@@ -83,7 +111,7 @@ struct WorkflowView: View {
       }
       if model.workspace.isSourceReview {
         Text(
-          "Reviewing a protected source. Organization and delivery are available on working copies; copying this review is coming next."
+          "Reviewing a protected source. Organization and delivery are available on working copies; use Ingest to prepare and copy a reviewed list."
         )
         .font(.caption).foregroundStyle(.secondary)
       }
@@ -95,28 +123,30 @@ struct WorkflowView: View {
     .interactiveDismissDisabled(model.busy && !model.backgroundable)
     .task {
       model.renamePlan = nil
+      model.reviewedCopyPlan = nil
       model.metadataPlan = []
       await model.refresh()
       fieldValues = model.currentMetadata.fields
     }
     .onChange(of: model.sourceReviewLaunch) { dismiss() }
     .onChange(of: tab) { model.requestedTab = tab }
-    .onChange(of: pattern) { model.renamePlan = nil }
-    .onChange(of: camera) { model.renamePlan = nil }
-    .onChange(of: sequence) { model.renamePlan = nil }
-    .onChange(of: scope) {
-      model.renamePlan = nil
-      model.metadataPlan = []
+    .onChange(of: source) {
+      model.reviewedCopyPlan = nil
+      includeOpposingPairs = false
     }
-    .onChange(of: fieldValues) { model.metadataPlan = [] }
-    .onChange(of: enabled) { model.metadataPlan = [] }
-    .onChange(of: cleared) {
-      enabled.formUnion(cleared)
-      model.metadataPlan = []
+    .onChange(of: primary) { model.reviewedCopyPlan = nil }
+    .onChange(of: backup) { model.reviewedCopyPlan = nil }
+    .onChange(of: job) { model.reviewedCopyPlan = nil }
+    .onChange(of: reviewedScope) {
+      model.reviewedCopyPlan = nil
+      includeOpposingPairs = false
     }
-    .onChange(of: keywordAction) { model.metadataPlan = [] }
-    .onChange(of: keywordText) { model.metadataPlan = [] }
-    .onChange(of: model.nextSequence) { sequence = String(model.nextSequence) }
+    .onChange(of: keepReviewPairs) {
+      model.reviewedCopyPlan = nil
+      includeOpposingPairs = false
+    }
+    .onChange(of: acceptSourceMetadataChanges) { model.reviewedCopyPlan = nil }
+    .onChange(of: resumePlan?.id) { includeOpposingPairs = false }
   }
   private var panelHeight: CGFloat {
     let available = (NSApp.keyWindow?.screen ?? NSScreen.main)?.visibleFrame.height ?? 840
@@ -132,67 +162,45 @@ struct WorkflowView: View {
   private var ingest: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 12) {
-        if !hideIntroduction && !introductionDismissed {
-          GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
-              Label("New to copy and cull?", systemImage: "lightbulb").font(.headline)
-              Text(
-                "Make verified copies and choose keepers as they arrive. Or learn what protected, review-only browsing means before choosing it."
-              )
-              .fixedSize(horizontal: false, vertical: true)
-              HStack {
-                Button("Show Walkthrough") { showingWalkthrough = true }
-                Button("Not Now") { introductionDismissed = true }
-                Spacer()
-                Button("Don’t Show Again") { hideIntroduction = true }
-                  .help(
-                    "Hides this introduction between launches. The guide stays available from Help."
-                  )
-              }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-          }
-        }
+        ingestIntroduction
         Text(
           "Copy photos and their metadata files to your photo folder and a backup. Keep the card’s subfolder layout. Matching copies are checked again; different files are never overwritten."
         ).fixedSize(horizontal: false, vertical: true)
-        Text("1. Choose where to copy from").font(.headline)
-        pathRow("Copy from", path: $source)
-        Button("Review Before Copying") { model.startSourceReview(source: source) }
-          .disabled(source.isEmpty)
-          .help(
-            "Browse and choose keepers without writing to this source. Review-only in this version; copying the review follows next."
+        ingestSetup
+        if model.workspace.isSourceReview {
+          reviewedCopyControls
+        } else {
+          Text("3. Copy, then start choosing keepers").font(.headline)
+          Text(
+            "Verified photos become available while the rest copy. Choose Continue Browsing to begin culling."
           )
-        Text(
-          "Review first: stars, flags and crops stay on this Mac. This version cannot copy a protected review yet. Captions and renaming are available after copying."
-        )
-        .font(.caption).foregroundStyle(.secondary)
-        Text("2. Choose where to keep this shoot").font(.headline)
-        pathRow("Photo folder", path: $primary)
-        pathRow("Backup folder", path: $backup)
-        HStack {
-          Text("Shoot name").frame(width: 125, alignment: .leading)
-          TextField("e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
+          .font(.caption).foregroundStyle(.secondary)
+          Button("Copy & Verify Both Copies") {
+            model.ingest(source: source, primary: primary, backup: backup, job: job)
+          }
+          .disabled(source.isEmpty || primary.isEmpty || backup.isEmpty || job.isEmpty)
+        }
+        if let folder = model.copiedReviewFolder {
+          Button("Review Copied Photos") { model.reviewCopiedPhotos() }
             .help(
-              "Give this shoot a name. Photo creates a folder with this name in both locations, with an Originals folder inside."
+              "Open the verified photo-folder copies. The source stays protected and its review is retained."
             )
+          Text("Working copies: \(folder.path)").font(.caption).textSelection(.enabled)
         }
-        Button("Remember These Folders") {
-          UserDefaults.standard.set(primary, forKey: "Photo.ingestWorkingRoot")
-          UserDefaults.standard.set(backup, forKey: "Photo.ingestBackupRoot")
-          model.status = "Photo and backup folders remembered. Give each new shoot its own name."
-        }.disabled(primary.isEmpty || backup.isEmpty)
-        Text(
-          "For example: Photo folder → Shoot name → Originals. The backup uses the same layout. Keep the card until both copies are verified; use a separate drive for an independent backup."
-        ).font(.caption).foregroundStyle(.secondary)
-        Text("3. Copy, then start choosing keepers").font(.headline)
-        Text(
-          "Verified photos become available while the rest copy. Choose Continue Browsing to begin culling."
-        )
-        .font(.caption).foregroundStyle(.secondary)
-        Button("Copy & Verify Both Copies") {
-          model.ingest(source: source, primary: primary, backup: backup, job: job)
+        if !model.reviewMetadataPendingImages.isEmpty {
+          DisclosureGroup(
+            "Metadata needs attention at \(model.reviewMetadataPendingImages.count) destinations"
+          ) {
+            ScrollView {
+              LazyVStack(alignment: .leading) {
+                ForEach(model.reviewMetadataPendingImages, id: \.self) { image in
+                  Text(image.path).font(.caption).textSelection(.enabled)
+                }
+              }
+            }.frame(height: 120)
+          }
         }
-        .disabled(source.isEmpty || primary.isEmpty || backup.isEmpty || job.isEmpty)
+        savedCopyControls
         if let folder = model.handoffFolder {
           Button("Reveal Latest Destination") {
             NSWorkspace.shared.activateFileViewerSelecting([folder])
@@ -200,6 +208,179 @@ struct WorkflowView: View {
         }
         Spacer()
       }.padding()
+    }
+  }
+  @ViewBuilder private var ingestIntroduction: some View {
+    if !hideIntroduction && !introductionDismissed {
+      GroupBox {
+        VStack(alignment: .leading, spacing: 8) {
+          Label("New to copy and cull?", systemImage: "lightbulb").font(.headline)
+          Text(
+            "Make verified copies and choose keepers as they arrive. Or learn how protected source review and selective copying work before choosing them."
+          )
+          .fixedSize(horizontal: false, vertical: true)
+          HStack {
+            Button("Show Walkthrough") { showingWalkthrough = true }
+            Button("Not Now") { introductionDismissed = true }
+            Spacer()
+            Button("Don’t Show Again") { hideIntroduction = true }
+              .help(
+                "Hides this introduction between launches. The guide stays available from Help."
+              )
+          }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+      }
+    }
+  }
+  private var ingestSetup: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("1. Choose where to copy from").font(.headline)
+      pathRow("Copy from", path: $source)
+      Button("Review Before Copying") { model.startSourceReview(source: source) }
+        .disabled(source.isEmpty)
+        .help(
+          "Browse and choose keepers without writing to this source. Then choose a copy scope, review the list, and copy to both destinations."
+        )
+      Text(
+        "Review first: stars, flags and crops stay on this Mac until copied. Copy your chosen photos with their review decisions to both destinations. Captions and renaming are available on the working copy."
+      )
+      .font(.caption).foregroundStyle(.secondary)
+      Text("2. Choose where to keep this shoot").font(.headline)
+      pathRow("Photo folder", path: $primary)
+      pathRow("Backup folder", path: $backup)
+      HStack {
+        Text("Shoot name").frame(width: 125, alignment: .leading)
+        TextField("e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
+          .help(
+            "Give this shoot a name. Photo creates a folder with this name in both locations, with an Originals folder inside."
+          )
+      }
+      Button("Remember These Folders") {
+        UserDefaults.standard.set(primary, forKey: "Photo.ingestWorkingRoot")
+        UserDefaults.standard.set(backup, forKey: "Photo.ingestBackupRoot")
+        model.status = "Photo and backup folders remembered. Give each new shoot its own name."
+      }.disabled(primary.isEmpty || backup.isEmpty)
+      Text(
+        "For example: Photo folder → Shoot name → Originals. The backup uses the same layout. Keep the card until both copies are verified; use a separate drive for an independent backup."
+      ).font(.caption).foregroundStyle(.secondary)
+    }
+  }
+  @ViewBuilder private var savedCopyControls: some View {
+    if !model.savedReviewCopies.isEmpty {
+      Divider()
+      Text("Resume a saved reviewed copy").font(.headline)
+      Text(
+        "Use the same saved list and destinations after an interruption or to retry metadata. New source decisions need a new copy list and shoot folder; resuming preserves newer destination work."
+      )
+      .font(.caption).foregroundStyle(.secondary)
+      Picker(
+        "Saved copy",
+        selection: Binding(
+          get: { resumePlan?.id ?? model.savedReviewCopies.first!.id },
+          set: { id in resumePlan = model.savedReviewCopies.first { $0.id == id } }
+        )
+      ) {
+        ForEach(model.savedReviewCopies) { plan in
+          Text(
+            "\(plan.primary.deletingLastPathComponent().lastPathComponent) · \(plan.scope.rawValue) · \(plan.created.formatted(date: .abbreviated, time: .shortened))"
+          ).tag(plan.id)
+        }
+      }
+      if let saved = resumePlan ?? model.savedReviewCopies.first {
+        Text(
+          "\(saved.images.count) photos · From \(saved.session.root.path) → \(saved.primary.path) + \(saved.backup.path)"
+        )
+        .font(.caption).textSelection(.enabled)
+        if !saved.opposingPairImages.isEmpty {
+          Toggle("Include companions with opposing flags", isOn: $includeOpposingPairs)
+        }
+        Button("Resume Saved Copy") {
+          model.copyReviewed(saved, includeOpposingPairs: includeOpposingPairs)
+        }
+        .disabled(!saved.opposingPairImages.isEmpty && !includeOpposingPairs)
+      }
+    }
+  }
+  private var reviewedCopyControls: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text("3. Choose and review what to copy").font(.headline)
+      Picker("Copy", selection: $reviewedScope) {
+        ForEach(ReviewedCopyScope.allCases, id: \.self) { choice in
+          Text(choice.rawValue).tag(choice)
+        }
+      }
+      Text(
+        reviewedScope == .selection
+          ? "Freezes your selected photos, even if you later change filters or navigate. Only the selected folders and required companions are checked."
+          : "Includes all subfolders of this source, regardless of the current filter. Unflagged photos are included unless you choose Picks Only."
+      )
+      .font(.caption).foregroundStyle(.secondary)
+      Toggle("Keep RAW+JPEG Pairs Together", isOn: $keepReviewPairs)
+      Toggle("Use Updated Source Metadata", isOn: $acceptSourceMetadataChanges)
+        .help(
+          "Enable only after reviewing an external source-sidecar change. Your explicitly set stars/flags stay; other fields use the current source metadata. Photo never writes to the source."
+        )
+      Button("Prepare Copy List") {
+        model.prepareReviewedCopy(
+          source: source, scope: reviewedScope, primary: primary, backup: backup,
+          job: job, keepPairs: keepReviewPairs, acceptMetadataChanges: acceptSourceMetadataChanges)
+      }.disabled(source.isEmpty || primary.isEmpty || backup.isEmpty || job.isEmpty)
+      if let plan = model.reviewedCopyPlan {
+        GroupBox("Review this copy list") {
+          VStack(alignment: .leading, spacing: 8) {
+            Text(
+              "\(plan.images.count) photos · \(plan.families.count) groups · \(plan.files.count) files including metadata · \(ByteCountFormatter.string(fromByteCount: Int64(clamping: plan.bytes), countStyle: .file)) per destination"
+            )
+            .font(.headline)
+            Text(
+              "\(plan.images.filter { $0.reviewed }.count) explicitly reviewed · \(plan.images.filter { !$0.reviewed }.count) unreviewed photos included"
+            )
+            if let total = plan.sourcePhotoCount, let unreviewed = plan.sourceUnreviewedCount,
+              let omitted = plan.omittedUnreviewedCount
+            {
+              Text(
+                "Source: \(total) photos · \(unreviewed) unreviewed · \(omitted) unreviewed left on source · \(plan.otherFileCount ?? 0) other files excluded"
+              )
+            } else {
+              Text("Selection only: photos elsewhere on the source were not counted.")
+            }
+            Text("Photo folder: \(plan.primary.path)\nBackup folder: \(plan.backup.path)")
+              .textSelection(.enabled)
+            if !plan.addedPairImages.isEmpty {
+              Text("Added \(plan.addedPairImages.count) RAW/JPEG companions:").bold()
+              DisclosureGroup("Show added companions") {
+                ScrollView {
+                  LazyVStack(alignment: .leading) {
+                    ForEach(plan.addedPairImages, id: \.self) {
+                      Text($0.path).textSelection(.enabled)
+                    }
+                  }
+                }.frame(height: 140)
+              }
+            }
+            if !plan.opposingPairImages.isEmpty {
+              Text(
+                "\(plan.opposingPairImages.count) added companions have an opposing flag. Their independent decisions will be preserved."
+              )
+              Toggle("Include companions with opposing flags", isOn: $includeOpposingPairs)
+            }
+            DisclosureGroup("Files in this frozen list") {
+              ScrollView {
+                LazyVStack(alignment: .leading) {
+                  ForEach(plan.files, id: \.relative) { Text($0.relative).textSelection(.enabled) }
+                }
+              }.frame(height: 140)
+            }
+            Text(
+              "Later source decisions do not change this list. Both copies retain stars, flags and Photo-local image edits; crop/rotation still need an editor for rendered output."
+            )
+            Button("Copy Reviewed Photos") {
+              model.copyReviewed(plan, includeOpposingPairs: includeOpposingPairs)
+            }
+            .disabled(!plan.opposingPairImages.isEmpty && !includeOpposingPairs)
+          }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)
+        }
+      }
     }
   }
   private var rename: some View {

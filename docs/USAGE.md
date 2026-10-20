@@ -30,7 +30,7 @@ Open **Workflow → Ingest** for a small introduction, then choose **Show Walkth
 Reopen it from **Help → Photo Quick Start & Shortcuts → Workflow Walkthrough**, or the **Workflow Walkthrough** button in the workflow panel. Uncheck the same checkbox to restore the ingest invitation. The guide never runs a file operation or changes photo decisions; it does not open automatically over browsing or while copying.
 
 
-1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Review Before Copying** for local-only review (copying the review is not available yet).
+1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Review Before Copying** to choose photos before copying them with their review decisions.
 2. **Scan in Fit.** Use the large Preview and bottom filmstrip, or press **Space** for the Contact Sheet grid.
 3. **Make decisions.** Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** for stars. Flags and stars are independent. Reject does not delete anything.
 4. **Inspect focus deliberately.** Double-click the large image, choose **100%**, or pinch out over the preview. Pan with a two-finger scroll or drag; use the small navigator to jump to another area.
@@ -44,7 +44,7 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 
 - **News or wire deadline:** copy and verify, begin culling as verified photos arrive, caption the keepers and prepare delivery copies in **Deliver / Edit**. Lightroom is optional. JPEG/PNG delivery copies can carry embedded captions/copyright. RAW files still require a RAW-capable editor; Photo does not yet render publication JPEGs, apply its local crop to exports or upload to an agency.
 - **Wedding or large shoot:** keep the shoot under Photo Home, verify both copies, cull in passes with flags/stars and compare similar frames. Add shared rights/event metadata, then individual captions/keywords. Rename survivors before importing into Lightroom or another editor. A 10–40k-photo shoot is a design target, not a newly verified performance claim.
-- **Review before copying — review-only available:** Workflow → Ingest → choose the card/source → **Review Before Copying**. Stars, flags, Undo and Photo-local rotate/mirror/crop save only on this Mac; source images and metadata stay protected. Copying this review is not available yet. Use ordinary verified ingest first if you need copied output today. [Implementation and next steps](PRE_COPY_CULLING.md).
+- **Review before copying:** Workflow → Ingest → choose the card/source → **Review Before Copying**. Stars, flags, Undo and Photo-local rotate/mirror/crop save on this Mac while the source stays protected. Choose **Copy Reviewed Photos…** in the source banner, prepare an explicit copy list and copy to both destinations with the review decisions. [Workflow and recovery](PRE_COPY_CULLING.md).
 
 
 ## 2. Workspace and saved folders
@@ -251,9 +251,27 @@ Re-running verifies matching copies; differing targets are not overwritten. Canc
 4. Expand the source in the sidebar and click child folders. Protection and local decisions restore after Reload or relaunch. A second window cannot write normal XMP/metadata into this source.
 5. Watch for **Review saved on this Mac** or **Review edits saved on this Mac**. Actual save failures expose review retry; they are not XMP errors.
 
-**Current limit:** this is review-only. Copying the review and transferring decisions to working/backup copies follow next; normal ingest/handoff deliberately refuse protected sources. Metadata editing and renaming are disabled there. Other ordinary working folders retain those tools. Closing a source or removing its sidebar shortcut does not remove protection; no unprotect command is available yet. Photo does not erase or eject the card.
+6. Choose **Copy Reviewed Photos…** in the source banner (or return to Workflow → Ingest). Set Photo folder, Backup folder and Shoot name.
+7. Choose a scope, then **Prepare Copy List**. Review photo/file counts, unreviewed inclusions/omissions, source bytes and destinations. Expand **Files in this frozen list** to inspect paths. RAW+JPEG additions are listed; an added companion with an opposing flag needs explicit confirmation or a new plan with pair grouping off.
+8. Click **Copy Reviewed Photos**. Photo verifies both copies and saves their independent stars/flags and Photo-local image edits. Continue culling the source, or explicitly choose **Review Copied Photos** once a verified group is available. The source is not automatically replaced on screen.
+9. Wait for both verification and metadata readiness before delivery. Add captions/keywords and rename on the working copy; backup is the initial snapshot, not a mirror of later changes.
 
-Keep Photo’s Application Support folder in backups: `decisions.sqlite` contains reviews/composition and `source-protection.json` contains protected-source bindings. The protection policy applies to this running Photo process, not other software or a forensic write blocker. Ambiguous reconnect/reformatted sources need a new review rather than guessing by filename. Removing local Photo data also removes reviews/protection. [Architecture and boundaries](decisions/0017-source-review-only.md).
+| Copy choice | Included photos |
+| --- | --- |
+| All Photos (default) | Every supported source photo across subfolders, including rejects and unreviewed photos |
+| Picks Only | Picks across the source, including flags imported from existing XMP |
+| Everything Except Rejects | Unflagged and unreviewed photos as well as picks |
+| Current Selection | The exact selected physical files, plus explicitly enabled pair companions; other source folders are not scanned or counted |
+
+Filters do not narrow a source-wide choice. **Unreviewed** means no explicit decision was made in this review, not a reject. Required XMP/ACR companions follow included images independently of pair grouping. The list freezes the current saved decisions; later source changes are not silently added. After copying, changed included review revisions are reported. To copy later choices, prepare a new list and fresh shoot folder; this version does not overwrite existing destination decisions with another snapshot.
+
+**Resume after interruption:** reopen Ingest and use **Resume a saved reviewed copy → Resume Saved Copy**. Keep the original source and both destinations connected. Resume rechecks source identities/hashes and verified copies, recovers local decision/XMP handover, and preserves newer destination ratings, composition and metadata. Conflicting/read-only XMP remains locally saved and visibly pending; open the relevant photo or backup folder to inspect its saving status and use the existing explicit conflict/retry actions. Then resume again to check readiness. Missing/replaced files, changed source metadata or differing destination bytes stop rather than guess. Finish synchronization before renaming; moved/renamed destination files stop this immutable-plan resume, so restore the recorded names/locations before retrying. Do not delete local recovery data as a workaround.
+
+If metadata was changed on the source by another app before planning, inspect that change and enable **Use Updated Source Metadata** to keep your explicitly set review stars/flags while using its current other fields. Malformed or ambiguous source packets must be fixed before copying. This option never writes to the source.
+
+Normal copy/handoff routes still refuse protected sources; use the reviewed route to carry decisions safely. Metadata editing and renaming are disabled on the source. Closing a source, copying it or removing its sidebar shortcut does not remove protection; no unprotect command is available yet. Photo does not erase or eject the card. Photo-local composition transfers between these copies inside Photo, but is not baked into delivered pixels or Lightroom develop settings.
+
+Keep Photo’s Application Support folder in backups: `decisions.sqlite` contains reviews/composition and `source-protection.json` contains protected-source bindings, and `Operations` contains saved copy lists/recovery events. The protection policy applies to this running Photo process, not other software or a forensic write blocker. Ambiguous reconnect/reformatted sources need a new review rather than guessing by filename. Removing local Photo data also removes reviews/protection. [Architecture and boundaries](decisions/0017-source-review-only.md).
 
 ## 10. Bulk rename
 

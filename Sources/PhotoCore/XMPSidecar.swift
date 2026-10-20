@@ -72,7 +72,9 @@ public enum XMPSidecar {
         ?? (rating == -1
           ? .reject : good == "true" ? .pick : good == "false" ? .reject : .unflagged))
   }
-  public static func merging(_ decision: CullingDecision, into data: Data?) throws -> Data {
+  public static func merging(
+    _ decision: CullingDecision, into data: Data?, fields owned: SourceDecisionFields = .all
+  ) throws -> Data {
     let initial = Data(
       "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"\(rdf)\"><rdf:Description rdf:about=\"\"/></rdf:RDF></x:xmpmeta>"
         .utf8)
@@ -93,6 +95,7 @@ public enum XMPSidecar {
       ),
     ]
     for (uri, prefix, name, value) in fields {
+      guard name == "Rating" ? owned.contains(.rating) : owned.contains(.flag) else { continue }
       // Reject conflicting prefix bindings instead of damaging unrelated properties.
       if let binding = target.resolveNamespace(forName: "\(prefix):\(name)"),
         binding.stringValue != uri

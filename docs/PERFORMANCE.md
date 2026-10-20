@@ -164,3 +164,10 @@ Existing thumbnail/preview cache limits, 256 MiB per-pane decoded-detail allowan
 ## Protected source review implementation — 2026-10-20
 
 This chunk adds no new latency or 10k/40k performance claim. Normal RAW decoding/cache lanes are unchanged. Folder photos publish before awaiting persistence context so a busy metadata actor does not hold up the selected preview; protected decision entries carry their role before becoming actionable. Protection registry JSON is cached by identity/modification/size, and copy write locks cover at most 1 MiB rather than entire RAW reads/hashes. Initial unreviewed review rows still use SQLite during background decision indexing; representative large-source indexing, memory and concurrent-copy measurements remain required. Native acceptance used only three synthetic PNGs; it establishes functionality/source preservation, not camera/card throughput.
+
+
+## Reviewed-copy completion — 2026-10-20
+
+Strict regression suite passes (135 registered, two optional RAW skips), including copying scoped source reviews, destination handover, cancellation/restart, metadata failures and later edits. Inventory/planning uses file metadata/XMP without image decoding; Current Selection limits dependency discovery to selected folders. Copying retains chunk-bounded source protection locks and original SHA-256 verification. Immutable plan counts are cached per execution rather than flattening the list per arrival; append-only provenance avoids rewriting an expanding ingest manifest for every photo, and final ordinary manifests materialize once.
+
+Optimized packaging/signature checks pass. Native synthetic source directory/image/sidecar hashes are unchanged, but the UI bridge disconnected before completing copy acceptance. No new preview/copy throughput, latency, RSS or 10k/40k scale numbers were collected; automated suite durations are not photographer performance benchmarks. Existing preview/detail targets and unmeasured simultaneous card-I/O acceptance remain in force.

@@ -1,10 +1,12 @@
 # Review before copying: implementation plan
 
-Status: **first chunk implemented: protected review-only**. Updated 2026-10-20. In Workflow → Ingest, choose a source and use **Review Before Copying**. Stars, flags, explicit-review state, Undo and Photo-local composition stay on this Mac; source images/sidecars are protected. Subfolders and relaunch retain this context. The current implementation is recorded in [ADR 0017](decisions/0017-source-review-only.md).
+Status: **protected review and reviewed copying implemented**. Updated 2026-10-20. Workflow → Ingest → Review Before Copying protects the source and keeps decisions local. Return through the source banner’s **Copy Reviewed Photos…** button, choose destinations/scope and **Prepare Copy List**, then **Copy Reviewed Photos**. Both verified copies receive ratings, flags and Photo-local composition. **Resume Saved Copy** reuses the frozen list after interruption; **Review Copied Photos** explicitly opens working copies. [ADR 0017](decisions/0017-source-review-only.md) records protection; [ADR 0019](decisions/0019-reviewed-copy-handover.md) records copying and recovery. Exact automated/native acceptance is in the tracker.
 
-**Not available yet:** reviewed subset copying, decision transfer to destination files and the rest of the guided copy flow below. Normal ingest/handoff reject protected sources rather than lose their local review. If you need copied output now, use ordinary verified ingest before culling. Protection remains after closing/removing a source shortcut; this chunk has no unprotect command. Unprotected ordinary browsing still uses normal XMP synchronization.
+Protection stays active after copying; this release has no unprotect command. Captions/renaming operate on copies. A new transfer of later source decisions requires a new reviewed list and fresh shoot folder; resume never overwrites later destination work. Both source and destinations must be connected to reverify/resume. Physical card interruptions and representative 10k/40k performance remain acceptance work.
 
-## Target experience (copy steps still planned)
+The original detailed design below explains the intended safety boundaries. The implementation uses immutable local JSON plans plus synchronized append-only per-file provenance at both destinations and local verification acknowledgements, with SQLite destination receipts/intents (ADR 0019); the older all-SQLite journal wording is a design alternative. Source-wide counts are complete only after indexing; Current Selection deliberately leaves other source photos uncounted.
+
+## Workflow and safety design
 
 Workflow starts with **Copy everything** or **Review before copying**. Direct folder browsing stays available.
 
@@ -88,10 +90,10 @@ Photo-local crops/rotation/mirroring transfer to both copies in Photo’s databa
 | Chunk | Work | Required proof |
 | --- | --- | --- |
 | 1. Protected source review — implemented; validation in tracker | Durable review store/context, guarded mutations, familiar culling controls, source banner, child navigation and restart | Writable disposable source still has identical directory listing and image/sidecar hashes after stars/flags/Undo/retry/metadata/rename attempts, relaunch and second-window tests |
-| 2. Reviewed subset copy | Source indexing, explicit scopes/family expansion, frozen plan and reviewed counts | No filtered-scope surprises; unreviewed accounted for; grouped/conflicting/ambiguous pairs, missing files, destination overlap/collisions and source replacement covered |
-| 3. Verified handover | Destination identity mapping, local edit/decision transfer, preserving XMP and recovery journal | Both copies retain independent stars/flags/crops, unrelated XMP/ACR survives, source unchanged; failures/crashes at every stage recover without overwriting newer destination edits |
+| 2. Reviewed subset copy — implemented | Source indexing, explicit scopes/family expansion, frozen plan and reviewed counts | No filtered-scope surprises; unreviewed accounted for; grouped/conflicting/ambiguous pairs, missing files, destination overlap/collisions and source replacement covered |
+| 3. Verified handover — implemented | Destination identity mapping, local edit/decision transfer, preserving XMP and recovery journal | Both copies retain independent stars/flags/crops, unrelated XMP/ACR survives, source unchanged; failures/crashes at every stage recover without overwriting newer destination edits |
 | 4. Guided native flow and scale | Resume/reconnect, source/destination navigation, publication/editor next steps and performance | Native keyboard/VoiceOver workflow; real disposable card unplug/reconnect; 10k/40k inventory, scrolling, first-preview/p95, save queue and concurrent-copy measurements |
 
-Chunk 1 can ship independently as **review-only**, with subset copying clearly unavailable until chunks 2–3 pass. Do not expose a partial copy button that loses decisions. Use synthetic or redistributable fixtures for automated tests; run destructive/interruption experiments only on disposable media/copies. Existing original-byte, cancellation, stale-result and full-detail budget checks remain required.
+Protected review, explicit subset planning and verified handover are implemented. Physical-card/native/scale acceptance remains separately tracked. Do not weaken decision transfer or claim unmeasured performance. Use synthetic or redistributable fixtures for automated tests; run destructive/interruption experiments only on disposable media/copies. Existing original-byte, cancellation, stale-result and full-detail budget checks remain required.
 
 This plan does not implement FTP/upload, a one-copy deadline mode, RAW-to-JPEG publication rendering, Lightroom crop exchange or continuous source watching.

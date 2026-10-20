@@ -34,7 +34,7 @@ struct WorkflowWalkthrough: View {
           case 0:
             section(
               "Need copied photos today?",
-              "Use Ingest to make verified copies, then choose keepers as photos arrive. This is the recommended route for a card you need to deliver from now."
+              "Use Ingest to copy the complete shoot and choose keepers as verified photos arrive. Or use Review Before Copying to choose a smaller set first, then copy that reviewed list to both destinations."
             )
             section(
               "Photos already on your computer?",
@@ -42,20 +42,20 @@ struct WorkflowWalkthrough: View {
             )
             section(
               "Want to review a source without changing it?",
-              "Review Before Copying keeps stars, flags and crops on this Mac. In this version you cannot copy that protected review or remove its protection in the app. Choose ordinary Ingest instead when you need copied output now."
+              "Review Before Copying keeps stars, flags and crops on this Mac while the source stays unchanged. Use Copy Reviewed Photos… in the source banner to prepare and copy your choices, carrying decisions and Photo-local edits to both copies. The source stays protected afterward."
             )
           case 1:
             section(
               "Example: a card from today’s match",
-              "In Ingest, choose Copy from, your Photo folder, a Backup folder and a Shoot name. Use separate drives for independent copies. Start the copy; Photo checks both copies before showing each arriving photo family."
+              "Choose Copy from, your Photo folder, a Backup folder and a Shoot name. Use separate drives for independent copies. For a reviewed source, choose All Photos, Picks Only, Everything Except Rejects or Current Selection, then Prepare Copy List. Check unreviewed counts and added RAW/JPEG companions before Copy Reviewed Photos."
             )
             section(
               "Keep moving",
-              "Choose Continue Browsing while copying runs. Cull the verified arrivals in the destination. Click subfolders in the sidebar for photos stored in other folders. Ingest takes a snapshot; it does not watch for new photos added to the card later."
+              "Choose Continue Browsing while copying runs. Ordinary ingest opens verified arrivals; reviewed copying keeps the source open until you choose Review Copied Photos. The copy list stays fixed if you keep culling. Resume Saved Copy continues that exact list after interruption and preserves later destination work."
             )
             section(
               "Before clearing the card",
-              "Wait for copying and verification to finish successfully. Keep the card until you have checked your copies. Later ratings and captions do not automatically update the backup copy."
+              "Wait for both copies to verify and review metadata to be ready; resolve any pending metadata status before delivery. Keep the card until you have checked your copies. Later ratings and captions do not automatically update the backup. For a later source selection, prepare a new list and fresh shoot folder."
             )
           case 2:
             section(
@@ -86,7 +86,7 @@ struct WorkflowWalkthrough: View {
           default:
             section(
               "Deadline / wire: send the essential frames first",
-              "Copy and cull in parallel → pick a small set → check focus → add accurate captions, credit and rights → prepare delivery copies in Deliver / Edit. Finish any required image processing and agency submission outside Photo; Lightroom is optional."
+              "Review essential frames → copy Current Selection, or copy the full shoot while culling → check shortlist focus → add accurate captions, credit and rights → prepare delivery copies in Deliver / Edit. Finish any required image processing and agency submission outside Photo; Lightroom is optional."
             )
             section(
               "Wedding / large shoot: narrow in stages",
