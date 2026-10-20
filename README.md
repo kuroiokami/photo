@@ -1,26 +1,34 @@
 # Photo
 
+**Fast photo culling and organization for macOS.**
+
 [![Swift checks](https://github.com/kuroiokami/photo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/ci.yml)
-[![Repository standards](https://github.com/kuroiokami/photo/actions/workflows/repository.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/repository.yml)
+[![Repository checks](https://github.com/kuroiokami/photo/actions/workflows/repository.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/repository.yml)
 
-A native macOS app for fast folder browsing, culling and organization for publication or an editing workflow. Built with SwiftUI and Swift Package Manager; normal RAW browsing prioritizes embedded JPEG previews.
+[Get started](docs/INSTALLATION.md) · [User guide](docs/USAGE.md) · [Roadmap](ROADMAP.md) · [Contribute](CONTRIBUTING.md)
 
-**Development preview:** build from source; a signed/notarized download has not been released. See the [changelog](CHANGELOG.md) and [tracker](PROJECT_STATUS.md) for status and verification limits.
+Photo helps you get from a card full of images to a set of keepers. Browse folders, review RAW previews, flag your picks, add captions and keywords, and prepare photos for publication or your favorite editor.
 
-## Start here
+Built for photographers working to a deadline and photographers sorting through a large shoot. Start reviewing before copying, or begin culling as verified copies arrive. Lightroom is optional.
 
-| Guide | What you’ll find |
+Photo is open source and in active development. You can build it from source today; a signed installer is still on the [roadmap](ROADMAP.md).
+
+## What you can do
+
+| Feature | What it does |
 | --- | --- |
-| **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
-| **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
-| [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
-| [Review before copying](docs/PRE_COPY_CULLING.md) | Protected source review, selective copying, decision transfer and recovery |
-| [Distribution plan](docs/DISTRIBUTION.md) | Path to a signed, notarized download other people can install |
-| [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
+| **Browse without importing** | Open a folder or memory card. Keep favorite folders in the sidebar and explore their subfolders. |
+| **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. |
+| **Check the details** | Zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; full RAW rendering happens when you request detail. |
+| **Review before copying** | Make culling decisions locally while Photo keeps the source protected. Choose which photos to copy, verify both destinations, and carry your decisions to the working copies. |
+| **Organize a shoot** | Rename batches, add shared IPTC fields without replacing unrelated metadata, and apply captions, copyright and hierarchical keywords. |
+| **Prepare the next step** | Create delivery copies with metadata for publication, Lightroom Classic or another editor. Rotate, mirror and crop within Photo for review. |
 
-## Quick installation
+JPEG (`.jpg` and `.jpeg`), PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM System ORF are recognized, including uppercase extensions. RAW preview and detail availability depend on the camera, file and installed macOS decoder. See [camera coverage and performance](docs/PERFORMANCE.md).
 
-Requires macOS 14+ and Apple Swift 6+ with `swift format`. No external Swift packages or API keys.
+## Build and run
+
+You need **macOS 14 or later** and **Apple Swift 6 or later**, including `swift format`. No third-party Swift packages or API keys are required.
 
 ```sh
 git clone https://github.com/kuroiokami/photo.git
@@ -29,44 +37,51 @@ sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
 
-Quit Photo before replacing its app bundle. This is a locally ad-hoc signed development build, not a notarized distribution release. See [installation](docs/INSTALLATION.md) for developer-tool setup, an Applications copy and update instructions.
+The [installation guide](docs/INSTALLATION.md) walks through installing Apple's developer tools, copying Photo to Applications, updates and troubleshooting. Quit Photo before replacing its app bundle. Local builds are ad-hoc signed; a Developer ID-signed, notarized download is not available yet.
 
-## Main features
+## Your first culling session
 
-- Folder-first JPEG/PNG/Sony/Canon/Olympus browsing, a remembered Photo Home, saved folders and clickable subfolders.
-- Large preview above a bottom filmstrip, plus a full contact sheet.
-- Independent stars and pick/reject flags, interactive thumbnail controls, batch decisions, filters and Undo.
-- Async EXIF indexing, numeric sorting, optional inspector and configurable thumbnail labels.
-- Fit, genuine physical-pixel 100%, trackpad magnification, pan/navigator and pinned comparison.
-- Selected-only review and RAW+JPEG grouping.
-- Protected review before copying, explicit all/picks/non-rejected/selection scopes, verified copying with decisions/Photo-local edits at both destinations, and saved-list resume.
-- Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
-- Dismissible ingest introduction and a reopenable five-step workflow walkthrough with deadline/large-shoot examples.
-- Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.
-- Field-specific IPTC patches, presets, hierarchical keywords, persistent metadata batch Undo and preserving XMP synchronization.
-- Verified delivery copies with metadata for publication, Lightroom Classic or another editor.
+1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Review Before Copying**.
+2. Move through photos with the arrow keys. Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** to rate. Rejecting never deletes a photo.
+3. Double-click the preview or choose **100%** to inspect focus. Compare similar frames, then filter down to your keepers.
+4. Copy reviewed photos to your Photo and Backup folders, or continue organizing existing working copies. Add metadata, rename, and prepare delivery copies when ready.
 
-Original image bytes remain untouched. Image edits are currently Photo-local and do not transfer to Lightroom or handoff copies; ratings/flags/descriptions have their separate XMP synchronization. See the [usage boundaries](docs/USAGE.md#14-current-boundaries) and tracker before relying on interoperability. Real CRW, application-level Lightroom round trips and wider platform/accessibility acceptance remain open.
+The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**. You can dismiss the introduction permanently and reopen the walkthrough whenever you need it.
 
-## Development
+## Documentation
+
+- [Installation](docs/INSTALLATION.md) — build, install, update and troubleshoot.
+- [User guide](docs/USAGE.md) — controls, selection, previews, culling and metadata.
+- [Copy, cull and deliver](docs/WORKFLOW.md) — choose a workflow and understand recovery.
+- [Review before copying](docs/PRE_COPY_CULLING.md) — source protection, copy choices and saved sessions.
+- [Roadmap](ROADMAP.md) — what works today and what's next.
+- [Changelog](CHANGELOG.md) — changes as the project develops.
+
+### Current limitations
+
+Photo keeps original image bytes unchanged. Rotate, mirror and crop edits currently stay within Photo; they are not applied to delivery copies or transferred to Lightroom. Ratings, flags and descriptive metadata use a separate XMP workflow.
+
+Lightroom application-level round trips, real Canon CRW files, broader camera/platform coverage and representative 10–40k-photo workflows still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
+
+## Contributing
+
+Bug reports, documentation improvements, workflow feedback and code contributions are welcome. Start with [Contributing](CONTRIBUTING.md), or [open an issue](https://github.com/kuroiokami/photo/issues/new/choose) to describe a problem or idea. Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+For local development:
 
 ```sh
 swift run Photo
 sh scripts/format.sh
 sh scripts/check.sh
+python3 scripts/check-repository.py
 ```
 
-Read [CONTRIBUTING](CONTRIBUTING.md), [AGENTS](AGENTS.md) and [development milestones](docs/DEVELOPMENT_PLAN.md). CI runs the same strict formatting/build/test script. Benchmark commands and measured limits are in [PERFORMANCE](docs/PERFORMANCE.md).
+The app uses SwiftUI and Swift Package Manager. PhotoCore contains models, metadata, storage and file operations; PhotoImaging handles previews and RAW detail; PhotoUI provides the workspace; PhotoApp manages startup and windows. See the [development plan](docs/DEVELOPMENT_PLAN.md), [architecture decisions](docs/decisions/0004-fast-culling.md) and [repository conventions](docs/REPOSITORY_STANDARDS.md) for more.
 
-| Module | Responsibility |
-| --- | --- |
-| PhotoCore | Workspace/metadata/edit models, file enumeration, SQLite, preserving XMP and file operations |
-| PhotoImaging | Embedded previews, bounded caches, EXIF, deliberate full-detail RAW rendering |
-| PhotoUI | Native workspace, interactive thumbnails, crop editor, gestures, menus and workflow panels |
-| PhotoApp | Startup and window lifecycle |
+## Help and security
 
-## License and distribution
+See [Getting help](SUPPORT.md) for questions and bug reports. Please report security issues through [private vulnerability reporting](SECURITY.md).
 
-Licensed under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE). Builds, private libraries, catalogs and signing material are excluded from Git. Photo is an independent project; other product names describe workflow references or interoperability targets.
+## License
 
-Contributions follow [CONTRIBUTING](CONTRIBUTING.md) and the [repository standards](docs/REPOSITORY_STANDARDS.md). For help use [SUPPORT](SUPPORT.md); for vulnerabilities use [SECURITY](SECURITY.md). Follow the [community conduct](CODE_OF_CONDUCT.md).
+Photo is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution. Photo is an independent project; references to other photography apps describe workflows or interoperability.

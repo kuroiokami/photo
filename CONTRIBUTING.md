@@ -1,41 +1,59 @@
-# Contributing
+# Contributing to Photo
 
-Read the [project tracker](PROJECT_STATUS.md) for current status and the [AI contributor instructions](AGENTS.md) for handoff maintenance. Update the tracker in the same change whenever behavior, setup, validation, or status changes.
+Thanks for helping improve Photo. Bug reports, documentation fixes, accessibility feedback, camera compatibility reports and code contributions are all welcome.
 
-Start with the [development plan](docs/DEVELOPMENT_PLAN.md) and keep changes focused on the current milestone.
+Photo focuses on fast culling, reliable copying and practical photo organization. Check the [roadmap](ROADMAP.md) and [project tracker](PROJECT_STATUS.md) to see what's already available and where help is needed.
 
-## Before you contribute
+## Report a bug or suggest a feature
 
-Photo is a development preview licensed under [Apache-2.0](LICENSE); retain [NOTICE](NOTICE). Submit only work you have the right to contribute under that license. Follow the [community conduct](CODE_OF_CONDUCT.md), use [SUPPORT.md](SUPPORT.md) for questions, and report vulnerabilities privately through [SECURITY.md](SECURITY.md).
+[Open an issue](https://github.com/kuroiokami/photo/issues/new/choose) and choose the appropriate form. Describe what you were trying to do, what happened and what you expected. For image problems, include the camera model, file format, macOS version and app build or commit.
 
-Start from current `main` and open a focused pull request; discuss new dependencies and large changes first. A helpful title states the concrete result. Maintain the [Unreleased changelog](CHANGELOG.md) for user-visible behavior. AI-assisted changes follow the same standards and must distinguish observed results from assumptions.
+Use synthetic or redistributable examples and remove private information from screenshots and logs. Report security issues [privately](SECURITY.md).
 
-## Workflow
+For a larger feature, dependency or workflow change, please open an issue before starting so we can agree on the approach.
 
-1. Use a short-lived branch, normally `codex/<description>` for agent work.
-2. Keep changes focused and explain their user-visible effect.
-3. Run `sh scripts/format.sh`, then `sh scripts/check.sh`.
-4. For UI changes, launch `swift run Photo` and verify keyboard and window behavior.
-5. Run `python3 scripts/check-repository.py` for repository hygiene, links, pinned workflow validation and redacted secret scanning. It uses Python 3's standard library and downloads checksum-pinned Gitleaks/actionlint into a temporary directory; see [repository standards](docs/REPOSITORY_STANDARDS.md). `--metadata-only` runs the offline file/link checks without claiming a secret scan.
-6. Include relevant validation and known limitations in the change description. Wait for final-head checks before merging; use squash merges and resolve review conversations.
+## Work on the code
 
-CI runs the same formatting, build, and test checks. Compilation uses Swift 6 language mode and treats warnings as errors. Keep PhotoCore independent of AppKit and SwiftUI; UI state uses main-actor isolation, and service protocols use Sendable asynchronous read-only interfaces.
+Follow the [installation guide](docs/INSTALLATION.md) to set up Apple's tools and build Photo. Start a branch from current `main` and keep each pull request focused on one change. Agent-created branches normally use `codex/`.
 
-## Files and data
+For Swift changes, run:
 
-- Never commit credentials, personal photo libraries, private metadata, or local catalogs.
-- Use small synthetic or appropriately licensed fixtures and record their provenance.
-- Keep dependency lockfiles tracked when dependencies are introduced.
-- Preserve original images; test future metadata writes on disposable copies.
-- Document new setup commands in the README as part of the same change.
+```sh
+sh scripts/format.sh
+sh scripts/check.sh
+```
 
-## Architecture decisions
+For documentation and repository changes, run:
 
-Record consequential choices in `docs/decisions/` using the template there. Give each decision a sequential number and descriptive filename. Include alternatives and tradeoffs.
+```sh
+python3 scripts/check-repository.py
+```
 
+The repository checker uses Python 3's standard library and downloads checksum-pinned Gitleaks and actionlint into a temporary directory. Use `--metadata-only` for offline file/link checks; the full command also checks workflows and scans for secrets. Documentation-only changes do not need a local Swift rebuild.
 
-## Review and release
+For UI changes, also open the app and check the affected controls, keyboard shortcuts and window behavior. Test file operations on disposable copies. Add tests for meaningful behavior, especially original-file preservation, interruption and recovery.
 
-Keep `main` ready to build. File/metadata changes need identity, replacement, source-byte preservation and interruption/retry coverage; UI changes need keyboard and window evidence. Fast embedded previews and deliberate full RAW rendering remain product priorities. Do not add tests that simply repeat the implementation; document unmeasured platform/camera/performance cases.
+## Open a pull request
 
-Only maintainers publish releases. Use `vMAJOR.MINOR.PATCH` tags with release notes, tested platform/camera limits and artifact checksums after the [distribution acceptance](docs/DISTRIBUTION.md) passes. Until then, label builds as development previews; never present ad-hoc builds as signed/notarized downloads. Include LICENSE/NOTICE in distributions. No CLA, automatic release, upload or publishing workflow is configured.
+Explain the problem, what changes for users, and how you checked it. Mention any checks you couldn't run and any remaining limitations. Screenshots help when a change affects the interface.
+
+Update relevant guides and the Unreleased [changelog](CHANGELOG.md). Keep [PROJECT_STATUS.md](PROJECT_STATUS.md) and [development milestones](docs/DEVELOPMENT_PLAN.md) current; record significant architecture choices in `docs/decisions/`. The tracker holds detailed implementation and validation evidence so the README can stay focused on getting started.
+
+Pull requests need passing checks and resolved review conversations before merging. We use squash merges. See [repository conventions](docs/REPOSITORY_STANDARDS.md) for the full process.
+
+## Project conventions
+
+- Target macOS 14+ with Swift 6. Keep PhotoCore independent of SwiftUI and AppKit.
+- Keep UI state on the main actor and service boundaries asynchronous and Sendable.
+- Prioritize responsive browsing, embedded RAW previews and deliberate full-detail rendering.
+- Keep credentials, private photos, catalogs and generated builds out of Git. Record fixture origins and licenses in an adjacent `PROVENANCE.md`.
+- Preserve original image bytes. Document metadata writes and verify them using disposable files.
+- Follow the same review and evidence standards for AI-assisted contributions. [AGENTS.md](AGENTS.md) contains the additional handoff instructions for coding agents.
+
+## Releases
+
+Maintainers publish releases after the [distribution checks](docs/DISTRIBUTION.md) pass. Releases use `vMAJOR.MINOR.PATCH` tags and include release notes, tested platform/camera limits, checksums and license notices. Local ad-hoc builds remain development previews until a signed, notarized release is available.
+
+## License and conduct
+
+Contributions are provided under Photo's [Apache-2.0 license](LICENSE); retain [NOTICE](NOTICE) and submit only material you have the right to contribute. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).

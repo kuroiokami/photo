@@ -257,3 +257,11 @@ See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained
 - [x] Validate the combined implementation/standards tree in public CI; deliver through PR #14 with final-head required checks. Exact check/merge evidence is recorded in the PR and tracker.
 
 Signed/notarized app distribution and broader platform/native acceptance remain separate milestones.
+
+## Public documentation — 2026-10-20
+
+- [x] Present Photo with a concise introduction, practical feature overview, build instructions and first culling session.
+- [x] Add a public roadmap and welcoming contribution/support guidance; retain detailed evidence and agent instructions in their dedicated documents.
+- [x] Keep release, camera compatibility and composition-edit limits visible without turning the README into an engineering handoff.
+
+Documentation validation and delivery evidence are tracked in PROJECT_STATUS.md and the delivery PR.
