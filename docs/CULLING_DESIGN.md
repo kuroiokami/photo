@@ -2,6 +2,12 @@
 
 Accepted 2026-10-19: Sony ARW → independent culling decisions → explicit full-detail inspection. The main workflow is open folder, browse quickly, pick/reject, narrow with filters, rank keepers with stars, and inspect doubtful focus at 100%. No import or full-library preview generation is required.
 
+## Primary workflows clarified — 2026-10-20
+
+Optimize for a wire/news photographer getting captioned keepers out quickly without requiring Lightroom, and a wedding/photoshoot photographer reducing 10–40k photos before any heavy editor. Keep fast embedded previews and immediate keyboard decisions ahead of organization or rendering work. Use ordinary folder language and a remembered Photo Home with subfolders loaded on demand.
+
+A guided source → optional cull → verified copy → naming/captions → publication/editor route is the product direction. Today, verified-copy arrivals support early culling; source-safe local-only pre-copy decisions and rendered publication output are planned. Current direct browsing can write XMP beside the source. Do not imply that a card-review wizard, applied-crop JPEG export, uploads or measured 40k performance exists. See [current usage routes](USAGE.md#choose-a-route-for-the-job) and [milestones](DEVELOPMENT_PLAN.md#photo-home-and-deadline-first-workflow--2026-10-20).
+
 ## Research
 
 - [Lightroom flag/rating documentation](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html) supports familiar P/X decisions, 1–5 stars and Shift-and-advance. Photo adds U/0 for clearing and an explicit remembered auto-advance checkbox rather than a hidden modifier mode.

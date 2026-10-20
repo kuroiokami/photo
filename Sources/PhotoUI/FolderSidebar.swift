@@ -9,6 +9,10 @@ struct FolderSidebar: View {
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 3) {
+        Text(
+          "Photo Home is your starting folder. Expand arrows to browse; click a folder to see its photos."
+        )
+        .font(.caption).foregroundStyle(.secondary).padding(.bottom, 5)
         if library.roots.isEmpty {
           Text("Open a folder to keep it here. Expand its arrow to browse subfolders.")
             .font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
@@ -35,11 +39,18 @@ struct FolderSidebar: View {
               Button {
                 open(row.directory)
               } label: {
-                Label(row.directory.lastPathComponent, systemImage: "folder")
-                  .lineLimit(1).truncationMode(.middle).frame(
-                    maxWidth: .infinity, alignment: .leading)
-              }.buttonStyle(.plain).help(
-                row.directory.path + "\nClick to display this folder's photos.")
+                Label(
+                  row.directory.lastPathComponent,
+                  systemImage: library.home?.path == row.directory.path ? "house" : "folder"
+                )
+                .lineLimit(1).truncationMode(.middle).frame(
+                  maxWidth: .infinity, alignment: .leading)
+              }.buttonStyle(.plain)
+                .accessibilityLabel(
+                  (library.home?.path == row.directory.path ? "Photo Home: " : "")
+                    + row.directory.lastPathComponent
+                )
+                .help(row.directory.path + "\nClick to display this folder's photos.")
               if library.loading.contains(row.directory.path) {
                 ProgressView().controlSize(.mini).accessibilityLabel("Loading subfolders")
               }
@@ -66,6 +77,8 @@ struct FolderSidebar: View {
           }
           .contextMenu {
             Button("Open Folder") { open(row.directory) }
+            Button("Use as Photo Home") { library.setHome(row.directory) }
+              .help("Make this your starting folder. Nothing is moved or copied.")
             Button("Refresh Subfolders") { Task { await library.refresh(row.directory) } }
             if row.isRoot { Button("Remove from Sidebar") { remove(row.root) } }
           }

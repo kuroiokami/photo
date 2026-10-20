@@ -101,7 +101,7 @@ public struct WorkspaceView: View {
           Label("Workflow…", systemImage: "arrow.triangle.branch")
         }
         .labelStyle(.titleOnly).disabled(choosingFolder).help(
-          "Ingest, bulk rename, IPTC/keywords and Lightroom handoff.")
+          "Copy from a card, rename, add captions and keywords, and prepare delivery copies.")
         Button(action: openFolder) { Label("Open Folder", systemImage: "folder.badge.plus") }
           .disabled(choosingFolder).help("Open Folder (⌘O)")
         Button(action: reload) { Label("Reload", systemImage: "arrow.clockwise") }
@@ -191,9 +191,15 @@ public struct WorkspaceView: View {
           folderLibrary.remove(folder)
           if folderLibrary.selected == nil { workspace.showSamples() }
         })
+      Button(folderLibrary.home == nil ? "Choose Photo Home…" : "Change Photo Home…") {
+        chooseFolder(asHome: true)
+      }.disabled(choosingFolder)
+        .help(
+          "Choose your usual photo folder. Its subfolders stay browsable; nothing is moved or copied."
+        )
       Button("Open Folder…", action: openFolder).disabled(choosingFolder)
       Button("Workflow…") { showingWorkflow = true }
-        .help("Ingest, bulk rename, IPTC/keywords and Lightroom handoff.")
+        .help("Copy from a card, rename, add captions and keywords, and prepare delivery copies.")
       if workspace.directory != nil {
         Button("Show Sample Collection") {
           workspace.showSamples()
@@ -1019,15 +1025,22 @@ public struct WorkspaceView: View {
     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.vertical, 9)
   }
 
-  private func openFolder() {
+  private func openFolder() { chooseFolder(asHome: false) }
+
+  private func chooseFolder(asHome: Bool) {
     guard !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil else {
       return
     }
     choosingFolder = true
     NSApp.activate()
     let panel = NSOpenPanel()
-    panel.title = "Open Photo Folder"
-    panel.prompt = "Open Folder"
+    panel.title = asHome ? "Choose Photo Home" : "Open Photo Folder"
+    panel.prompt = asHome ? "Use as Photo Home" : "Open Folder"
+    panel.message =
+      asHome
+      ? "Choose the folder where you usually keep shoots. This adds a starting place in the sidebar; it does not move photos."
+      : "Choose a folder to browse its photos and subfolders."
+    panel.directoryURL = folderLibrary.home
     panel.allowedContentTypes = [.folder]
     panel.canChooseFiles = false
     panel.canChooseDirectories = true
@@ -1043,8 +1056,9 @@ public struct WorkspaceView: View {
         }
         return
       }
-      folderLibrary.add(url)
+      if asHome { folderLibrary.setHome(url) } else { folderLibrary.add(url) }
       Task {
+        if asHome && !folderLibrary.expanded.contains(url.path) { await folderLibrary.toggle(url) }
         await workflowModel.openFolder(url)
         gridFocused = true
       }

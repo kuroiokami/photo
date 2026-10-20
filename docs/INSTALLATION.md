@@ -123,8 +123,8 @@ The copied app still has a local ad-hoc signature. It is not a notarized distrib
 
 ## 6. First launch
 
-1. Open Photo and choose **Open Folder…** (**⌘O**).
-2. Choose a small working folder. You can browse the bundled synthetic collection with **Show Sample Collection** before making decisions on real files.
+1. Open Photo and choose **Choose Photo Home…** in the sidebar to set your usual photo folder. **Open Folder…** (**⌘O**) adds other locations.
+2. Choose a folder on your photo drive or in Pictures; changing Home never moves photos. For a first trial, open a small folder. You can browse the bundled synthetic collection with **Show Sample Collection** before making decisions on real files.
 3. In Preview, the large image appears above the filmstrip. Choose **Contact Sheet** for the full grid.
 4. Expand a saved folder’s sidebar arrow and click a subfolder to browse it. Removing a shortcut never deletes its files.
 5. Read the [usage guide](USAGE.md) for stars/flags, selection, trackpad zoom, editing and metadata. The in-app **Quick Start & Shortcuts** sheet is also available from Help.

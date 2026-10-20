@@ -1,6 +1,6 @@
 # Using Photo
 
-Photo is built for **fast folder browsing → culling → organization → Lightroom Classic**. It uses embedded RAW previews for normal browsing and requests genuine RAW detail only when you deliberately inspect it.
+Photo is built for **fast browsing → choosing keepers → naming and captions → publication or an editor**. It uses embedded RAW previews for normal browsing and requests genuine RAW detail only when you deliberately inspect it.
 
 Install/build it with the [installation guide](INSTALLATION.md). The [tracker](../PROJECT_STATUS.md) separates implemented features from verified behavior and remaining acceptance work.
 
@@ -33,23 +33,32 @@ Install/build it with the [installation guide](INSTALLATION.md). The [tracker](.
 
 For a safe introduction, choose **Show Sample Collection**. Sample decisions and image edits are temporary.
 
+### Choose a route for the job
+
+- **News or wire deadline:** copy and verify, begin culling as verified photos arrive, caption the keepers and prepare delivery copies in **Deliver / Edit**. Lightroom is optional. JPEG/PNG delivery copies can carry embedded captions/copyright. RAW files still require a RAW-capable editor; Photo does not yet render publication JPEGs, apply its local crop to exports or upload to an agency.
+- **Wedding or large shoot:** keep the shoot under Photo Home, verify both copies, cull in passes with flags/stars and compare similar frames. Add shared rights/event metadata, then individual captions/keywords. Rename survivors before importing into Lightroom or another editor. A 10–40k-photo shoot is a design target, not a newly verified performance claim.
+- **Review before copying — planned:** a guided, local-only source-review mode will retain decisions without writing to the card and let you copy a reviewed subset. This is not implemented yet. Opening a card directly uses normal browsing: ratings and metadata may write sidecars there. Use verified ingest before making decisions on a card today.
+
+
 ## 2. Workspace and saved folders
 
 | Area | Purpose |
 | --- | --- |
-| Folder sidebar | Saved roots and lazily expanded immediate subfolders |
+| Folder sidebar | Photo Home, saved folders and subfolders loaded on demand |
 | Collection header | Contact Sheet/Preview, sort, EXIF label menu, thumbnail size and visible/total count |
 | Filter/selection rows | Flag/star filters, RAW+JPEG grouping, selection-wide decisions, selected review and auto-advance |
 | Large preview | Fast Fit view, detail controls, rotate/mirror/crop and optional shooting-information pane |
 | Contact sheet / bottom filmstrip | Selection, direct stars/flags and contextual actions |
 | Status bar | Decision or image-edit saving state and current photo/count |
-| Workflow | Ingest, Bulk Rename, IPTC & Keywords, and Lightroom handoff |
+| Workflow | Ingest, Bulk Rename, IPTC & Keywords, and Deliver / Edit |
 
 ### Open and revisit folders
 
 Choose **File → Open Folder…** or **⌘O**. Photo lists visible, regular supported image files directly inside that folder. It does not recursively mix all descendants into one collection. Hidden items and symlinks are excluded.
 
-A root stays in the sidebar until removed. Expand its arrow to discover subfolders, then click a name to display that folder’s images. The last folder restores on launch. Disconnected roots remain listed for retry. The sidebar’s remove button deletes only the shortcut.
+Choose **Photo Home** in the sidebar to set your usual photo folder, such as Pictures or a folder on a photo drive. It appears first with a house icon. This is a starting place, not a move/import operation. If no copy destination has been remembered, Ingest suggests Photo Home as the Photo folder. Other saved folders remain alongside it. Use **Change Photo Home…** or a folder’s **Use as Photo Home** context command to change it. Existing installations initially use their first saved folder. A new installation asks you to choose; it does not scan your home directory.
+
+A saved folder stays in the sidebar until removed. Expand its arrow to discover subfolders, then click a name to display that folder’s images. The last folder restores on launch. Disconnected folders remain listed for retry. The sidebar’s remove button deletes only the shortcut.
 
 **⌘R** reloads the current folder, clears image caches and retains the selected identity when possible. Ordinary external filesystem changes require Reload. Verified arrivals during Photo ingest update automatically.
 
@@ -216,12 +225,12 @@ Image-edit values survive restart; session Undo does not. Watch the status for *
 Open **Workflow → Ingest** (**⌘G**):
 
 1. Choose the card/source folder.
-2. Choose a working root and a backup root. Prefer separate drives for independence; Photo warns when both are on the same volume.
-3. Enter a unique single-component job folder name.
-4. Choose **Ingest & Verify Both Copies**.
+2. Choose your **Photo folder** and **Backup folder**. Prefer separate drives for independence; Photo warns when both are on the same volume.
+3. Enter a unique **Shoot name**, such as `2026-10-20_Wedding`.
+4. Choose **Copy & Verify Both Copies**.
 5. Use **Continue Browsing** while it runs. Keep the card until the operation reports successful verification.
 
-Both destinations receive `Job/Originals/<source tree>`. Photo recurses for ingest, copies supported images and matching XMP/ACR companions, verifies SHA-256, and records durable manifests. It does not erase/eject/format the card.
+Both destinations receive `Shoot name/Originals/<source folders>`. Photo recurses for ingest, copies supported images and matching XMP/ACR companions, verifies SHA-256, and records durable manifests. It does not erase/eject/format the card.
 
 The first fully verified image family’s folder opens once. Subsequent approved arrivals merge into the currently browsed destination folder without Reload or resetting decisions/selection. Unique RAW+JPEG companions complete together. Other source subfolders remain separately browsable; browsing elsewhere is respected. This is a snapshot ingest, not tethered/continuous source watching.
 
@@ -229,7 +238,7 @@ Re-running verifies matching copies; differing targets are not overwritten. Canc
 
 ## 10. Bulk rename
 
-Rename before importing into Lightroom. Open **Bulk Rename** with **M** or Workflow:
+Rename before delivery or importing into your editor. Open **Bulk Rename** with **M** or Workflow:
 
 1. Choose Selection, Visible photos or All files in folder.
 2. Set a template, camera label and starting sequence.
@@ -286,7 +295,7 @@ Replay checks every identity and expected owned value before committing intent, 
 
 ### Hand off to Lightroom Classic
 
-Resolve pending writes/conflicts first. Workflow’s **Lightroom** tab can prepare a new dedicated verified copy of current-folder non-rejects, including XMP/ACR companions. Optional JPEG/PNG metadata embedding applies only to derived copies and verifies pixels/orientation. It does not apply Photo-local image edits. Reusing a differing derived destination is refused.
+Resolve pending writes/conflicts first. Workflow’s **Deliver / Edit** tab can prepare a new dedicated verified copy of current-folder non-rejects, including XMP/ACR companions. Optional JPEG/PNG metadata embedding applies only to derived copies and verifies pixels/orientation. It does not apply Photo-local image edits. Reusing a differing derived destination is refused.
 
 In Lightroom Classic, use **Add** for the prepared folder and Embedded & Sidecar previews. Avoid an import preset that replaces prepared metadata. Verify a small sample before a whole job. Direct source-plus-sidecar import is also possible for RAW workflows. JPEG/PNG full-filename sidecar recognition varies, which is why derived metadata copies are offered.
 

@@ -39,3 +39,10 @@ Selection images/filenames and decision buttons are separate controls. Native ch
 Rotate/mirror, crop frame/shield/grid, corner resize, move/clamp, square ratio, numeric percentage commits, Apply and cropped-thumbnail markers passed native inspection on disposable PNGs. Crop's ratio menu uses its intrinsic width, corner handles have expanded hit areas, and Crop Cancel is independent of Apply. Main-folder requests activate Photo and fall back to its main window for sheets; the native picker worked after this correction. Competing folder/reload/culling commands yield to modal editing.
 
 Native detail inspection exposed painting outside a crop's intended bounds. Drawing now explicitly clips the fitted composition, with source-pixel, letterbox and progressive-patch regressions. The Mac locked before final corrected-view/restart recheck. Physical pinch input cannot be generated through current automation; gesture/scroller/linked-scale/anchor tests are not a claim of physical device validation. Full VoiceOver, keyboard-only, compact-window and platform coverage remain open. Original photographs were not edited; synthetic pending-QA files stay outside Git.
+
+
+## Photo Home and workflow language — 2026-10-20
+
+Native review passed the migrated Home tree, its subfolders, explanatory chooser/cancel, default copy destination, numbered copy setup and Deliver / Edit guidance. No copying or decisions were applied to personal photos. A Home text badge crowded the root name at the default sidebar width; use the house icon plus accessible Photo Home name instead. Folder fields no longer say absolute path, working root or backup root, and accessibility names avoid duplicated “folder.”
+
+The retained synthetic composition also restored after relaunch; Fit and physical-pixel 100% now visibly clip the rotated/mirrored crop correctly. This closes the previous lock-blocked final crop/restart check. Physical pinch remains hands-on acceptance work. News/wire and large-shoot routes are documented without claiming local-only pre-copy culling, rendered publication exports or 40k-photo performance as implemented.

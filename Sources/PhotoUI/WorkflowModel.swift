@@ -17,7 +17,8 @@ final class WorkflowModel {
   var requestedTab = 0
   var busy = false
   var backgroundable = false
-  var status = "Choose an operation. File changes are intended for photos before Lightroom import."
+  var status =
+    "Choose a step. Copy photos, choose keepers, organize, then deliver or open in your editor."
   var renamePlan: RenamePlan?
   var metadataPlan: [MetadataFilePlan] = []
   var metadataResults: [String: String] = [:]
@@ -97,7 +98,8 @@ final class WorkflowModel {
     run(background: true) { [self] in
       guard !job.isEmpty, job != ".", job != "..", !job.contains(where: { "/\\:".contains($0) })
       else {
-        throw MediaOperationError.invalid("Enter a single job folder name without path separators.")
+        throw MediaOperationError.invalid(
+          "Use a shoot name without slashes, backslashes or colons.")
       }
       let sourceURL = try Self.path(source)
       let primaryURL = try Self.path(primary).appendingPathComponent(job).appendingPathComponent(
@@ -345,12 +347,12 @@ final class WorkflowModel {
       }
       handoffFolder = destination
       status =
-        "Prepared \(count) non-rejected photos plus their XMP/ACR companions. In Lightroom Classic, Import this folder with Add. The source folder is unchanged."
+        "Prepared \(count) non-rejected photos plus their XMP/ACR companions. Ready for delivery or an editor. The source folder is unchanged."
     }
   }
   private static func path(_ text: String) throws -> URL {
     guard text.hasPrefix("/"), !text.isEmpty else {
-      throw MediaOperationError.invalid("Choose or enter an absolute folder path.")
+      throw MediaOperationError.invalid("Use Choose to select a folder.")
     }
     return URL(fileURLWithPath: text).standardizedFileURL.resolvingSymlinksInPath()
   }

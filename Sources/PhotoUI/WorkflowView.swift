@@ -12,7 +12,8 @@ struct WorkflowView: View {
   @WorkflowStorage private var scope = "Selection"
   @WorkflowStorage private var source = ""
   @WorkflowStorage private var primary =
-    UserDefaults.standard.string(forKey: "Photo.ingestWorkingRoot") ?? ""
+    UserDefaults.standard.string(forKey: "Photo.ingestWorkingRoot")
+    ?? UserDefaults.standard.string(forKey: "Photo.folders.home") ?? ""
   @WorkflowStorage private var backup =
     UserDefaults.standard.string(forKey: "Photo.ingestBackupRoot") ?? ""
   @WorkflowStorage private var job = ""
@@ -60,13 +61,14 @@ struct WorkflowView: View {
         Button(model.busy && model.backgroundable ? "Continue Browsing" : "Done") { dismiss() }
           .keyboardShortcut(.cancelAction).disabled(model.busy && !model.backgroundable)
       }
-      Text("Ingest → Cull → Rename → Metadata → Lightroom Classic").font(.callout).foregroundStyle(
-        .secondary)
+      Text("Copy → Choose keepers → Name & caption → Deliver or edit").font(.callout)
+        .foregroundStyle(
+          .secondary)
       TabView(selection: $tab) {
         ingest.tabItem { Text("Ingest") }.tag(0)
         rename.tabItem { Text("Bulk Rename") }.tag(1)
         metadata.tabItem { Text("IPTC & Keywords") }.tag(2)
-        handoff.tabItem { Text("Lightroom") }.tag(3)
+        handoff.tabItem { Text("Deliver / Edit") }.tag(3)
       }
       .disabled(model.busy)
       if !model.pendingRenames.isEmpty {
@@ -116,45 +118,54 @@ struct WorkflowView: View {
     }.pickerStyle(.segmented)
   }
   private var ingest: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text(
-        "Copy supported photos and their XMP/ACR companions to two destinations. Card subfolders are preserved. Existing matching files are reverified; different files are never overwritten."
-      ).fixedSize(horizontal: false, vertical: true)
-      pathRow("Card / source", path: $source)
-      pathRow("Working root", path: $primary)
-      pathRow("Backup root", path: $backup)
-      HStack {
-        Text("Job folder").frame(width: 125, alignment: .leading)
-        TextField("e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
-          .help(
-            "A single shoot folder name. Both destinations receive this folder with an Originals subfolder."
-          )
-      }
-      Button("Remember Destination Roots") {
-        UserDefaults.standard.set(primary, forKey: "Photo.ingestWorkingRoot")
-        UserDefaults.standard.set(backup, forKey: "Photo.ingestBackupRoot")
-        model.status = "Destination roots saved; each shoot still needs its own job folder."
-      }.disabled(primary.isEmpty || backup.isEmpty)
-      Text(
-        "Each destination receives Job/Originals. Keep the card until both copies are verified; a second folder on the same drive is not an independent backup."
-      ).font(.caption).foregroundStyle(.secondary)
-      Button("Ingest & Verify Both Copies") {
-        model.ingest(source: source, primary: primary, backup: backup, job: job)
-      }
-      .disabled(source.isEmpty || primary.isEmpty || backup.isEmpty || job.isEmpty)
-      if let folder = model.handoffFolder {
-        Button("Reveal Latest Destination") {
-          NSWorkspace.shared.activateFileViewerSelecting([folder])
+    ScrollView {
+      VStack(alignment: .leading, spacing: 12) {
+        Text(
+          "Copy photos and their metadata files to your photo folder and a backup. Keep the card’s subfolder layout. Matching copies are checked again; different files are never overwritten."
+        ).fixedSize(horizontal: false, vertical: true)
+        Text("1. Choose where to copy from").font(.headline)
+        pathRow("Copy from", path: $source)
+        Text("2. Choose where to keep this shoot").font(.headline)
+        pathRow("Photo folder", path: $primary)
+        pathRow("Backup folder", path: $backup)
+        HStack {
+          Text("Shoot name").frame(width: 125, alignment: .leading)
+          TextField("e.g. 2026-10-19_Birding", text: $job).textFieldStyle(.roundedBorder)
+            .help(
+              "Give this shoot a name. Photo creates a folder with this name in both locations, with an Originals folder inside."
+            )
         }
-      }
-      Spacer()
-    }.padding()
+        Button("Remember These Folders") {
+          UserDefaults.standard.set(primary, forKey: "Photo.ingestWorkingRoot")
+          UserDefaults.standard.set(backup, forKey: "Photo.ingestBackupRoot")
+          model.status = "Photo and backup folders remembered. Give each new shoot its own name."
+        }.disabled(primary.isEmpty || backup.isEmpty)
+        Text(
+          "For example: Photo folder → Shoot name → Originals. The backup uses the same layout. Keep the card until both copies are verified; use a separate drive for an independent backup."
+        ).font(.caption).foregroundStyle(.secondary)
+        Text("3. Copy, then start choosing keepers").font(.headline)
+        Text(
+          "Verified photos become available while the rest copy. Choose Continue Browsing to begin culling."
+        )
+        .font(.caption).foregroundStyle(.secondary)
+        Button("Copy & Verify Both Copies") {
+          model.ingest(source: source, primary: primary, backup: backup, job: job)
+        }
+        .disabled(source.isEmpty || primary.isEmpty || backup.isEmpty || job.isEmpty)
+        if let folder = model.handoffFolder {
+          Button("Reveal Latest Destination") {
+            NSWorkspace.shared.activateFileViewerSelecting([folder])
+          }
+        }
+        Spacer()
+      }.padding()
+    }
   }
   private var rename: some View {
     VStack(alignment: .leading, spacing: 12) {
       scopePicker
       Text(
-        "Rename before Lightroom import. A unique RAW+JPEG pair consumes one sequence; matching XMP and ACR files follow it. Camera times without offsets are interpreted consistently as wall-clock time; offset-tagged times use UTC."
+        "Rename before delivery or importing into an editor. A unique RAW+JPEG pair consumes one sequence; matching XMP and ACR files follow it. Camera times without offsets are interpreted consistently as wall-clock time; offset-tagged times use UTC."
       ).font(.caption).foregroundStyle(.secondary)
       LabeledContent("Naming template") {
         TextField("Naming template", text: $pattern).textFieldStyle(.roundedBorder)
@@ -369,8 +380,8 @@ struct WorkflowView: View {
         Text(
           "Prepare a verified copy of all non-rejected photos in the current folder, including their XMP/ACR companions. This optional handoff uses extra disk space and leaves the source library in place."
         )
-        pathRow("New handoff folder", path: $destination)
-        Toggle("Embed metadata in derived JPEG/PNG handoff copies", isOn: $embedMetadata)
+        pathRow("Delivery folder", path: $destination)
+        Toggle("Include captions and other metadata inside JPEG/PNG copies", isOn: $embedMetadata)
           .toggleStyle(
             .checkbox)
         Text(
@@ -385,7 +396,12 @@ struct WorkflowView: View {
           }
         }
         Divider()
-        Text("In Lightroom Classic").font(.headline)
+        Text("For publication or another editor").font(.headline)
+        Text(
+          "The prepared folder contains originals and their metadata companions. JPEG/PNG copies can include captions and copyright inside the file. RAW files still need a RAW-capable editor. Photo-local crops and rotations are not applied to these copies. Uploading to an agency and exporting edited JPEGs are not available yet."
+        )
+        .font(.callout)
+        Text("If you use Lightroom Classic").font(.headline)
         Text(
           "1. Import the prepared folder with Add.\n2. Use Embedded & Sidecar previews for fast initial browsing.\n3. Avoid an import preset that overwrites prepared metadata.\n4. Verify stars, flags, captions and keyword hierarchy on a small set.\n5. After import, rename/move photos inside Lightroom. Save Lightroom metadata before any intentional external round trip."
         )
@@ -398,18 +414,23 @@ struct WorkflowView: View {
   private func pathRow(_ label: String, path: Binding<String>) -> some View {
     HStack {
       Text(label).frame(width: 125, alignment: .leading)
-      TextField("Absolute folder path", text: path).textFieldStyle(.roundedBorder)
-        .accessibilityLabel(label + " folder path")
+      TextField("Choose a folder…", text: path).textFieldStyle(.roundedBorder)
+        .accessibilityLabel(label == "Copy from" ? "Source folder" : label)
       Button("Choose…") {
         NSApp.activate()
         let panel = NSOpenPanel()
+        panel.title = "Choose " + label
+        panel.prompt = "Use This Folder"
+        if !path.wrappedValue.isEmpty {
+          panel.directoryURL = URL(fileURLWithPath: path.wrappedValue)
+        }
         panel.allowedContentTypes = [.folder]
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url { path.wrappedValue = url.path }
-      }.accessibilityLabel("Choose " + label + " folder")
+      }.accessibilityLabel(label == "Copy from" ? "Choose source folder" : "Choose " + label)
     }
   }
   private func membership(_ field: MetadataField, in set: Binding<Set<MetadataField>>) -> Binding<
