@@ -66,9 +66,9 @@ struct WorkflowView: View {
           .secondary)
       TabView(selection: $tab) {
         ingest.tabItem { Text("Ingest") }.tag(0)
-        rename.tabItem { Text("Bulk Rename") }.tag(1)
-        metadata.tabItem { Text("IPTC & Keywords") }.tag(2)
-        handoff.tabItem { Text("Deliver / Edit") }.tag(3)
+        rename.disabled(model.workspace.isSourceReview).tabItem { Text("Bulk Rename") }.tag(1)
+        metadata.disabled(model.workspace.isSourceReview).tabItem { Text("IPTC & Keywords") }.tag(2)
+        handoff.disabled(model.workspace.isSourceReview).tabItem { Text("Deliver / Edit") }.tag(3)
       }
       .disabled(model.busy)
       if !model.pendingRenames.isEmpty {
@@ -76,6 +76,12 @@ struct WorkflowView: View {
           Text("\(model.pendingRenames.count) incomplete rename operations need recovery.")
           Button("Recover Original Names") { model.recover() }.disabled(model.busy)
         }
+      }
+      if model.workspace.isSourceReview {
+        Text(
+          "Reviewing a protected source. Organization and delivery are available on working copies; copying this review is coming next."
+        )
+        .font(.caption).foregroundStyle(.secondary)
       }
       Text(model.status).font(.callout).textSelection(.enabled).frame(
         maxWidth: .infinity, alignment: .leading)
@@ -88,6 +94,7 @@ struct WorkflowView: View {
       await model.refresh()
       fieldValues = model.currentMetadata.fields
     }
+    .onChange(of: model.sourceReviewLaunch) { dismiss() }
     .onChange(of: tab) { model.requestedTab = tab }
     .onChange(of: pattern) { model.renamePlan = nil }
     .onChange(of: camera) { model.renamePlan = nil }
@@ -125,6 +132,15 @@ struct WorkflowView: View {
         ).fixedSize(horizontal: false, vertical: true)
         Text("1. Choose where to copy from").font(.headline)
         pathRow("Copy from", path: $source)
+        Button("Review Before Copying") { model.startSourceReview(source: source) }
+          .disabled(source.isEmpty)
+          .help(
+            "Browse and choose keepers without writing to this source. Review-only in this version; copying the review follows next."
+          )
+        Text(
+          "Review first: stars, flags and crops stay on this Mac. This version cannot copy a protected review yet. Captions and renaming are available after copying."
+        )
+        .font(.caption).foregroundStyle(.secondary)
         Text("2. Choose where to keep this shoot").font(.headline)
         pathRow("Photo folder", path: $primary)
         pathRow("Backup folder", path: $backup)

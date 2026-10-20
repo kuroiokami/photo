@@ -13,6 +13,9 @@ public struct ImageEditWrite: Sendable {
 }
 extension DecisionStore {
   public func loadImageState(for image: URL) throws -> (DecisionEntry, PhotoEdit) {
+    if let session = try sourceReview(for: image) {
+      return try loadSourceReview(session, image: image)
+    }
     let entry = try load(for: image)
     do { return (entry, try loadImageEdit(for: image)) } catch {
       return (
@@ -24,6 +27,9 @@ extension DecisionStore {
     }
   }
   public func loadImageEdit(for image: URL) throws -> PhotoEdit {
+    if let session = try sourceReview(for: image) {
+      return try loadSourceReview(session, image: image).1
+    }
     let identity = try key(for: image)
     return try withDB { db in
       var stmt: OpaquePointer?
@@ -45,41 +51,45 @@ extension DecisionStore {
   }
   /// Local-only edits: original bytes and existing XMP/develop settings are never rewritten.
   public func saveImageEdits(_ writes: [ImageEditWrite]) throws {
-    for write in writes {
-      guard try key(for: write.image) == write.identity else {
-        throw DecisionStoreError.fileChanged
-      }
-    }
-    try withDB { db in
-      guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
-        throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
-      }
-      do {
-        for write in writes {
-          let data = try JSONEncoder().encode(write.edit)
-          var stmt: OpaquePointer?
-          guard
-            sqlite3_prepare_v2(
-              db, "INSERT OR REPLACE INTO image_edits(identity,payload) VALUES(?,?)", -1, &stmt, nil
-            ) == SQLITE_OK, let stmt
-          else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-          defer { sqlite3_finalize(stmt) }
-          let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-          sqlite3_bind_text(stmt, 1, write.identity, -1, transient)
-          _ = data.withUnsafeBytes {
-            sqlite3_bind_blob(stmt, 2, $0.baseAddress, Int32($0.count), transient)
-          }
-          guard sqlite3_step(stmt) == SQLITE_DONE else {
-            throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
-          }
+    return try sourceProtection.withWritable(writes.map(\.image)) {
+      for write in writes {
+        guard try key(for: write.image) == write.identity else {
+          throw DecisionStoreError.fileChanged
         }
-        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+      }
+      try withDB { db in
+        guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
           throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
         }
-      } catch {
-        _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
-        throw error
+        do {
+          for write in writes {
+            let data = try JSONEncoder().encode(write.edit)
+            var stmt: OpaquePointer?
+            guard
+              sqlite3_prepare_v2(
+                db, "INSERT OR REPLACE INTO image_edits(identity,payload) VALUES(?,?)", -1, &stmt,
+                nil
+              ) == SQLITE_OK, let stmt
+            else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
+            defer { sqlite3_finalize(stmt) }
+            let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+            sqlite3_bind_text(stmt, 1, write.identity, -1, transient)
+            _ = data.withUnsafeBytes {
+              sqlite3_bind_blob(stmt, 2, $0.baseAddress, Int32($0.count), transient)
+            }
+            guard sqlite3_step(stmt) == SQLITE_DONE else {
+              throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+            }
+          }
+          guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+            throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+          }
+        } catch {
+          _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+          throw error
+        }
       }
+
     }
   }
 }

@@ -9,7 +9,7 @@ A native macOS app for fast folder browsing, culling and organization for public
 | **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
 | **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
 | [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
-| [Review-before-copy plan](docs/PRE_COPY_CULLING.md) | Protected source review, explicit copy choices and safe decision transfer; not implemented yet |
+| [Review before copying](docs/PRE_COPY_CULLING.md) | Local-only source review is implemented; reviewed copying and decision transfer are next |
 | [Distribution plan](docs/DISTRIBUTION.md) | Path to a signed, notarized download other people can install |
 | [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
 
@@ -34,6 +34,7 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 - Async EXIF indexing, numeric sorting, optional inspector and configurable thumbnail labels.
 - Fit, genuine physical-pixel 100%, trackpad magnification, pan/navigator and pinned comparison.
 - Selected-only review and RAW+JPEG grouping.
+- Protected review before copying: stars, flags, Undo and Photo-local edits stay on this Mac; copying this review is not available yet.
 - Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
 - Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.
 - Field-specific IPTC patches, presets, hierarchical keywords, persistent metadata batch Undo and preserving XMP synchronization.

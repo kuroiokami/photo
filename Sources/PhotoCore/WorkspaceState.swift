@@ -13,6 +13,9 @@ public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
   public private(set) var selectedIDs: Set<String> = []
   public private(set) var groupPairs = false
+  public private(set) var sourceReview: SourceReviewSession?
+  public var isSourceReview: Bool { sourceReview != nil }
+  public private(set) var sourceReviewedIDs: Set<String> = []
   public private(set) var reviewIDs: Set<String>?
   public var reviewingSelection: Bool { reviewIDs != nil }
   /// Freeze membership independently of subsequent navigation/selection.
@@ -223,8 +226,15 @@ public final class WorkspaceState {
       selectedIDs = Set([selectedID].compactMap { $0 })
       if groupPairs { rebuildVisible(preferred: selectedID) }
       loadState = .ready
+      // Publish photos first: a busy metadata/save actor must not hold up the
+      // selected preview. Decision entries carry protected context before they
+      // become actionable, even if this context lookup is still awaiting IO.
+      let context = try await decisionStore.sourceReview(for: directory)
+      guard sessionID == session else { return }
+      sourceReview = context ?? sourceReview
       folderTask = nil
     } catch {
+      task.cancel()
       guard sessionID == session else { return }
       decisionsLoading = false
       loadState = .failed(
@@ -416,6 +426,8 @@ public final class WorkspaceState {
     let photo: PhotoItem
     let before: CullingDecision
     let after: CullingDecision
+    let beforeReviewed: Bool
+    let afterReviewed: Bool
   }
   private struct DecisionChange {
     let items: [DecisionItemChange]
@@ -439,6 +451,8 @@ public final class WorkspaceState {
   }
 
   private func resetDecisions() {
+    sourceReview = nil
+    sourceReviewedIDs = []
     reviewIDs = nil
     imageEdits = [:]
     editStatus = ""
@@ -505,10 +519,12 @@ public final class WorkspaceState {
     guard session == sessionID, !Task.isCancelled, !decisionsReady.contains(photo.id) else {
       return
     }
+    if let review = entry.sourceReview { sourceReview = review }
     imageEdits[photo.id] = edit
     fileIdentities[photo.id] = entry.identity
     decisionRevision += 1
     decisions[photo.id] = entry.decision
+    if entry.reviewed { sourceReviewedIDs.insert(photo.id) }
     saveStatus[photo.id] = entry.status
     decisionsReady.insert(photo.id)
   }
@@ -563,7 +579,12 @@ public final class WorkspaceState {
     let changes = targets.compactMap { target -> DecisionItemChange? in
       let before = decisions[target.id] ?? CullingDecision()
       let after = CullingDecision(rating: rating ?? before.rating, flag: flag ?? before.flag)
-      return before == after ? nil : DecisionItemChange(photo: target, before: before, after: after)
+      let reviewed = sourceReviewedIDs.contains(target.id)
+      return before == after && (!isSourceReview || reviewed)
+        ? nil
+        : DecisionItemChange(
+          photo: target, before: before, after: after,
+          beforeReviewed: reviewed, afterReviewed: isSourceReview)
     }
     if !changes.isEmpty {
       undoStack.append(.decision(DecisionChange(items: changes, focus: photo.id)))
@@ -571,7 +592,8 @@ public final class WorkspaceState {
       decisionRevision += 1
       for change in changes {
         decisions[change.photo.id] = change.after
-        persist(change.photo, change.after)
+        if change.afterReviewed { sourceReviewedIDs.insert(change.photo.id) }
+        persist(change.photo, change.after, reviewed: change.afterReviewed)
       }
       if sort == .rating {
         if changes.count == 1 {
@@ -649,11 +671,16 @@ public final class WorkspaceState {
     }
     editStatus = "Saving image edits…"
     let store = decisionStore
+    let review = sourceReview
     DecisionSaveQueue.shared.enqueue { [weak self] in
       let status: String
       do {
-        try await store.saveImageEdits(writes)
-        status = "Image edits saved in Photo"
+        if let review {
+          try await store.saveSourceEdits(writes, session: review)
+        } else {
+          try await store.saveImageEdits(writes)
+        }
+        status = review == nil ? "Image edits saved in Photo" : "Review edits saved on this Mac"
       } catch { status = error.localizedDescription }
       guard let self, self.sessionID == session, self.editVersion == version else { return }
       self.editStatus = status
@@ -705,7 +732,13 @@ public final class WorkspaceState {
     for item in change.items {
       let value = undo ? item.before : item.after
       decisions[item.photo.id] = value
-      persist(item.photo, value)
+      let reviewed = undo ? item.beforeReviewed : item.afterReviewed
+      if reviewed {
+        sourceReviewedIDs.insert(item.photo.id)
+      } else {
+        sourceReviewedIDs.remove(item.photo.id)
+      }
+      persist(item.photo, value, reviewed: reviewed)
     }
     if sort == .rating {
       allPhotos = sort.ordered(
@@ -715,21 +748,31 @@ public final class WorkspaceState {
   }
 
   private func persist(
-    _ photo: PhotoItem, _ decision: CullingDecision, resolveConflict: Bool = false
+    _ photo: PhotoItem, _ decision: CullingDecision, resolveConflict: Bool = false,
+    reviewed: Bool = true
   ) {
     guard let url = photo.fileURL else { return }
     let session = sessionID
     let version = decisionVersions[photo.id, default: 0] + 1
     decisionVersions[photo.id] = version
-    saveStatus[photo.id] = "Saving…"
+    saveStatus[photo.id] = isSourceReview ? "Saving review…" : "Saving…"
+    let review = sourceReview
     let store = decisionStore
     let identity = fileIdentities[photo.id]
     DecisionSaveQueue.shared.enqueue { [weak self] in
       let status: String
       do {
-        status = try await store.save(
-          decision, for: url, resolveConflict: resolveConflict, expectedIdentity: identity
-        ).status
+        if let review {
+          guard let identity else { throw SourceReviewError.unavailable }
+          status = try await store.saveSourceDecision(
+            decision, reviewed: reviewed,
+            session: review, image: url, identity: identity
+          ).status
+        } else {
+          status = try await store.save(
+            decision, for: url, resolveConflict: resolveConflict, expectedIdentity: identity
+          ).status
+        }
       } catch { status = error.localizedDescription }
       guard let self, self.sessionID == session, self.decisionVersions[photo.id] == version else {
         return
@@ -740,10 +783,13 @@ public final class WorkspaceState {
 
   public func retrySync(useLocal: Bool = false) {
     guard let photo = selectedPhoto else { return }
-    persist(photo, decisions[photo.id] ?? CullingDecision(), resolveConflict: useLocal)
+    persist(
+      photo, decisions[photo.id] ?? CullingDecision(), resolveConflict: useLocal,
+      reviewed: sourceReviewedIDs.contains(photo.id))
   }
 
   public func useExternalDecision() async {
+    guard !isSourceReview else { return }
     guard let photo = selectedPhoto, let url = photo.fileURL else { return }
     let session = sessionID
     let identity = fileIdentities[photo.id]

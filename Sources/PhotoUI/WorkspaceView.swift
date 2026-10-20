@@ -71,6 +71,21 @@ public struct WorkspaceView: View {
     } detail: {
       VStack(spacing: 0) {
         collectionHeader
+        if workspace.isSourceReview {
+          VStack(alignment: .leading, spacing: 3) {
+            Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
+              .font(.callout.bold())
+            Text(
+              "Stars, flags and image edits stay on this Mac. Copying this review is not available yet."
+            )
+            .font(.caption).foregroundStyle(.secondary)
+            Text(
+              "\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) files reviewed in this folder"
+            )
+            .font(.caption.monospacedDigit())
+          }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
+            .background(Color.accentColor.opacity(0.10))
+        }
         filterBar
         Divider()
         VStack(spacing: 0) {
@@ -129,6 +144,18 @@ public struct WorkspaceView: View {
         await workflowModel.openFolder(saved)
       }
       await folderLibrary.restoreExpanded()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .photoSourceReviewChanged)) { _ in
+      if !workspace.isSourceReview, let directory = workspace.directory {
+        let session = workspace.sessionID
+        Task {
+          if (try? await workspace.persistence.sourceReview(for: directory)) != nil,
+            workspace.sessionID == session
+          {
+            await workflowModel.openFolder(directory)
+          }
+        }
+      }
     }
     .onChange(of: workspace.directory) {
       if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
@@ -878,7 +905,9 @@ public struct WorkspaceView: View {
               "Apply to all selected files, preserving stars. P picks, X rejects, U clears flags. Reject never deletes files."
             )
         }
-        Button("Edit Selected IPTC…") { showWorkflow(2) }.disabled(workspace.selectedIDs.isEmpty)
+        Button("Edit Selected IPTC…") { showWorkflow(2) }
+          .disabled(workspace.selectedIDs.isEmpty || workspace.isSourceReview)
+          .help("Add captions and shared metadata to working copies after copying.")
           .help("Edit one field or review several checked fields across the selection.")
         Spacer(minLength: 0)
       }
@@ -992,7 +1021,11 @@ public struct WorkspaceView: View {
       if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
         Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
         HStack {
-          if status.hasPrefix("XMP conflict") {
+          if workspace.isSourceReview {
+            if !status.hasPrefix("Review saved on this Mac") && status != "Saving review…" {
+              Button("Retry Review Save") { workspace.retrySync() }
+            }
+          } else if status.hasPrefix("XMP conflict") {
             Button("Use My Decisions") { workspace.retrySync(useLocal: true) }
             Button("Use External Decisions") { Task { await workspace.useExternalDecision() } }
           } else if status != "Saving…" {

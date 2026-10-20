@@ -101,90 +101,95 @@ extension DecisionStore {
   private func commitMetadataBatch(_ plans: [MetadataFilePlan], history: (Int64, Bool)?) throws
     -> [String: MetadataEntry]
   {
-    try Task.checkCancellation()
-    guard !plans.isEmpty else { return [:] }
-    guard Set(plans.map(\.identity)).count == plans.count else {
-      throw MediaOperationError.invalid("A metadata batch must contain each physical file once.")
-    }
-    var normalized: [MetadataFilePlan] = []
-    var records: [StoredMetadata] = []
-    // Preflight the whole batch before recording any new local intent.
-    for plan in plans {
-      let current = try loadMetadata(for: plan.image, embedded: plan.embedded)
-      guard current.identity == plan.identity else { throw DecisionStoreError.fileChanged }
-      guard Self.ownedMetadataMatches(current.value, plan.before, plan: plan) else {
-        throw MediaOperationError.invalid(
-          "Metadata changed since the preview. Preview this batch again.")
+    return try sourceProtection.withWritable(
+      plans.flatMap { [$0.image, XMPSidecar.url(for: $0.image)] }
+    ) {
+      try Task.checkCancellation()
+      guard !plans.isEmpty else { return [:] }
+      guard Set(plans.map(\.identity)).count == plans.count else {
+        throw MediaOperationError.invalid("A metadata batch must contain each physical file once.")
       }
-      let previous = try metadataRecord(plan.identity)
-      let value = Self.replacingOwned(current.value, from: plan.after, plan: plan)
-      normalized.append(
-        MetadataFilePlan(
-          image: plan.image, identity: plan.identity, baseline: plan.baseline,
-          before: current.value, after: value, fields: plan.fields,
-          changesKeywords: plan.changesKeywords,
-          embedded: plan.embedded ?? previous?.embedded))
-      records.append(
-        StoredMetadata(
-          value: value, baseline: plan.baseline, pending: true,
-          fields: previous?.pending == true
-            ? plan.fields.union(previous?.fields ?? []) : plan.fields,
-          changesKeywords: plan.changesKeywords
-            || (previous?.pending == true && previous?.changesKeywords == true),
-          embedded: plan.embedded ?? previous?.embedded))
-    }
-    try Task.checkCancellation()
-    try withDB { db in
-      try Self.metadataSQL(db, "BEGIN IMMEDIATE")
-      do {
-        for (plan, record) in zip(normalized, records) {
-          try putMetadata(record, identity: plan.identity)
+      var normalized: [MetadataFilePlan] = []
+      var records: [StoredMetadata] = []
+      // Preflight the whole batch before recording any new local intent.
+      for plan in plans {
+        let current = try loadMetadata(for: plan.image, embedded: plan.embedded)
+        guard current.identity == plan.identity else { throw DecisionStoreError.fileChanged }
+        guard Self.ownedMetadataMatches(current.value, plan.before, plan: plan) else {
+          throw MediaOperationError.invalid(
+            "Metadata changed since the preview. Preview this batch again.")
         }
-        if let history {
-          try Self.metadataSQL(
-            db, "UPDATE metadata_history SET undone=\(history.1 ? 1 : 0) WHERE seq=\(history.0)")
+        let previous = try metadataRecord(plan.identity)
+        let value = Self.replacingOwned(current.value, from: plan.after, plan: plan)
+        normalized.append(
+          MetadataFilePlan(
+            image: plan.image, identity: plan.identity, baseline: plan.baseline,
+            before: current.value, after: value, fields: plan.fields,
+            changesKeywords: plan.changesKeywords,
+            embedded: plan.embedded ?? previous?.embedded))
+        records.append(
+          StoredMetadata(
+            value: value, baseline: plan.baseline, pending: true,
+            fields: previous?.pending == true
+              ? plan.fields.union(previous?.fields ?? []) : plan.fields,
+            changesKeywords: plan.changesKeywords
+              || (previous?.pending == true && previous?.changesKeywords == true),
+            embedded: plan.embedded ?? previous?.embedded))
+      }
+      try Task.checkCancellation()
+      try withDB { db in
+        try Self.metadataSQL(db, "BEGIN IMMEDIATE")
+        do {
+          for (plan, record) in zip(normalized, records) {
+            try putMetadata(record, identity: plan.identity)
+          }
+          if let history {
+            try Self.metadataSQL(
+              db, "UPDATE metadata_history SET undone=\(history.1 ? 1 : 0) WHERE seq=\(history.0)")
+          } else {
+            try Self.metadataSQL(db, "DELETE FROM metadata_history WHERE undone=1")
+            let payload = try JSONEncoder().encode(normalized.map(Self.historyProjection))
+            var statement: OpaquePointer?
+            guard
+              sqlite3_prepare_v2(
+                db, "INSERT INTO metadata_history(payload) VALUES(?)", -1, &statement, nil)
+                == SQLITE_OK,
+              let statement
+            else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
+            defer { sqlite3_finalize(statement) }
+            _ = payload.withUnsafeBytes {
+              sqlite3_bind_blob(
+                statement, 1, $0.baseAddress, Int32($0.count),
+                unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+            }
+            guard sqlite3_step(statement) == SQLITE_DONE else {
+              throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+            }
+            try Self.metadataSQL(
+              db,
+              "DELETE FROM metadata_history WHERE seq NOT IN (SELECT seq FROM metadata_history ORDER BY seq DESC LIMIT 20)"
+            )
+          }
+          try Self.metadataSQL(db, "COMMIT")
+        } catch {
+          _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+          throw error
+        }
+      }
+      var result: [String: MetadataEntry] = [:]
+      for (plan, record) in zip(normalized, records) {
+        if Task.isCancelled {
+          result[plan.image.path] = MetadataEntry(
+            value: record.value, identity: plan.identity,
+            baseline: record.baseline, status: "Saved locally · metadata XMP pending")
         } else {
-          try Self.metadataSQL(db, "DELETE FROM metadata_history WHERE undone=1")
-          let payload = try JSONEncoder().encode(normalized.map(Self.historyProjection))
-          var statement: OpaquePointer?
-          guard
-            sqlite3_prepare_v2(
-              db, "INSERT INTO metadata_history(payload) VALUES(?)", -1, &statement, nil)
-              == SQLITE_OK,
-            let statement
-          else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-          defer { sqlite3_finalize(statement) }
-          _ = payload.withUnsafeBytes {
-            sqlite3_bind_blob(
-              statement, 1, $0.baseAddress, Int32($0.count),
-              unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-          }
-          guard sqlite3_step(statement) == SQLITE_DONE else {
-            throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
-          }
-          try Self.metadataSQL(
-            db,
-            "DELETE FROM metadata_history WHERE seq NOT IN (SELECT seq FROM metadata_history ORDER BY seq DESC LIMIT 20)"
-          )
+          result[plan.image.path] = try syncMetadata(
+            record, image: plan.image, identity: plan.identity, useLocal: false)
         }
-        try Self.metadataSQL(db, "COMMIT")
-      } catch {
-        _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
-        throw error
       }
+      return result
+
     }
-    var result: [String: MetadataEntry] = [:]
-    for (plan, record) in zip(normalized, records) {
-      if Task.isCancelled {
-        result[plan.image.path] = MetadataEntry(
-          value: record.value, identity: plan.identity,
-          baseline: record.baseline, status: "Saved locally · metadata XMP pending")
-      } else {
-        result[plan.image.path] = try syncMetadata(
-          record, image: plan.image, identity: plan.identity, useLocal: false)
-      }
-    }
-    return result
   }
 
   private static func metadataSQL(_ db: OpaquePointer, _ sql: String) throws {

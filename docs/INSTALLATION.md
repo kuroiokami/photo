@@ -178,6 +178,8 @@ For read-only performance measurements, use the commands and interpretation limi
 
 ## 10. Local data and uninstalling
 
+Protected source reviews use both `decisions.sqlite` and `source-protection.json` under Application Support/Photo. Back up both; deleting local Photo data removes reviews and source protection. The app bundle is separate from this data.
+
 | Location | Contents |
 | --- | --- |
 | `~/Library/Application Support/Photo/decisions.sqlite` | Decisions, descriptive intent, metadata batch history and Photo-local image edits |

@@ -77,6 +77,7 @@ public struct RenamePlan: Codable, Sendable {
 public actor MediaOperations {
   public static let shared = MediaOperations()
   private let journalDirectory: URL
+  private let sourceProtection: SourceProtection
   private var operationInProgress = false
   private func beginOperation() throws {
     guard !operationInProgress else {
@@ -85,7 +86,8 @@ public actor MediaOperations {
     }
     operationInProgress = true
   }
-  public init(journalDirectory: URL? = nil) {
+  public init(journalDirectory: URL? = nil, sourceProtection: SourceProtection = .shared) {
+    self.sourceProtection = sourceProtection
     self.journalDirectory =
       journalDirectory
       ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -113,6 +115,10 @@ public actor MediaOperations {
     try beginOperation()
     defer { operationInProgress = false }
     let source = try directory(source)
+    do { try sourceProtection.withWritable([source]) {} } catch SourceReviewError.protectedSource {
+      throw SourceReviewError.copyNotReady
+    }
+    try sourceProtection.withWritable([primary, backup]) {}
     var primary = primary.standardizedFileURL
     var backup = backup.standardizedFileURL
     for pair in [(source, primary), (source, backup), (primary, backup)] {
@@ -213,6 +219,9 @@ public actor MediaOperations {
       throw MediaOperationError.invalid("There are no eligible photos to copy.")
     }
     for image in images {
+      do { try sourceProtection.withWritable([image]) {} } catch SourceReviewError.protectedSource {
+        throw SourceReviewError.copyNotReady
+      }
       guard !Self.contains(image.deletingLastPathComponent(), destination),
         !Self.contains(destination, image.deletingLastPathComponent())
       else {
@@ -384,33 +393,40 @@ public actor MediaOperations {
   }
 
   public func rename(_ proposed: RenamePlan) throws -> URL {
-    try beginOperation()
-    defer { operationInProgress = false }
-    var plan = proposed
-    try validate(plan.entries)
-    for entry in plan.entries { try verify(entry.original, entry) }
-    plan.phase = "executing"
-    let journal = journalDirectory.appendingPathComponent("\(plan.id).json")
-    try safeDirectory(journalDirectory)
-    try durableJSON(plan, at: journal)
-    do {
-      for entry in plan.entries {
-        try Task.checkCancellation()
-        try verify(entry.original, entry)
-        try FileManager.default.moveItem(at: entry.original, to: entry.staging)
-      }
-      for entry in plan.entries {
-        try Task.checkCancellation()
-        try FileManager.default.moveItem(at: entry.staging, to: entry.destination)
-      }
-      try updateIngestMappings(plan.entries, undo: false)
-      plan.phase = "completed"
+    return try sourceProtection.withWritable(
+      proposed.entries.flatMap { [$0.original, $0.destination, $0.staging, $0.recovery] } + [
+        journalDirectory
+      ]
+    ) {
+      try beginOperation()
+      defer { operationInProgress = false }
+      var plan = proposed
+      try validate(plan.entries)
+      for entry in plan.entries { try verify(entry.original, entry) }
+      plan.phase = "executing"
+      let journal = journalDirectory.appendingPathComponent("\(plan.id).json")
+      try safeDirectory(journalDirectory)
       try durableJSON(plan, at: journal)
-      return journal
-    } catch {
-      // Rollback ignores cancellation so that a cancelled operation can recover.
-      try? rollback(plan, journal: journal)
-      throw error
+      do {
+        for entry in plan.entries {
+          try Task.checkCancellation()
+          try verify(entry.original, entry)
+          try FileManager.default.moveItem(at: entry.original, to: entry.staging)
+        }
+        for entry in plan.entries {
+          try Task.checkCancellation()
+          try FileManager.default.moveItem(at: entry.staging, to: entry.destination)
+        }
+        try updateIngestMappings(plan.entries, undo: false)
+        plan.phase = "completed"
+        try durableJSON(plan, at: journal)
+        return journal
+      } catch {
+        // Rollback ignores cancellation so that a cancelled operation can recover.
+        try? rollback(plan, journal: journal)
+        throw error
+      }
+
     }
   }
 
@@ -433,46 +449,53 @@ public actor MediaOperations {
   }
 
   private func rollback(_ original: RenamePlan, journal: URL) throws {
-    var plan = original
-    if plan.phase == "rolledBack" { return }
-    // Preflight every member before moving any: never overwrite an unrelated
-    // file or silently undo a later metadata edit.
-    var locations: [(RenameEntry, URL)] = []
-    for entry in plan.entries {
-      let matches = [entry.original, entry.staging, entry.destination, entry.recovery].filter {
-        (try? FileFingerprint.read($0)) == entry.fingerprint
-          && (try? $0.resourceValues(forKeys: [.nameKey]).name) == $0.lastPathComponent
+    return try sourceProtection.withWritable(
+      original.entries.flatMap { [$0.original, $0.destination, $0.staging, $0.recovery] } + [
+        journal
+      ]
+    ) {
+      var plan = original
+      if plan.phase == "rolledBack" { return }
+      // Preflight every member before moving any: never overwrite an unrelated
+      // file or silently undo a later metadata edit.
+      var locations: [(RenameEntry, URL)] = []
+      for entry in plan.entries {
+        let matches = [entry.original, entry.staging, entry.destination, entry.recovery].filter {
+          (try? FileFingerprint.read($0)) == entry.fingerprint
+            && (try? $0.resourceValues(forKeys: [.nameKey]).name) == $0.lastPathComponent
+        }
+        guard let location = matches.first, Set(matches).count == 1 else {
+          throw MediaOperationError.invalid(
+            "Rename recovery is blocked by a missing or changed file. The journal was retained.")
+        }
+        try verify(location, entry, cancellation: false)
+        locations.append((entry, location))
       }
-      guard let location = matches.first, Set(matches).count == 1 else {
-        throw MediaOperationError.invalid(
-          "Rename recovery is blocked by a missing or changed file. The journal was retained.")
+      let owned = Set(locations.map { $0.1.standardizedFileURL.path })
+      for entry in plan.entries where FileManager.default.fileExists(atPath: entry.original.path) {
+        guard
+          owned.contains(entry.original.path)
+            || locations.contains(where: {
+              (try? FileFingerprint.read(entry.original)) == $0.0.fingerprint
+            })
+        else {
+          throw MediaOperationError.invalid(
+            "An original filename is occupied; recovery will not overwrite it.")
+        }
       }
-      try verify(location, entry, cancellation: false)
-      locations.append((entry, location))
-    }
-    let owned = Set(locations.map { $0.1.standardizedFileURL.path })
-    for entry in plan.entries where FileManager.default.fileExists(atPath: entry.original.path) {
-      guard
-        owned.contains(entry.original.path)
-          || locations.contains(where: {
-            (try? FileFingerprint.read(entry.original)) == $0.0.fingerprint
-          })
-      else {
-        throw MediaOperationError.invalid(
-          "An original filename is occupied; recovery will not overwrite it.")
+      plan.phase = "rollingBack"
+      try durableJSON(plan, at: journal)
+      for (entry, location) in locations where location != entry.recovery {
+        try FileManager.default.moveItem(at: location, to: entry.recovery)
       }
+      for entry in plan.entries {
+        try FileManager.default.moveItem(at: entry.recovery, to: entry.original)
+      }
+      try updateIngestMappings(plan.entries, undo: true)
+      plan.phase = "rolledBack"
+      try durableJSON(plan, at: journal)
+
     }
-    plan.phase = "rollingBack"
-    try durableJSON(plan, at: journal)
-    for (entry, location) in locations where location != entry.recovery {
-      try FileManager.default.moveItem(at: location, to: entry.recovery)
-    }
-    for entry in plan.entries {
-      try FileManager.default.moveItem(at: entry.recovery, to: entry.original)
-    }
-    try updateIngestMappings(plan.entries, undo: true)
-    plan.phase = "rolledBack"
-    try durableJSON(plan, at: journal)
   }
 
   private func updateIngestMappings(_ entries: [RenameEntry], undo: Bool) throws {
@@ -622,6 +645,7 @@ public actor MediaOperations {
   }
 
   private func copyVerified(_ source: URL, to target: URL, expected: String) throws -> Bool {
+    try sourceProtection.withWritable([target]) {}
     try safeDirectory(target.deletingLastPathComponent())
     if FileManager.default.fileExists(atPath: target.path) {
       _ = try FileFingerprint.read(target)
@@ -633,26 +657,36 @@ public actor MediaOperations {
     }
     let temporary = target.deletingLastPathComponent().appendingPathComponent(
       ".photo-partial-\(UUID())")
-    try Data().write(to: temporary, options: .withoutOverwriting)
-    defer { try? FileManager.default.removeItem(at: temporary) }
+    try sourceProtection.withWritable([temporary]) {
+      try Data().write(to: temporary, options: .withoutOverwriting)
+    }
+    defer {
+      try? sourceProtection.withWritable([temporary]) {
+        try FileManager.default.removeItem(at: temporary)
+      }
+    }
     let input = try FileHandle(forReadingFrom: source)
     let output = try FileHandle(forWritingTo: temporary)
     defer {
       try? input.close()
       try? output.close()
     }
+    // Bound the protection lock to a write chunk, never a whole RAW copy/hash.
+    // Preview/decision checks in another actor can proceed between chunks.
     while true {
       try Task.checkCancellation()
       guard let data = try input.read(upToCount: 1_048_576), !data.isEmpty else { break }
-      try output.write(contentsOf: data)
+      try sourceProtection.withWritable([temporary]) { try output.write(contentsOf: data) }
     }
-    try output.synchronize()
+    try sourceProtection.withWritable([temporary]) { try output.synchronize() }
     try output.close()
     guard try Self.checksum(temporary) == expected else {
       throw MediaOperationError.invalid(
         "Copy verification failed; the incomplete copy was not published.")
     }
-    try FileManager.default.moveItem(at: temporary, to: target)
+    try sourceProtection.withWritable([temporary, target]) {
+      try FileManager.default.moveItem(at: temporary, to: target)
+    }
     return true
   }
   private func directory(_ url: URL) throws -> URL {
@@ -671,24 +705,27 @@ public actor MediaOperations {
     return url.standardizedFileURL
   }
   private func safeDirectory(_ url: URL) throws {
-    for component in sequence(
-      first: url.standardizedFileURL,
-      next: { $0.path == "/" ? nil : $0.deletingLastPathComponent() })
-    {
-      if let destination = try? FileManager.default.destinationOfSymbolicLink(
-        atPath: component.path)
+    return try sourceProtection.withWritable([url]) {
+      for component in sequence(
+        first: url.standardizedFileURL,
+        next: { $0.path == "/" ? nil : $0.deletingLastPathComponent() })
       {
-        // macOS exposes these immutable system aliases in temporary URLs.
-        if ["/var": "private/var", "/tmp": "private/tmp", "/etc": "private/etc"][component.path]
-          == destination
+        if let destination = try? FileManager.default.destinationOfSymbolicLink(
+          atPath: component.path)
         {
-          continue
+          // macOS exposes these immutable system aliases in temporary URLs.
+          if ["/var": "private/var", "/tmp": "private/tmp", "/etc": "private/etc"][component.path]
+            == destination
+          {
+            continue
+          }
+          throw MediaOperationError.invalid(
+            "A destination contains a symbolic link. Choose its actual folder instead.")
         }
-        throw MediaOperationError.invalid(
-          "A destination contains a symbolic link. Choose its actual folder instead.")
       }
+      try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+
     }
-    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
   }
   private static func contains(_ parent: URL, _ child: URL) -> Bool {
     let a = parent.standardizedFileURL.resolvingSymlinksInPath().path.lowercased()
@@ -708,12 +745,15 @@ public actor MediaOperations {
     return try JSONDecoder().decode(IngestManifest.self, from: Data(contentsOf: url))
   }
   private func durableJSON<T: Encodable>(_ value: T, at url: URL) throws {
-    if FileManager.default.fileExists(atPath: url.path) { _ = try FileFingerprint.read(url) }
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    try encoder.encode(value).write(to: url, options: .atomic)
-    let file = try FileHandle(forWritingTo: url)
-    try file.synchronize()
-    try file.close()
+    return try sourceProtection.withWritable([url]) {
+      if FileManager.default.fileExists(atPath: url.path) { _ = try FileFingerprint.read(url) }
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      try encoder.encode(value).write(to: url, options: .atomic)
+      let file = try FileHandle(forWritingTo: url)
+      try file.synchronize()
+      try file.close()
+
+    }
   }
 }
