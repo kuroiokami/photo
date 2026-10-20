@@ -62,3 +62,21 @@ public final class DecisionSaveQueue {
   }
   public func flush() async { while count > 0 { await tail?.value } }
 }
+
+/// Tracks long file operations without delaying independent culling saves.
+@MainActor
+public final class WorkflowOperationBarrier {
+  public static let shared = WorkflowOperationBarrier()
+  private var tasks: [UUID: Task<Void, Never>] = [:]
+  public var hasPending: Bool { !tasks.isEmpty }
+  public func track(_ task: Task<Void, Never>) {
+    let id = UUID()
+    tasks[id] = Task {
+      await task.value
+      tasks[id] = nil
+    }
+  }
+  public func flush() async {
+    while let task = tasks.values.first { await task.value }
+  }
+}

@@ -6,9 +6,11 @@ For installation, usage, feature status, planned work, and handoff evidence, see
 
 ## Status
 
-Photo opens JPEG, PNG and Sony ARW folders directly in a contact sheet, with fast embedded RAW previews, EXIF sorting, independent flags/stars, local persistence with XMP synchronization, and on-demand Fit/100% inspection. Background workers keep decoding, metadata and persistence away from the UI. Original image bytes and embedded metadata are never written.
+Photo opens JPEG, PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM System ORF folders directly in a contact sheet, with fast embedded RAW previews, EXIF sorting, independent flags/stars, local persistence with XMP synchronization, and on-demand Fit/100% inspection. Background workers keep decoding, metadata and persistence away from the UI. Original image bytes and embedded metadata are never written.
 
-Other RAW formats, HEIC, batch selection and release distribution remain planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
+The Workflow panel adds verified dual-destination ingest, multi-selection and RAW+JPEG grouping, reviewed bulk rename/Undo, IPTC presets and hierarchical keywords, and a Lightroom Classic handoff. See the [workflow guide](docs/WORKFLOW.md) for usage, recovery and verified camera coverage. Other RAW formats, HEIC and release distribution remain planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
+
+The workflow changes are currently in draft [PR #3](https://github.com/kuroiokami/photo/pull/3), stacked on the unmerged culling PR. After cloning, use `git switch --track origin/codex/ingest-metadata-cameras` to try this development version before building. The default branch does not include these unmerged features yet.
 
 ## Requirements and installation
 
@@ -33,13 +35,25 @@ This bundle is ad-hoc signed locally and unnotarized; it is for development, not
 
 ## Usage
 
-- Choose **File → Open Folder…** (Command-O) or use the Open Folder button. Only the selected folder's visible regular `.jpg`, `.jpeg`, `.png`, and `.arw` files are listed, in natural filename order. Subfolders and symbolic links are excluded.
+- Choose **File → Open Folder…** (Command-O) or use the Open Folder button. Only the selected folder's visible regular `.jpg`, `.jpeg`, `.png`, `.arw`, `.cr2`, `.cr3`, `.crw`, and `.orf` files are listed, in natural filename order. Subfolders and symbolic links are excluded.
 - Click a thumbnail to select it. Left/right arrows move one photo; up/down arrows move one grid row. Home/End select the first/last image. On compact Mac keyboards, Fn-left/right provide Home/End.
 - Space toggles the preview; Escape hides it. Double-clicking a thumbnail shows it. Drag the split divider to resize the contact sheet and preview.
 - Adjust the thumbnail-size slider to change grid density. Click a thumbnail to return keyboard focus to the grid after using another control.
 - **File → Reload Folder** (Command-R) rescans the folder, clears cached images, and preserves the selection if the file still exists. Filesystem changes are not watched automatically.
 - Damaged, unreadable, or removed images show an error instead of blocking navigation. The preview provides **Try Again**; Reload also retries thumbnails. Folder failures offer Reload or another folder choice.
 - **Show Sample Collection** returns to three bundled synthetic images. Quit with Command-Q.
+
+## Ingest, organize and hand off
+
+Open **Workflow…** in the toolbar. Ingest a card to separate working/backup roots with a job folder; each copy is SHA-256 verified. Use **Continue Browsing** during ingest and **Reload** for arrivals. Browse individual card subfolders. The backup is an ingest snapshot; later edits require your normal backup system.
+
+Command/Shift-click select multiple thumbnails; Command-A selects all visible photos. Enable **RAW+JPEG** to represent a unique same-stem pair as one item and apply decisions to both files. Batch decisions undo together.
+
+In **Bulk Rename**, choose Selection/Visible/All files, set a naming template and sequence, then **Preview Names** before **Apply Reviewed Rename**. Paired images and matching XMP/ACR companions follow together. Rename before Lightroom import; after import use Lightroom's rename/move commands.
+
+In **IPTC & Keywords**, check fields to apply; blank unchecked fields stay untouched. **Clear** is explicit. Preview changes before applying. Save layered author/shoot/subject presets. Use keyword Append/Replace/Remove/Clear; `Wildlife|Birds|Heron` records a hierarchy and its leaf keyword.
+
+**Lightroom** prepares an optional verified copy of non-rejected photos and companions. Its JPEG/PNG copies can embed prepared metadata without recompressing pixels; original library bytes stay untouched. In Lightroom Classic, import that folder with **Add**. Actual Lightroom application round trips remain unverified. Follow the [workflow guide](docs/WORKFLOW.md) before working on an existing catalog.
 
 ## Development checks
 

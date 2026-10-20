@@ -42,15 +42,18 @@ private enum ImageDecoder {
   static func decode(_ url: URL, maximumPixelSize: Int) throws -> PhotoPreview {
     try autoreleasepool {
       try Task.checkCancellation()
+      if let canon = try CanonEmbeddedPreview.decode(url, maximumPixelSize: maximumPixelSize) {
+        return canon
+      }
       let options = [kCGImageSourceShouldCache: false] as CFDictionary
       guard let source = CGImageSourceCreateWithURL(url as CFURL, options),
         let type = CGImageSourceGetType(source) as String?,
-        ["public.jpeg", "public.png", "com.sony.arw-raw-image"].contains(type),
+        SupportedImageTypes.supports(type),
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
         let width = properties[kCGImagePropertyPixelWidth] as? Int,
         let height = properties[kCGImagePropertyPixelHeight] as? Int
       else { throw PreviewError.unreadable }
-      let raw = type == "com.sony.arw-raw-image"
+      let raw = SupportedImageTypes.raw.contains(type)
       let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
       let thumbnailOptions: [CFString: Any] = [
         kCGImageSourceCreateThumbnailFromImageAlways: !raw,

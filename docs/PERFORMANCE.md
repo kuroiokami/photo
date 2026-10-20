@@ -102,3 +102,24 @@ JPEG/PNG synthetic templates have valid dimensions but no shooting EXIF; their I
 Nine verified disposable real ARW copies (655,712,256 bytes, 9504-pixel sensor long edge) were also tested. All are **Sony ILCE-7CR**, with eight orientation-1 files and one orientation-8 portrait. Embedded previews and genuine rendered detail passed for every file, with matching source hashes. Pipeline preview p95 was 21.72 ms, cached p95 0.014 ms, sampled peak CLI RSS 131.98 MiB and image failures zero. The first thumbnail took 166.85 ms; that exceeds the old 150 ms thumbnail target for this run. In the separate workspace process, first preview during concurrent indexing took **179.61 ms**, exceeding 150 ms; metadata indexing took 167.72 ms, initial/repeat decisions 9.17/2.63 ms and the selected decision 3.90 ms. The pipeline's preview phase follows its thumbnail phase, so its lower preview p95 must not be substituted for startup latency. Decoder initialization/first-open latency remains an explicit optimization target; multiple-camera coverage remains open.
 
 Reproduce workspace measurements using `sh scripts/benchmark.sh --workspace /path/to/folder`. Use disposable folders for any metadata-write tests. The real-camera optional suite now checks every ARW in its supplied shallow folder, rather than only the first file. Camera files, filenames, private EXIF, source paths and hash values are excluded from the committed evidence.
+
+## Ingest/camera workflow follow-up — 2026-10-19
+
+[Aggregate results](benchmarks/2026-10-19-ingest-cameras.json) record sequential release runs on the same reference Mac. Public CC0 files cover Canon EOS R CR3, Canon EOS Rebel SL1 CR2, Olympus E-M1MarkII ORF and OM System OM-1 ORF; [provenance and SHA-256](fixtures/public-raw-provenance.json) are public, but the images stay outside Git. These four camera/mode examples do not establish universal RAW compatibility. Real CRW remains unverified.
+
+Initial ImageIO-only support returned a **5,127.52 ms** maximum/p95 thumbnail over four files. A focused diagnostic isolated approximately **5,088 ms** in the EOS R CR3 property read; requesting its thumbnail without properties still took approximately **5,114 ms**. Both RAW generation switches were disabled. Repeated preview access was much faster, so reporting only warm previews would conceal the startup problem.
+
+The new bounded CR3 container path reads the existing PRVW JPEG and CMT1 orientation/dimensions, then decodes only the JPEG. Unknown layouts retain ImageIO's embedded-only fallback. The follow-up run's maximum/p95 thumbnail over the four files fell to **182.02 ms**; preview p95 was **77.90 ms**, cached-preview p95 **0.017 ms**, with zero failures and all input hashes unchanged. Sampled CLI peak RSS was **195.56 MiB**; fit/thumbnail cache costs were **60.84/2.49 MiB**, within their existing budgets. The direct PRVW image can be smaller than ImageIO's alternate embedded source; the UI reports its actual decoded size and retains genuine rendered RAW detail separately.
+
+The 182 ms first-thumbnail outcome still exceeds the 150 ms reference target. Apple's initial decoder setup for other formats and CR3 EXIF/background indexing remain profiling work. These runs are single-process observations with uncontrolled OS caches, not controlled performance distributions or native frame/input measurements. Full-detail render timings are not represented by the Fit preview figures.
+
+With unique-family/companion indexes enabled, 2,000 valid synthetic JPEG/PNG files returned first preview during concurrent indexing in **43.84 ms**, decision loading in **2.03 s** initially/**0.44 s** on repeat, metadata indexing **362.80 ms**, ISO/rating sorts **31.00/42.26 ms**, and sampled maximum main-actor gap **42.17 ms** including scheduler delays. All 2,000 source hashes matched; metadata/decision errors were zero. An early quadratic family companion scan was removed before these results. This nominal 10 ms timer gap is not UI frame time.
+
+Reproduce externally, keeping sample images out of the repository:
+
+```sh
+PHOTO_RAW_TEST_FOLDER=/absolute/disposable/raw-folder sh scripts/check.sh
+sh scripts/benchmark.sh --folder /absolute/disposable/raw-folder > camera-report.json
+sh scripts/benchmark.sh --generate /new/disposable/mixed-folder 2000
+sh scripts/benchmark.sh --workspace /new/disposable/mixed-folder > workspace-report.json
+```

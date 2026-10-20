@@ -44,7 +44,8 @@ struct FolderBrowsingTests {
   }
 
   @Test(arguments: [
-    "jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG", "PNG", "pNg", "ARW", "arw", "ArW",
+    "jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG", "PNG", "pNg", "ARW", "arw", "ArW", "cr2", "CR2",
+    "Cr3", "CR3", "CRW", "orf", "ORF", "OrF",
   ])
   func extensionVariantsAndUnicodeNamesAreIncluded(_ ext: String) async throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

@@ -16,16 +16,16 @@ public enum SidecarError: LocalizedError {
 public enum XMPSidecar {
   private static let xmp = "http://ns.adobe.com/xap/1.0/"
   private static let dm = "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
-  private static let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  static let rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   public static func url(for image: URL) -> URL {
-    image.pathExtension.lowercased() == "arw"
+    PhotoFormats.isRaw(image)
       ? image.deletingPathExtension().appendingPathExtension("xmp")
       : image.appendingPathExtension("xmp")
   }
   public static func digest(_ data: Data?) -> String {
     data.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? "absent"
   }
-  private static func document(_ data: Data) throws -> XMLDocument {
+  static func document(_ data: Data) throws -> XMLDocument {
     guard data.count <= 16 * 1024 * 1024,
       let text = String(data: data, encoding: .utf8),
       !text.uppercased().contains("<!DOCTYPE"), !text.uppercased().contains("<!ENTITY"),
@@ -34,8 +34,19 @@ public enum XMPSidecar {
     else { throw SidecarError.malformed }
     return document
   }
+  /// XMP is an XML fragment/packet, not a standalone XML document. In
+  /// particular, older ImageIO XMP readers reject Foundation's standalone
+  /// declaration. Preserve the existing packet instructions and tree.
+  static func serializedPacket(_ document: XMLDocument) -> Data {
+    document.characterEncoding = "UTF-8"
+    var text = String(decoding: document.xmlData(options: [.nodePreserveAll]), as: UTF8.self)
+    if text.hasPrefix("<?xml "), let end = text.range(of: "?>") {
+      text.removeSubrange(text.startIndex..<end.upperBound)
+    }
+    return Data(text.utf8)
+  }
   // Traverse explicitly: namespace prefixes are arbitrary in real sidecars.
-  private static func walk(_ node: XMLNode) -> [XMLElement] {
+  static func walk(_ node: XMLNode) -> [XMLElement] {
     var result: [XMLElement] = []
     if let element = node as? XMLElement { result.append(element) }
     for child in node.children ?? [] { result += walk(child) }
@@ -66,7 +77,10 @@ public enum XMPSidecar {
       "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"\(rdf)\"><rdf:Description rdf:about=\"\"/></rdf:RDF></x:xmpmeta>"
         .utf8)
     let doc = try document(data ?? initial)
-    let descriptions = walk(doc).filter { $0.localName == "Description" && $0.uri == rdf }
+    let descriptions = walk(doc).filter {
+      $0.localName == "Description" && $0.uri == rdf && $0.parent?.localName == "RDF"
+        && $0.parent?.uri == rdf
+    }
     guard let target = descriptions.first, descriptions.count == 1 else {
       throw SidecarError.malformed
     }
@@ -85,19 +99,20 @@ public enum XMPSidecar {
       {
         throw SidecarError.malformed
       }
-      for element in walk(doc) {
-        for attr in element.attributes ?? [] where attr.uri == uri && attr.localName == name {
-          if let attrName = attr.name { element.removeAttribute(forName: attrName) }
-        }
-        if element.uri == uri && element.localName == name { element.detach() }
+      for attr in target.attributes ?? [] where attr.uri == uri && attr.localName == name {
+        if let attrName = attr.name { target.removeAttribute(forName: attrName) }
       }
+      for item in target.children?.compactMap({ $0 as? XMLElement }) ?? []
+      where item.uri == uri && item.localName == name { item.detach() }
       if let value {
-        target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
+        if target.resolveNamespace(forName: "\(prefix):\(name)") == nil {
+          target.addNamespace(XMLNode.namespace(withName: prefix, stringValue: uri) as! XMLNode)
+        }
         target.addAttribute(
           XMLNode.attribute(withName: "\(prefix):\(name)", uri: uri, stringValue: value) as! XMLNode
         )
       }
     }
-    return doc.xmlData(options: [.nodePreserveAll])
+    return serializedPacket(doc)
   }
 }

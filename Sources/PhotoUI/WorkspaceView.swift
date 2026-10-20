@@ -5,6 +5,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 private typealias WorkspaceStorage = SwiftUI.State<WorkspaceState>
+private typealias WorkflowModelStorage = SwiftUI.State<WorkflowModel>
 private typealias BoolStorage = SwiftUI.State<Bool>
 private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
@@ -20,6 +21,7 @@ private struct GridLayout: Equatable {
 
 public struct WorkspaceView: View {
   @WorkspaceStorage private var workspace: WorkspaceState
+  @WorkflowModelStorage private var workflowModel: WorkflowModel
   @BoolStorage private var showPreview = true
   @BoolStorage private var choosingFolder = false
   @ColumnStorage private var gridColumns = 1
@@ -29,10 +31,12 @@ public struct WorkspaceView: View {
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
   @BoolStorage private var showInspector = false
+  @BoolStorage private var showingWorkflow = false
   private let metadataReader = ImageMetadataReader()
 
   public init(workspace: WorkspaceState = WorkspaceState()) {
     _workspace = State(initialValue: workspace)
+    _workflowModel = State(initialValue: WorkflowModel(workspace: workspace))
   }
 
   public var body: some View {
@@ -61,6 +65,7 @@ public struct WorkspaceView: View {
     .navigationTitle("Photo")
     .toolbar {
       ToolbarItemGroup {
+        Button("Workflow…") { showingWorkflow = true }.disabled(choosingFolder)
         Button(action: openFolder) { Label("Open Folder", systemImage: "folder.badge.plus") }
           .disabled(choosingFolder).help("Open Folder (⌘O)")
         Button(action: reload) { Label("Reload", systemImage: "arrow.clockwise") }
@@ -74,13 +79,16 @@ public struct WorkspaceView: View {
         .help("Show or hide preview (Space)")
       }
     }
+    .sheet(isPresented: $showingWorkflow) { WorkflowView(model: workflowModel) }
     .focusedSceneValue(
       \.workspaceActions,
       WorkspaceActions(
-        workspace: workspace, canDecide: !choosingFolder, columns: gridColumns,
+        workspace: workspace,
+        canDecide: !choosingFolder && !showingWorkflow
+          && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
-        canReload: workspace.directory != nil)
+        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow)
     )
     .task(id: workspace.sessionID) {
       // Retain one worker per lane across folders, while invalidating caches.
@@ -90,8 +98,10 @@ public struct WorkspaceView: View {
     }
     .task(id: "\(workspace.sessionID)-\(workspace.loadState)") {
       guard workspace.loadState == .ready else { return }
-      async let metadata: Void = workspace.indexMetadata(using: metadataReader)
-      async let decisions: Void = workspace.loadDecisions()
+      let session = workspace.sessionID
+      async let metadata: Void = workspace.indexMetadata(
+        using: metadataReader, expectedSession: session)
+      async let decisions: Void = workspace.loadDecisions(expectedSession: session)
       _ = await (metadata, decisions)
     }
   }
@@ -114,6 +124,7 @@ public struct WorkspaceView: View {
           .textSelection(.enabled).lineLimit(5)
       }
       Button("Open Folder…", action: openFolder).disabled(choosingFolder)
+      Button("Ingest, Rename & Metadata…") { showingWorkflow = true }
       if workspace.directory != nil {
         Button("Show Sample Collection") {
           workspace.showSamples()
@@ -124,7 +135,7 @@ public struct WorkspaceView: View {
       Spacer()
       VStack(alignment: .leading, spacing: 7) {
         Label("Originals stay untouched", systemImage: "lock.shield")
-        Text("JPEG · PNG · Sony ARW")
+        Text("JPEG · PNG · Sony · Canon · Olympus RAW")
         Text("← → Navigate   Space Preview")
       }
       .font(.caption).foregroundStyle(.secondary)
@@ -200,7 +211,7 @@ public struct WorkspaceView: View {
             Label("No supported images", systemImage: "photo.on.rectangle")
           } description: {
             Text(
-              "Choose a folder with JPEG, PNG, or Sony ARW files. Subfolders and hidden files are not included."
+              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Subfolders and hidden files are not included."
             )
           } actions: {
             Button("Open Folder…", action: openFolder)
@@ -286,10 +297,12 @@ public struct WorkspaceView: View {
   }
 
   private func thumbnail(_ photo: PhotoItem) -> some View {
-    let selected = workspace.selectedID == photo.id
+    let selected = workspace.selectedIDs.contains(photo.id)
     let decision = workspace.decisions[photo.id] ?? CullingDecision()
     return Button {
-      workspace.select(photo.id)
+      let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+      workspace.selectMultiple(
+        photo.id, extending: modifiers.contains(.command), range: modifiers.contains(.shift))
       gridFocused = true
     } label: {
       VStack(alignment: .leading, spacing: 8) {
@@ -306,6 +319,9 @@ public struct WorkspaceView: View {
           )
           .accessibilityLabel("\(decision.rating) stars")
         }.font(.caption2).foregroundStyle(.secondary)
+        if workspace.groupPairs, workspace.pairedCount(photo) > 1 {
+          Text("RAW + JPEG").font(.caption2).foregroundStyle(.secondary)
+        }
         Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
           .foregroundStyle(selected ? Color.white : Color.secondary)
       }
@@ -422,6 +438,11 @@ public struct WorkspaceView: View {
         ForEach(1...5, id: \.self) { Text("\($0)★ or more").tag($0) }
       }.frame(width: 150)
       Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
+      Toggle(
+        "RAW+JPEG", isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
+      ).toggleStyle(.checkbox)
+      Button("Select All") { workspace.selectAllVisible() }
+      Text("\(workspace.selectedIDs.count) selected").font(.caption)
       Spacer()
       Toggle(
         "Auto-advance",
@@ -476,6 +497,11 @@ public struct WorkspaceView: View {
 
   private var statusBar: some View {
     HStack {
+      if workflowModel.busy {
+        ProgressView().controlSize(.small)
+        Button("Workflow…") { showingWorkflow = true }
+        Text(workflowModel.status).lineLimit(1)
+      }
       Label(
         workspace.selectedID.flatMap { workspace.saveStatus[$0] } ?? "Originals stay untouched",
         systemImage: "checkmark.shield")

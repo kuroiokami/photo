@@ -28,13 +28,14 @@ public struct WorkspaceCommands: Commands {
   public init() {}
 
   public var body: some Commands {
-    CommandGroup(replacing: .undoRedo) {
-      Button("Undo Decision") { actions?.workspace.undoDecision() }
-        .keyboardShortcut("z", modifiers: .command).disabled(
-          actions?.canDecide != true || actions?.workspace.canUndo != true)
-      Button("Redo Decision") { actions?.workspace.redoDecision() }
-        .keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
-          actions?.canDecide != true || actions?.workspace.canRedo != true)
+    if actions?.canDecide == true {
+      CommandGroup(replacing: .undoRedo) {
+        Button("Undo Decision") { actions?.workspace.undoDecision() }
+          .keyboardShortcut("z", modifiers: .command).disabled(actions?.workspace.canUndo != true)
+        Button("Redo Decision") { actions?.workspace.redoDecision() }
+          .keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
+            actions?.workspace.canRedo != true)
+      }
     }
     CommandMenu("Navigate") {
       Group {
@@ -57,6 +58,11 @@ public struct WorkspaceCommands: Commands {
       }.disabled(actions?.canDecide != true)
     }
     CommandMenu("Decisions") {
+      if actions?.canDecide == true {
+        Button("Select All Photos") { actions?.workspace.selectAllVisible() }
+          .keyboardShortcut("a", modifiers: .command)
+      }
+      Divider()
       Group {
         ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
           Button(flag.title) { actions?.workspace.applyDecision(flag: flag) }

@@ -13,7 +13,7 @@ public struct DecisionEntry: Sendable {
   public var conflict: Bool { status.hasPrefix("XMP conflict") }
 }
 
-private struct StoredDecision: Codable {
+struct StoredDecision: Codable {
   var decision: CullingDecision
   var pending: Bool
   var baseline: String
@@ -48,7 +48,7 @@ public actor DecisionStore {
     deinit { sqlite3_close(handle) }
   }
 
-  private func key(for image: URL) throws -> String {
+  func key(for image: URL) throws -> String {
     let attributes = try FileManager.default.attributesOfItem(atPath: image.path)
     guard attributes[.type] as? FileAttributeType == .typeRegular else {
       throw CocoaError(.fileReadUnsupportedScheme)
@@ -67,7 +67,7 @@ public actor DecisionStore {
     return "\(identity):\(created):\(modified):\(size)"
   }
 
-  private func withDB<T>(_ body: (OpaquePointer) throws -> T) throws -> T {
+  func withDB<T>(_ body: (OpaquePointer) throws -> T) throws -> T {
     if let connection { return try body(connection.handle) }
     try FileManager.default.createDirectory(
       at: databaseURL.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -86,7 +86,7 @@ public actor DecisionStore {
     guard
       sqlite3_exec(
         db,
-        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL)",
+        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL)",
         nil, nil, nil) == SQLITE_OK
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
@@ -95,7 +95,7 @@ public actor DecisionStore {
     return try body(db)
   }
 
-  private func read(_ key: String) throws -> StoredDecision? {
+  func read(_ key: String) throws -> StoredDecision? {
     try withDB { db in
       var statement: OpaquePointer?
       guard
@@ -117,7 +117,7 @@ public actor DecisionStore {
     }
   }
 
-  private func write(_ value: StoredDecision, key: String) throws {
+  func write(_ value: StoredDecision, key: String) throws {
     let data = try JSONEncoder().encode(value)
     try withDB { db in
       var statement: OpaquePointer?
@@ -164,15 +164,15 @@ public actor DecisionStore {
     }
   }
 
-  private func sidecarData(_ image: URL) throws -> Data? {
+  func sidecarData(_ image: URL) throws -> Data? {
     let url = XMPSidecar.url(for: image)
-    if image.pathExtension.lowercased() == "arw" {
-      // Check the eight possible ASCII extension spellings directly rather
+    if PhotoFormats.isRaw(image) {
+      // Check the supported RAW extension spellings directly rather
       // than scanning the entire folder for every photo. The actual on-disk
       // name deduplicates aliases on case-insensitive volumes, while distinct
       // case-only files on case-sensitive volumes still count as collisions.
       var names: Set<String> = []
-      for ext in ["arw", "arW", "aRw", "aRW", "Arw", "ArW", "ARw", "ARW"] {
+      for ext in PhotoFormats.rawExtensionSpellings {
         let peer = image.deletingPathExtension().appendingPathExtension(ext)
         do {
           if let name = try peer.resourceValues(forKeys: [.nameKey]).name { names.insert(name) }
@@ -280,6 +280,8 @@ public actor DecisionStore {
           let output = try XMPSidecar.merging(decision, into: current)
           try output.write(to: XMPSidecar.url(for: image), options: .atomic)
           record.baseline = XMPSidecar.digest(output)
+          try rebaseMetadata(
+            identity: identity, from: XMPSidecar.digest(current), to: record.baseline)
         } catch { operationError = error }
       }
       if let error = coordinationError { throw error }

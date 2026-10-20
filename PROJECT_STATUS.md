@@ -6,22 +6,23 @@ This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md
 
 ## Current state
 
-Photo is a native SwiftUI/SwiftPM macOS 14+ folder-first photo culling app. The fast-culling implementation is pushed on `codex/fast-culling` in [draft PR #2](https://github.com/kuroiokami/photo/pull/2), in separate RAW/EXIF, ratings/persistence, and detail-view chunks. Original image bytes and embedded metadata remain untouched. Sony ARW browsing uses embedded previews; genuine RAW rendering happens only on explicit 100% inspection.
+Photo is a native SwiftUI/SwiftPM macOS 14+ folder-first culling app. The existing fast-culling work remains in draft [PR #2](https://github.com/kuroiokami/photo/pull/2). The approved workflow follow-up adds verified ingest, batch organization, metadata and Canon/Olympus RAW support. Delivery for this follow-up is recorded below. Original library image bytes remain untouched; reviewed renaming changes names, and explicit derived JPEG/PNG handoff copies can receive embedded metadata. RAW Fit uses embedded JPEGs; genuine RAW rendering happens only on explicit 100% inspection.
 
+See the [workflow guide](docs/WORKFLOW.md) for the operational sequence and recovery, [decision 0006](docs/decisions/0006-ingest-metadata-cameras.md) for architecture, and [camera/performance evidence](docs/PERFORMANCE.md#ingestcamera-workflow-follow-up--2026-10-19).
 ## Installation and use
 
-Use macOS 14+, Apple Swift 6+ and built-in `swift format`. Clone `https://github.com/kuroiokami/photo.git`, enter the checkout, then run `swift run Photo`. For a Finder-launchable development bundle: `sh scripts/build-app.sh`, then `open .build/Photo.app`. The helper now seals the local bundle with an ad-hoc signature; it is not Developer ID signed, notarized or an installable release. No external packages, API keys or Package.resolved are required. System SQLite, ImageIO, Core Image and Foundation XML supply storage/imaging support.
+Use macOS 14+, Apple Swift 6+ and built-in `swift format`. Clone `https://github.com/kuroiokami/photo.git`, enter the checkout, switch to `codex/ingest-metadata-cameras` to try the unmerged workflow, then run `swift run Photo`. For a Finder-launchable development bundle: `sh scripts/build-app.sh`, then `open .build/Photo.app`. The helper now seals the local bundle with an ad-hoc signature; it is not Developer ID signed, notarized or an installable release. No external packages, API keys or Package.resolved are required. System SQLite, ImageIO, Core Image and Foundation XML supply storage/imaging support.
 
-- Command-O opens visible regular JPEG/PNG/Sony ARW files in one folder, case-insensitively. No recursion or symlink following. Command-R reloads and preserves selection where possible. No live file watching.
+- Command-O opens visible regular JPEG/PNG/Sony ARW/Canon CR2-CR3-CRW/Olympus ORF files in one folder, case-insensitively. No recursion or symlink following. Command-R reloads and preserves selection where possible. No live file watching.
 - Arrows navigate; up/down move a grid row, Home/End select ends. Navigate menu commands keep browsing available after preview/control interactions. Space toggles preview, Escape hides it. Thumbnail size and split pane are adjustable.
 - P/X/U set pick/reject/unflagged; 0–5 set independent stars. Shift applies and advances once. Auto-advance is visible, initially off and remembered. Reject never deletes or moves an image. Edit menu provides Undo/Redo.
 - Filters combine flag state and minimum stars; Clear Filters restores all. Rating sort is highest first. EXIF sorts are numeric, missing-last, with natural filename ties. Sorting waits for metadata indexing and preserves selection. The optional inspector shows capture time, camera/lens, exposure, ISO, focal length and dimensions; a compact exposure strip stays visible.
 - Fit shows a fast bounded preview with source/resolution badge. 100% or double-click requests genuine detail around the pointer; scroll/drag to pan and inspect the navigator. One image pixel equals one physical display pixel. Fit/double-click returns; changing photo resets to Fit. Unsupported/oversized RAW detail retains the fit preview with an error/retry state.
-- Samples are temporary. Real decisions persist in `~/Library/Application Support/Photo/decisions.sqlite`; normal quit drains queued saves. The UI distinguishes Saving, Saved, local-only failures and XMP conflict.
+- Samples are temporary. Real decisions persist in `~/Library/Application Support/Photo/decisions.sqlite`; normal quit drains file operations and queued saves. The UI distinguishes Saving, Saved, local-only failures and XMP conflict.
 
 ## Storage and recovery
 
-SQLite saves decisions and pending sync before sidecar writes. ARW uses `basename.xmp`; JPEG/PNG use `filename.jpg.xmp` / `filename.png.xmp`. Other apps may not recognize JPEG/PNG sidecars. RAW+JPEG remain separate items. XMP stores stars independently of flags, preserves unrelated properties/develop settings semantically, and writes coordinated atomic replacements. Entities, symlinks, malformed/ambiguous packets and unsafe collisions are not rewritten.
+SQLite saves decisions, descriptive patches and pending sync before sidecar writes. All supported RAWs use `basename.xmp`; JPEG/PNG use `filename.jpg.xmp` / `filename.png.xmp`. Other apps may not recognize JPEG/PNG sidecars. RAW+JPEG retain separate file identities and sidecars; an optional unique-pair view targets both together. XMP stores stars independently of flags, preserves unrelated properties/develop settings semantically, and writes coordinated atomic replacements. Entities, symlinks, malformed/ambiguous packets and unsafe collisions are not rewritten.
 
 Read-only folders retain local decisions and expose Retry XMP Sync. Reload imports external decisions when no local edit is pending. External changes conflicting with pending decisions require Use My Decisions or Use External Decisions. File identities plus replacement fingerprints and captured request identities protect queued decisions from attaching to replaced files. Direct Lightroom round-trip verification remains pending; field compatibility must not be presented as tested application interoperability. Sudden process termination can lose changes still marked Saving.
 
@@ -30,16 +31,43 @@ Read-only folders retain local decisions and expose Retry XMP Sync. Reload impor
 | Capability | State |
 | --- | --- |
 | Native shell, samples, lazy contact sheet and selected preview | Implemented; native checks passed |
-| JPEG/PNG and case-insensitive Sony ARW | Implemented; real ARW/JPEG checks passed |
+| JPEG/PNG, Sony ARW, Canon CR2/CR3/CRW, Olympus/OM ORF | Implemented; real ARW/CR2/CR3/ORF checks passed; real CRW unverified |
 | Embedded-only RAW fit, provenance, separate image workers and LRU caches | Implemented; benchmarked on the reference Mac |
 | EXIF inspector/background indexing and numeric sorts | Implemented; numeric/timezone tests and native inspector/ISO checks passed |
 | Independent flags/stars, shortcuts, filters, auto-advance and Undo/Redo | Implemented; automated and native checks passed |
 | Durable local SQLite and preserving XMP sync/conflicts | Implemented; fixture tests, native undo/reload and database restart tests passed |
 | Fit/physical-pixel 100%, pan, navigator, explicit Apple RAW rendering | Implemented; fixture and local real-RAW tests passed; native detail/scroll checks passed |
 | Lightroom application-level interchange | Not verified |
-| Other RAW/HEIC, pairing, multi-select, batch file organization | Planned |
+| Dual-destination verified ingest, manifests, early browsing | Implemented; disposable copy/resume/collision tests and native checks passed |
+| RAW+JPEG representation and multi-selection/batch decisions | Implemented; independent companion/Undo tests passed |
+| Reviewed token renaming, XMP/ACR companions, Undo/recovery | Implemented; collision, changed-input, recovery, re-ingest and native checks passed |
+| IPTC presets, explicit keyword operations and hierarchy | Implemented; preservation/conflict/pending/restart tests and native batch checks passed |
+| Optional verified handoff with JPEG/PNG metadata copies | Implemented; source/pixel/orientation tests and native handoff passed; Lightroom import unverified |
+| Other RAW/HEIC, full vocabulary dictionary, live arrivals | Planned |
 | RAW histogram, focus peaking, exposure adjustment, comparison | Planned |
 | Wider hardware/camera/macOS/accessibility coverage and release distribution | Pending |
+
+## Latest workflow/camera follow-up — 2026-10-19
+
+Implemented recursive verified two-destination ingest with a per-file manifest and original-name/hash evidence, retained card structure, resumable matching copies and collision refusal. Companions publish first. Completed images can be culled while ingest continues without delaying culling saves; Reload shows new arrivals. The second destination is an initial snapshot, not continuous backup. A stale UI indexing launch could initially empty a newly ingested collection; entry/session guards now prevent old jobs starting on a loading/new session, and native ingest showed both photos immediately after completion.
+
+Unique RAW+JPEG pairs can share a contact-sheet representative; physical files retain independent decisions. Command/Shift selection, Select All and batch decision Undo are implemented. Bulk naming uses date/time/camera/original/sequence tokens, full per-file previews, paired XMP/ACR movement, collision/identity/hash checks and durable two-stage recovery/Undo journals. Working ingest manifests follow Photo's renames so incremental ingest retains original-name evidence without recreating old names. Changed working metadata is preserved and counted separately.
+
+Descriptive metadata extends the shared SQLite store with durable pending ownership, embedded-metadata overlays, explicit clear semantics and preserving XMP conflict resolution. Layered author/shoot/subject presets, separate created/shown location fields, reusable vocabulary suggestions and keyword Append/Replace/Remove/Clear with hierarchy are available. Arbitrary IPTC fields, full vocabulary-file/synonym/export-rule management, automatic ingest metadata/naming, metadata Undo and clock correction are not implemented. Full-filename JPEG/PNG sidecars retain limited application recognition.
+
+The optional non-reject handoff verifies copied files plus XMP/ACR. JPEG/PNG derived copies can embed prepared metadata using ImageIO CopyImageSource; tests compare decoded pixel data/orientation and unchanged original bytes. The original-copy manifest and derived-byte checksum manifest are separate. A new dedicated handoff folder is required after metadata-derived files differ from originals. Lightroom Classic import is manual Add; no Lightroom catalog was modified and actual application interchange remains unverified.
+
+RAW recognition now includes all case spellings of CR2/CR3/CRW/ORF. Four external CC0 camera samples passed embedded Fit, genuine Apple full-detail rendering, dimension/budget checks and source hash preservation. Models: EOS R, EOS Rebel SL1, E-M1MarkII and OM-1. Real CRW is not yet tested. A bounded CR3 embedded-JPEG reader removes the observed five-second first-container delay; unknown layouts fall back to embedded-only ImageIO. Synthetic tests cover malformed bounds and all eight orientations against ImageIO. EXIF and full RAW detail still rely on Apple's installed decoders.
+
+Release measurements on the four samples: preview p95 **77.90 ms**, cached p95 **0.017 ms**, peak CLI RSS **195.56 MiB**, zero failures/changed originals. Worst first-thumbnail **182.02 ms** remains above the 150 ms target; ImageIO-only first CR3 access was about 5.1 seconds. For 2,000 JPEG/PNG files, first preview during indexing was **43.84 ms**, initial/repeat decisions **2.03/0.44 s** and hashes all matched. See the [aggregate report](docs/benchmarks/2026-10-19-ingest-cameras.json) and limits in PERFORMANCE.md. These are CLI service timings, not native input/frame measurements.
+
+The final local `sh scripts/format.sh` and `PHOTO_RAW_TEST_FOLDER=/absolute/disposable/raw-folder sh scripts/check.sh` passed strict lint, warnings-as-errors build and **65 tests** (47 core + 18 UI/imaging). The real-camera case checked all four licensed samples; standard CI skips that optional case and does not test those camera files. Tests include symlink/overlap/collision refusal, incremental copies after rename, interrupted recovery, pending metadata accumulation, conflict/restart, preserving keywords/languages/develop settings, all eight CR3 orientations, metadata export pixel/orientation/source protection, batch decisions and independent quit/save barriers.
+
+Native disposable-photo checks passed dual-copy ingest, first published folder browsing after the session guard, reviewed rename/Undo, batch IPTC plus hierarchical keywords, before/after previews, synchronized results and derived PNG handoff. Final modal text Command-A replacement and Command-Z restoration passed; custom browser commands now yield to native Edit commands in sheets. A separate native folder-picker confirmation attempt was inconclusive through the automation; picker experiments were discarded and its established implementation retained. Automated real-camera decode checks passed; no new native Canon/Olympus detail or Lightroom application exchange is claimed. All four public RAW hashes and every native ingested image-copy hash were rechecked; test rename preferences/journal were restored. The local app bundle builds and verifies with its ad-hoc signature.
+
+The follow-up is published on `codex/ingest-metadata-cameras` as draft [PR #3](https://github.com/kuroiokami/photo/pull/3), stacked on `codex/fast-culling`. PR #2 remains unmerged. The service/imaging and UI/documentation chunks are separate, with compatibility follow-ups. The older CI compiler uses explicit photo-family array construction; XMP fragments omit Foundation’s standalone XML declaration; repeated namespace bindings are avoided; export destinations close before verification; and IPTC created/shown locations use Bags of structured resources. ImageIO parsing, native array interpretation and retained location fields are covered by export regressions.
+
+Implementation `58b624b` passed [push CI on macOS 15](https://github.com/kuroiokami/photo/actions/runs/39325009900). The same implementation also passed [PR CI on macOS 15](https://github.com/kuroiokami/photo/actions/runs/39325015808). A documentation-only follow-up records these observed results; tested implementation source is unchanged. The final local standard run passed **64 executed tests plus one optional real-camera skip** after the licensed camera fixtures had been removed; the preceding camera-enabled run passed all 65, checking four RAWs. No personal-camera payload is committed or tested by CI. The three disposable fixture directories and the completed native rename journal were removed after hash checks, and the two test-created naming preferences were restored. Native folder-picker confirmation remained inconclusive through automation, so its established implementation was retained. App startup uses samples; the original user's decisions were not edited by these workflow checks. Earlier counts/results in the historical sections describe their respective revisions.
 
 ## Latest reliability follow-up — 2026-10-19
 
@@ -69,11 +97,13 @@ PhotoCore remains independent of AppKit/SwiftUI: workspace models, metadata/sort
 
 Cache budgets remain 24 MiB thumbnails / 64 MiB fit previews; one full-detail image is limited to 256 MiB decoded bytes. Visible views, transient decoders and OS/GPU allocations are additional. In-progress ImageIO/Core Image work is cooperatively cancellable around synchronous calls, not interrupted mid-call. No speculative RAW rendering or prefetch is implemented.
 
-Next: investigate first-open RAW/decoder latency; broaden Sony camera models and real-EXIF/large-folder native frame measurements; verify Lightroom round trips; add RAW+JPEG pairing and batch organization; evaluate focus/exposure inspection; review accessibility, minimum macOS/Intel and release packaging. License and distribution requirements remain open.
+Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW/JPEG/PNG metadata round trips; test real CRW and more camera/modes/storage failures; measure native frame/input behavior; add live arrivals and full keyword dictionaries if prioritized; review focus/exposure, accessibility, minimum macOS/Intel and release packaging. License and distribution requirements remain open.
 
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- **2026-10-19 — Ingest, metadata and cameras:** added verified background ingest, paired/batch decisions, reviewed companion-safe renaming/recovery, layered IPTC/keywords and explicit Lightroom handoff copies. Added Canon/Olympus formats and a fast bounded CR3 preview path; public camera hashes and large-folder checks passed. Real CRW, direct Lightroom exchange and broader storage/platform coverage remain open.
 
 - **2026-10-19 — Reliability and large-folder measurements:** added isolated workspace benchmarks, bounded ARW sidecar checks and actor-owned SQLite reuse; fixed external rating order, old-session reads and corrupt-detail errors. Expanded the real-camera test from the first file to every supplied ARW. All nine ILCE-7CR copies and 42 local tests passed; first-open latency and Lightroom exchange remain open.
 

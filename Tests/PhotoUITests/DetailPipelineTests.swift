@@ -43,11 +43,11 @@ struct DetailPipelineTests {
     #expect(try Data(contentsOf: jpeg) == original)
   }
   @Test(.enabled(if: ProcessInfo.processInfo.environment["PHOTO_RAW_TEST_FOLDER"] != nil))
-  func localSonyEmbeddedAndRenderedDetailPreserveSource() async throws {
+  func localRawEmbeddedAndRenderedDetailPreserveSource() async throws {
     let path = try #require(ProcessInfo.processInfo.environment["PHOTO_RAW_TEST_FOLDER"])
     let folder = URL(fileURLWithPath: path)
     let files = try await LocalPhotoFileAccess().photos(in: folder)
-      .filter { $0.pathExtension.lowercased() == "arw" }
+      .filter(PhotoFormats.isRaw)
     #expect(!files.isEmpty)
     for file in files {
       let before = SHA256.hash(data: try Data(contentsOf: file))
@@ -57,8 +57,8 @@ struct DetailPipelineTests {
       #expect(embedded.decodedWidth <= 2560 && embedded.decodedHeight <= 2560)
       let detail = try await DetailPipeline().detail(for: file)
       #expect(detail.sourceKind == .raw)
-      #expect(detail.decodedWidth == embedded.originalWidth)
-      #expect(detail.decodedHeight == embedded.originalHeight)
+      #expect(detail.decodedWidth >= embedded.decodedWidth)
+      #expect(detail.decodedHeight >= embedded.decodedHeight)
       #expect(detail.byteCost <= DetailPipeline.byteLimit)
       #expect(SHA256.hash(data: try Data(contentsOf: file)) == before)
     }

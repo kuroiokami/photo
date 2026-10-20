@@ -11,6 +11,45 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
+  public private(set) var selectedIDs: Set<String> = []
+  public private(set) var groupPairs = false
+  @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:]
+  @ObservationIgnored private var allByID: [String: PhotoItem] = [:]
+  public var filePhotos: [PhotoItem] { allPhotos }
+  public var persistence: DecisionStore { decisionStore }
+  public var operationPhotos: [PhotoItem] {
+    let chosen = selectedIDs.isEmpty ? Set([selectedID].compactMap { $0 }) : selectedIDs
+    let expanded = Set(
+      chosen.flatMap { id in groupPairs ? familyMembers[id]?.map(\.id) ?? [id] : [id] })
+    return expanded.compactMap { allByID[$0] }
+  }
+  public func filesRepresented(by representatives: [PhotoItem]) -> [PhotoItem] {
+    let expanded = Set(
+      representatives.flatMap { photo in
+        groupPairs ? familyMembers[photo.id]?.map(\.id) ?? [photo.id] : [photo.id]
+      })
+    return expanded.compactMap { allByID[$0] }
+  }
+  public func pairedCount(_ photo: PhotoItem) -> Int { familyMembers[photo.id]?.count ?? 1 }
+  public func setGrouping(_ value: Bool) {
+    groupPairs = value
+    let primary = selectedID.flatMap { familyMembers[$0]?.first?.id }
+    rebuildVisible(preferred: value ? primary ?? selectedID : selectedID)
+  }
+  public func selectAllVisible() { selectedIDs = Set(photos.map(\.id)) }
+  public func selectMultiple(_ id: String, extending: Bool, range: Bool) {
+    guard let index = indicesByID[id] else { return }
+    if range, let anchor = selectedIndex {
+      selectedIDs = Set(photos[min(anchor, index)...max(anchor, index)].map(\.id))
+    } else if extending {
+      if selectedIDs.isEmpty, let selectedID { selectedIDs.insert(selectedID) }
+      if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
+    } else {
+      selectedIDs = [id]
+    }
+    selectedIndex =
+      selectedIDs.contains(id) ? index : photos.firstIndex { selectedIDs.contains($0.id) }
+  }
   public private(set) var decisions: [String: CullingDecision] = [:]
   public private(set) var saveStatus: [String: String] = [:]
   public private(set) var decisionsLoading = false
@@ -62,6 +101,8 @@ public final class WorkspaceState {
     self.decisionStore = decisionStore
     indicesByID = Self.makeIndex(photos)
     selectedIndex = photos.isEmpty ? nil : 0
+    selectedIDs = Set([selectedID].compactMap { $0 })
+    buildFamilies(photos)
   }
 
   public func openFolder(_ directory: URL) async {
@@ -90,7 +131,9 @@ public final class WorkspaceState {
       let photos = urls.map(PhotoItem.init(fileURL:))
       let indices = Self.makeIndex(photos)
       try Task.checkCancellation()
-      return LoadedPhotos(photos: photos, indices: indices)
+      return LoadedPhotos(
+        photos: photos, indices: indices, families: Self.makeFamilies(photos),
+        byID: Dictionary(photos.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }))
     }
     folderTask = task
     do {
@@ -102,9 +145,13 @@ public final class WorkspaceState {
       guard sessionID == session else { return }
       try Task.checkCancellation()
       allPhotos = loaded.photos
+      familyMembers = loaded.families
+      allByID = loaded.byID
       photos = flagFilter == .all && minimumRating == 0 ? loaded.photos : []
       indicesByID = photos.isEmpty ? [:] : loaded.indices
       selectedIndex = previousID.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
+      selectedIDs = Set([selectedID].compactMap { $0 })
+      if groupPairs { rebuildVisible(preferred: selectedID) }
       loadState = .ready
       folderTask = nil
     } catch {
@@ -126,6 +173,7 @@ public final class WorkspaceState {
     directory = nil
     selectedIndex = nil
     allPhotos = SampleLibrary.photos
+    buildFamilies(allPhotos)
     photos = flagFilter == .all && minimumRating == 0 ? allPhotos : []
     metadata = [:]
     metadataAttempted = []
@@ -133,16 +181,19 @@ public final class WorkspaceState {
     indexing = false
     indicesByID = Self.makeIndex(photos)
     selectedIndex = photos.isEmpty ? nil : 0
+    selectedIDs = Set([selectedID].compactMap { $0 })
     loadState = .ready
   }
 
   public func select(_ id: PhotoItem.ID?) {
     guard let id else {
       selectedIndex = nil
+      selectedIDs = []
       return
     }
     guard let index = indicesByID[id] else { return }
     selectedIndex = index
+    selectedIDs = [id]
   }
 
   public func moveSelection(by offset: Int) {
@@ -150,9 +201,14 @@ public final class WorkspaceState {
     let current = selectedIndex ?? 0
     let movement = min(max(offset, -current), photos.count - 1 - current)
     selectedIndex = current + movement
+    selectedIDs = Set([selectedID].compactMap { $0 })
   }
 
-  public func indexMetadata(using reader: any PhotoMetadataReading) async {
+  public func indexMetadata(using reader: any PhotoMetadataReading, expectedSession: UUID? = nil)
+    async
+  {
+    guard expectedSession == nil || expectedSession == sessionID else { return }
+    guard loadState == .ready else { return }
     let session = sessionID
     let snapshot = allPhotos
     indexing = true
@@ -182,6 +238,7 @@ public final class WorkspaceState {
 
   public func setSort(_ sort: PhotoSort) async {
     self.sort = sort
+    guard loadState == .ready else { return }
     guard sort == .filename || sort == .rating || !indexing else { return }
     let session = sessionID
     let snapshot = allPhotos
@@ -203,14 +260,36 @@ public final class WorkspaceState {
     selectedIndex = selected.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
   }
 
-  private struct DecisionChange {
+  private struct DecisionItemChange {
     let photo: PhotoItem
     let before: CullingDecision
     let after: CullingDecision
   }
+  private struct DecisionChange {
+    let items: [DecisionItemChange]
+    let focus: String
+  }
+  private func buildFamilies(_ photos: [PhotoItem]) {
+    familyMembers = Self.makeFamilies(photos)
+    allByID = Dictionary(photos.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+  }
+  private nonisolated static func makeFamilies(_ photos: [PhotoItem]) -> [String: [PhotoItem]] {
+    let urls = photos.compactMap(\.fileURL)
+    let byURL = Dictionary(
+      photos.compactMap { photo in photo.fileURL.map { ($0, photo) } },
+      uniquingKeysWith: { first, _ in first })
+    var families: [String: [PhotoItem]] = [:]
+    for group in (try? PhotoFamily.groups(urls, contents: urls)) ?? [] {
+      let members = group.images.compactMap { byURL[$0] }
+      for member in members { families[member.id] = members }
+    }
+    return families
+  }
 
   private func resetDecisions() {
     decisions = [:]
+    selectedIDs = []
+    familyMembers = [:]
     saveStatus = [:]
     decisionsReady = []
     decisionsLoading = false
@@ -221,7 +300,9 @@ public final class WorkspaceState {
     redoStack = []
   }
 
-  public func loadDecisions() async {
+  public func loadDecisions(expectedSession: UUID? = nil) async {
+    guard expectedSession == nil || expectedSession == sessionID else { return }
+    guard loadState == .ready else { return }
     decisionsLoading = true
     let session = sessionID
     let snapshot = allPhotos
@@ -266,7 +347,8 @@ public final class WorkspaceState {
 
   private func matches(_ photo: PhotoItem) -> Bool {
     let decision = decisions[photo.id] ?? CullingDecision()
-    return flagFilter.includes(decision.flag) && decision.rating >= minimumRating
+    let representative = !groupPairs || (familyMembers[photo.id]?.first?.id ?? photo.id) == photo.id
+    return representative && flagFilter.includes(decision.flag) && decision.rating >= minimumRating
   }
 
   private func visiblePhotos(_ candidates: [PhotoItem]) -> [PhotoItem] {
@@ -283,6 +365,8 @@ public final class WorkspaceState {
       preferred.flatMap { indicesByID[$0] }
       ?? fallback.lazy.compactMap { self.indicesByID[$0] }.first
       ?? (photos.isEmpty ? nil : 0)
+    selectedIDs.formIntersection(Set(photos.map(\.id)))
+    if selectedIDs.isEmpty { selectedIDs = Set([selectedID].compactMap { $0 }) }
   }
 
   public func setFilter(_ filter: FlagFilter, minimumRating: Int) {
@@ -292,19 +376,37 @@ public final class WorkspaceState {
   }
 
   public func applyDecision(rating: Int? = nil, flag: PhotoFlag? = nil, advance: Bool = false) {
-    guard let photo = selectedPhoto, decisionsReady.contains(photo.id) else { return }
-    let before = decisions[photo.id] ?? CullingDecision()
-    let after = CullingDecision(rating: rating ?? before.rating, flag: flag ?? before.flag)
+    guard let photo = selectedPhoto else { return }
+    let targets = operationPhotos.isEmpty ? [photo] : operationPhotos
+    guard targets.allSatisfy({ decisionsReady.contains($0.id) }) else { return }
     let index = selectedIndex ?? 0
     let next = index + 1 < photos.count ? photos[index + 1].id : nil
     let previous = index > 0 ? photos[index - 1].id : nil
-    if before != after {
-      undoStack.append(DecisionChange(photo: photo, before: before, after: after))
+    let changes = targets.compactMap { target -> DecisionItemChange? in
+      let before = decisions[target.id] ?? CullingDecision()
+      let after = CullingDecision(rating: rating ?? before.rating, flag: flag ?? before.flag)
+      return before == after ? nil : DecisionItemChange(photo: target, before: before, after: after)
+    }
+    if !changes.isEmpty {
+      undoStack.append(DecisionChange(items: changes, focus: photo.id))
       redoStack = []
       decisionRevision += 1
-      decisions[photo.id] = after
-      repositionRating(photo)
-      persist(photo, after)
+      for change in changes {
+        decisions[change.photo.id] = change.after
+        persist(change.photo, change.after)
+      }
+      if sort == .rating {
+        if changes.count == 1 {
+          repositionRating(photo)
+        } else {
+          allPhotos = sort.ordered(
+            allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+        }
+      }
+    }
+    if selectedIDs.count > 1 {
+      rebuildVisible(preferred: photo.id)
+      return
     }
     let remains = matches(photo)
     let shouldAdvance = advance || autoAdvance
@@ -312,7 +414,6 @@ public final class WorkspaceState {
       if shouldAdvance { moveSelection(by: 1) }
       return
     }
-    // Filter removal already advances. Use pre-action neighbors exactly once.
     rebuildVisible(
       preferred: remains && !shouldAdvance ? photo.id : nil,
       fallback: [next, remains ? photo.id : previous].compactMap { $0 })
@@ -342,20 +443,25 @@ public final class WorkspaceState {
   public func undoDecision() {
     guard let change = undoStack.popLast() else { return }
     redoStack.append(change)
-    decisionRevision += 1
-    decisions[change.photo.id] = change.before
-    repositionRating(change.photo)
-    persist(change.photo, change.before)
-    rebuildVisible(preferred: change.photo.id)
+    restore(change, undo: true)
   }
   public func redoDecision() {
     guard let change = redoStack.popLast() else { return }
     undoStack.append(change)
+    restore(change, undo: false)
+  }
+  private func restore(_ change: DecisionChange, undo: Bool) {
     decisionRevision += 1
-    decisions[change.photo.id] = change.after
-    repositionRating(change.photo)
-    persist(change.photo, change.after)
-    rebuildVisible(preferred: change.photo.id)
+    for item in change.items {
+      let value = undo ? item.before : item.after
+      decisions[item.photo.id] = value
+      persist(item.photo, value)
+    }
+    if sort == .rating {
+      allPhotos = sort.ordered(
+        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+    }
+    rebuildVisible(preferred: change.focus)
   }
 
   private func persist(
@@ -407,6 +513,8 @@ public final class WorkspaceState {
   private struct LoadedPhotos: Sendable {
     let photos: [PhotoItem]
     let indices: [PhotoItem.ID: Int]
+    let families: [String: [PhotoItem]]
+    let byID: [String: PhotoItem]
   }
 
   private nonisolated static func makeIndex(_ photos: [PhotoItem]) -> [PhotoItem.ID: Int] {

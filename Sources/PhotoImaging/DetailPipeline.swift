@@ -15,14 +15,14 @@ public actor DetailPipeline {
           url as CFURL,
           [kCGImageSourceShouldCache: false] as CFDictionary),
         let type = CGImageSourceGetType(source) as String?,
-        ["public.jpeg", "public.png", "com.sony.arw-raw-image"].contains(type),
+        SupportedImageTypes.supports(type),
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
         let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue,
         let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue
       else { throw PreviewError.unreadable }
       guard Self.fits(width: width, height: height) else { throw PreviewError.detailTooLarge }
       let image: CGImage
-      let raw = type == "com.sony.arw-raw-image"
+      let raw = SupportedImageTypes.raw.contains(type)
       if raw {
         guard let filter = CIRAWFilter(imageURL: url), let output = filter.outputImage,
           output.extent.width.isFinite, output.extent.height.isFinite,
