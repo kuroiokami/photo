@@ -7,7 +7,7 @@ public struct MetadataEntry: Sendable {
   public let baseline: String
   public let status: String
 }
-public struct MetadataFilePlan: Sendable, Identifiable {
+public struct MetadataFilePlan: Codable, Sendable, Identifiable {
   public var id: String { image.path }
   public let image: URL
   public let identity: String
@@ -125,7 +125,7 @@ extension DecisionStore {
     return MetadataEntry(value: value, identity: identity, baseline: baseline, status: "Saved")
   }
 
-  private func syncMetadata(
+  func syncMetadata(
     _ original: StoredMetadata, image: URL, identity: String, useLocal: Bool
   ) throws -> MetadataEntry {
     var record = original
@@ -173,7 +173,7 @@ extension DecisionStore {
     }
   }
 
-  private func metadataRecord(_ identity: String) throws -> StoredMetadata? {
+  func metadataRecord(_ identity: String) throws -> StoredMetadata? {
     try withDB { db in
       var statement: OpaquePointer?
       guard
@@ -194,7 +194,7 @@ extension DecisionStore {
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
-  private func putMetadata(_ value: StoredMetadata, identity: String) throws {
+  func putMetadata(_ value: StoredMetadata, identity: String) throws {
     let data = try JSONEncoder().encode(value)
     try withDB { db in
       var statement: OpaquePointer?

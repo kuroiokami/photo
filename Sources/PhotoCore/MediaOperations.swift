@@ -33,6 +33,8 @@ public struct IngestProgress: Sendable {
   public let total: Int
   public let filename: String
   public var directory: URL? = nil
+  /// Published only after both destinations and every family companion are verified.
+  public var verifiedImages: [URL] = []
 }
 public struct IngestReport: Sendable {
   public let fileCount: Int
@@ -127,6 +129,18 @@ public actor MediaOperations {
     var manifest = try readManifest(manifestURL)
     var backupManifest = try readManifest(backup.appendingPathComponent(".photo-ingest.json"))
     let files = try ingestFiles(in: source)
+    let families = Dictionary(grouping: files, by: { $0.deletingLastPathComponent() }).values
+      .flatMap { contents in
+        let images = contents.filter(PhotoFormats.supports)
+        return (try? PhotoFamily.groups(images, contents: contents))
+          ?? images.map { PhotoFamily(primary: $0, images: [$0], sidecars: []) }
+      }
+    var remaining = families.map { $0.files.count }
+    var dependencies: [URL: [Int]] = [:]
+    for (index, family) in families.enumerated() {
+      for file in family.files { dependencies[file, default: []].append(index) }
+    }
+    var publishedTargets: [URL: URL] = [:]
     var copied = 0
     var skipped = 0
     var preservedMetadata = 0
@@ -166,10 +180,18 @@ public actor MediaOperations {
       try durableJSON(manifest, at: manifestURL)
       backupManifest.records[relative] = manifest.records[relative]
       try durableJSON(backupManifest, at: backup.appendingPathComponent(".photo-ingest.json"))
+      publishedTargets[file] = targets[0]
+      var arrivals: [URL] = []
+      for family in dependencies[file] ?? [] {
+        remaining[family] -= 1
+        if remaining[family] == 0 {
+          arrivals += families[family].images.compactMap { publishedTargets[$0] }
+        }
+      }
       await progress(
         IngestProgress(
           completed: index + 1, total: files.count, filename: file.lastPathComponent,
-          directory: PhotoFormats.supports(file) ? targets[0].deletingLastPathComponent() : nil))
+          directory: arrivals.first?.deletingLastPathComponent(), verifiedImages: arrivals))
     }
     let a =
       try FileManager.default.attributesOfItem(atPath: primary.path)[.systemNumber] as? NSNumber

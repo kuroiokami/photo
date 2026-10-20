@@ -10,7 +10,7 @@ Photo opens JPEG, PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM System ORF fol
 
 The Workflow panel adds verified dual-destination ingest, multi-selection and RAW+JPEG grouping, reviewed bulk rename/Undo, IPTC presets and hierarchical keywords, and a Lightroom Classic handoff. See the [workflow guide](docs/WORKFLOW.md) for usage, recovery and verified camera coverage. Other RAW formats, HEIC and release distribution remain planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
 
-The fast-culling and ingest/metadata changes are merged into `main`. Use the default branch for development. See the [Photo Mechanic review](docs/PHOTO_MECHANIC_REVIEW.md) for adopted interactions and the prioritized remaining work.
+The current follow-up adds pinned comparison, selected-only review, optional EXIF labels, automatic verified ingest arrivals and persistent metadata batch Undo/Redo. Delivery status is recorded in the tracker. See the [Photo Mechanic review](docs/PHOTO_MECHANIC_REVIEW.md) for adopted interactions and the prioritized remaining work.
 
 ## Requirements and installation
 
@@ -135,3 +135,11 @@ Ordinary ARW browsing uses the embedded JPEG; its badge shows its actual resolut
 See the [culling design and research](docs/CULLING_DESIGN.md) and [current tracker](PROJECT_STATUS.md) for validation and interoperability limits.
 
 For optional real-camera integration checks, set `PHOTO_RAW_TEST_FOLDER` to a disposable folder containing supported RAW files when running `sh scripts/check.sh`. That test checks every supported RAW directly inside the supplied folder for embedded previews, full RAW detail and unchanged source hashes; it does not recurse. CI skips it without the environment variable; personal files are never checked into the repository.
+
+## Compare and review
+
+In Preview, choose **Compare** (**C**) to pin a reference beside the active photo. Arrows move the active photo; **G** pins it, **L** links Fit/100% and normalized pan, and **O** returns to Single Image. Decisions follow the thumbnail selection. Photo changes return both panes to Fit. Comparison can retain two 256 MiB detail images; normal viewing retains one.
+
+Select a burst, then choose **Review Selection** to freeze that shortlist while rating individual photos. **End Selected Review** restores the full collection. Existing filters still apply. The **Labels** menu adds up to two remembered EXIF rows beneath filenames using already indexed metadata.
+
+During Photo ingest, verified image families appear automatically in the currently browsed destination folder. Other source changes still require Reload. In **Workflow → IPTC & Keywords**, explicit **Undo Metadata Batch** / **Redo Metadata** controls reverse only the fields/keywords owned by a reviewed batch, preserving other values. The latest 20 batches survive restart. See the [workflow guide](docs/WORKFLOW.md) for conflict and recovery behavior.

@@ -21,6 +21,10 @@ final class WorkflowModel {
   var renamePlan: RenamePlan?
   var metadataPlan: [MetadataFilePlan] = []
   var metadataResults: [String: String] = [:]
+  var metadataUndoCount = 0
+  var metadataRedoCount = 0
+  var metadataUndoSummary: String?
+  var metadataRedoSummary: String?
   var currentMetadata = DescriptiveMetadata()
   var presets: [MetadataPreset] = []
   var vocabulary: [String] = []
@@ -69,6 +73,13 @@ final class WorkflowModel {
     WorkflowOperationBarrier.shared.track(task)
   }
   func refresh() async {
+    do {
+      let history = try await workspace.persistence.metadataHistoryState()
+      metadataUndoCount = history.undoCount
+      metadataRedoCount = history.redoCount
+      metadataUndoSummary = history.undoSummary
+      metadataRedoSummary = history.redoSummary
+    } catch { status = error.localizedDescription }
     do { pendingRenames = try await MediaOperations.shared.pendingRenames() } catch {
       status = "Rename recovery needs attention: " + error.localizedDescription
     }
@@ -94,11 +105,21 @@ final class WorkflowModel {
       let backupURL = try Self.path(backup).appendingPathComponent(job).appendingPathComponent(
         "Originals")
       ingestBrowseFolder = nil
-      let report = try await MediaOperations.shared.ingest(
-        source: sourceURL, primary: primaryURL, backup: backupURL
-      ) { [weak self] progress in
-        await self?.ingestProgress(progress)
+      verifiedArrivals = [:]
+      activeIngestRoot = PhotoPath.canonical(primaryURL)
+      defer { activeIngestRoot = nil }
+      let report: IngestReport
+      do {
+        report = try await MediaOperations.shared.ingest(
+          source: sourceURL, primary: primaryURL, backup: backupURL
+        ) { [weak self] progress in
+          await self?.ingestProgress(progress)
+        }
+      } catch {
+        await flushArrivals()
+        throw error
       }
+      await flushArrivals()
       status =
         "Processed \(report.fileCount) files: \(report.copiedCount) copies written, \(report.alreadyVerifiedCount) existing copies verified, \(report.preservedMetadataCount) previously ingested metadata copies preserved."
       if report.sameVolumeBackup {
@@ -106,21 +127,52 @@ final class WorkflowModel {
           " Both destinations are on the same volume; choose another drive for an independent backup."
       }
       handoffFolder = report.destination
-      if let folder = ingestBrowseFolder, workspace.directory == folder {
-        await workspace.openFolder(folder)
-      }
       status +=
-        " Reload the current folder to see arrivals; browse subfolders for other card directories."
+        " Verified arrivals appear automatically; browse subfolders for other card directories."
     }
   }
   private var ingestBrowseFolder: URL?
+  private var activeIngestRoot: URL?
+  private var verifiedArrivals: [URL: Set<URL>] = [:]
+  @ObservationIgnored private var arrivalTask: Task<Void, Never>?
+
+  /// During ingest, opening/reloading a working subfolder excludes files whose
+  /// family has not yet been verified at both destinations.
+  func openFolder(_ folder: URL) async {
+    let canonical = PhotoPath.canonical(folder)
+    let limited =
+      activeIngestRoot.map { canonical.pathComponents.starts(with: $0.pathComponents) } ?? false
+    await workspace.openFolder(
+      folder, verifiedImages: limited ? Array(verifiedArrivals[canonical] ?? []) : nil)
+  }
   private func ingestProgress(_ progress: IngestProgress) async {
     status =
-      "Verified \(progress.completed)/\(progress.total): \(progress.filename). Continue Browsing to cull; Reload shows new arrivals."
+      "Verified \(progress.completed)/\(progress.total): \(progress.filename). Verified arrivals appear automatically."
+    for image in progress.verifiedImages {
+      verifiedArrivals[PhotoPath.canonical(image.deletingLastPathComponent()), default: []].insert(
+        image)
+    }
     if ingestBrowseFolder == nil, let directory = progress.directory {
       ingestBrowseFolder = directory
-      await workspace.openFolder(directory)
+      await openFolder(directory)
     }
+    guard arrivalTask == nil, !progress.verifiedImages.isEmpty else { return }
+    arrivalTask = Task { [weak self] in
+      do {
+        try await Task.sleep(for: .milliseconds(200))
+        try Task.checkCancellation()
+      } catch { return }
+      self?.arrivalTask = nil
+      await self?.flushArrivals()
+    }
+  }
+  private func flushArrivals() async {
+    arrivalTask?.cancel()
+    arrivalTask = nil
+    guard let folder = workspace.directory,
+      let images = verifiedArrivals[PhotoPath.canonical(folder)]
+    else { return }
+    await workspace.publishVerified(Array(images), in: folder, using: ImageMetadataReader())?.value
   }
   func previewRename(scope: String, pattern: String, camera: String, sequence: String) {
     run { [self] in
@@ -197,17 +249,24 @@ final class WorkflowModel {
   func applyMetadata() {
     let plans = metadataPlan
     run { [self] in
-      metadataResults = [:]
-      for plan in plans {
-        try Task.checkCancellation()
-        do {
-          metadataResults[plan.image.path] = try await workspace.persistence.saveMetadata(plan)
-            .status
-        } catch { metadataResults[plan.image.path] = error.localizedDescription }
-      }
+      let entries = try await workspace.persistence.saveMetadataBatch(plans)
+      metadataResults = entries.mapValues(\.status)
       metadataPlan = []
       status =
         "Metadata processed: \(metadataResults.values.filter { $0 == "Saved" }.count)/\(plans.count) synchronized. Review local-only or conflict rows below."
+      await refresh()
+    }
+  }
+  func replayMetadata(undo: Bool) {
+    run { [self] in
+      let entries =
+        try await
+        (undo
+        ? workspace.persistence.undoMetadataBatch() : workspace.persistence.redoMetadataBatch())
+      metadataResults = entries.mapValues(\.status)
+      metadataPlan = []
+      status =
+        "\(undo ? "Undid" : "Redid") metadata for \(entries.count) files. Review any pending/conflict rows."
       await refresh()
     }
   }

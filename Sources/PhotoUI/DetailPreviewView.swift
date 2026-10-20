@@ -36,6 +36,8 @@ struct DetailPreviewView: View {
   let pipeline: ImagePipeline
   let detailPipeline: DetailPipeline
   let sessionID: UUID
+  var comparison: ComparisonSession? = nil
+  var pane: ComparisonPane = .active
   @DetailStorage private var state = DetailPresentation()
 
   var body: some View {
@@ -45,14 +47,7 @@ struct DetailPreviewView: View {
           "Zoom",
           selection: Binding(
             get: { state.zoom },
-            set: { zoom in
-              if zoom {
-                state.error = nil
-                state.zoom = true
-              } else {
-                fit()
-              }
-            })
+            set: { chooseZoom($0) })
         ) {
           Text("Fit").tag(false)
           Text("100%").tag(true)
@@ -64,7 +59,7 @@ struct DetailPreviewView: View {
         if state.zoom, state.image == nil, state.error == nil {
           ProgressView().controlSize(.small)
           Text(state.region == nil ? "Loading…" : "Finishing…").font(.caption).lineLimit(1)
-          Button("Cancel") { fit() }.help("Cancel detail loading and return to Fit.")
+          Button("Cancel") { chooseZoom(false) }.help("Cancel detail loading and return to Fit.")
         }
       }.buttonStyle(.borderless)
       GeometryReader { geometry in
@@ -73,7 +68,8 @@ struct DetailPreviewView: View {
             PixelScrollView(
               image: display.image, focal: state.focal,
               canvasSize: display.size, imageBounds: display.bounds, navigation: state.navigation,
-              visible: $state.visible, onFit: fit)
+              visible: $state.visible, onFit: { chooseZoom(false) },
+              onPan: { comparison?.pan($0, from: pane) })
             if let thumbnail = state.fitPreview?.image ?? state.image?.image {
               navigator(thumbnail, width: Int(display.size.width), height: Int(display.size.height))
             }
@@ -98,7 +94,7 @@ struct DetailPreviewView: View {
                 state.focal = CGPoint(
                   x: min(1, max(0, (event.location.x - origin.x) / displayed.width)),
                   y: min(1, max(0, (event.location.y - origin.y) / displayed.height)))
-                state.zoom = true
+                chooseZoom(true)
               })
           }
         }
@@ -118,9 +114,21 @@ struct DetailPreviewView: View {
       if let error = state.error {
         Text(error).font(.caption).foregroundStyle(.secondary)
         Button("Retry Full Detail") {
-          state.error = nil
-          state.zoom = true
+          chooseZoom(true)
         }
+      }
+    }
+    .onChange(of: comparison?.request(for: pane)) { _, request in
+      guard let request else { return }
+      switch request.action {
+      case .fit: fit()
+      case .zoom(let point):
+        state.error = nil
+        state.focal = point
+        state.navigation = DetailNavigationRequest(center: point)
+        state.zoom = true
+      case .pan(let point):
+        if state.zoom { state.navigation = DetailNavigationRequest(center: point) }
       }
     }
     .task(id: state.zoom) {
@@ -149,9 +157,21 @@ struct DetailPreviewView: View {
         state.zoom = false
         state.image = nil
         state.region = nil
+        comparison?.zoom(false, center: state.focal, from: pane)
       }
     }
     .onDisappear { fit() }
+  }
+
+  private func chooseZoom(_ zoom: Bool) {
+    let center = state.zoom ? CGPoint(x: state.visible.midX, y: state.visible.midY) : state.focal
+    if zoom {
+      state.error = nil
+      state.zoom = true
+    } else {
+      fit()
+    }
+    comparison?.zoom(zoom, center: center, from: pane)
   }
 
   private func fit() {
@@ -170,6 +190,7 @@ struct DetailPreviewView: View {
       visible: state.visible
     ) { point in
       state.navigation = DetailNavigationRequest(center: point)
+      comparison?.pan(point, from: pane)
     }
 
   }
@@ -185,6 +206,7 @@ struct PixelScrollView: NSViewRepresentable {
   let navigation: DetailNavigationRequest?
   @Binding var visible: CGRect
   let onFit: () -> Void
+  var onPan: (@MainActor (CGPoint) -> Void)? = nil
 
   func makeNSView(context: Context) -> PixelScroller {
     let view = PixelScroller()
@@ -205,10 +227,12 @@ struct PixelScrollView: NSViewRepresentable {
       }
     }
     view.onFit = onFit
+    view.onUserPan = { point in Task { @MainActor in onPan?(point) } }
     return view
   }
   func updateNSView(_ view: PixelScroller, context: Context) {
     view.onFit = onFit
+    view.onUserPan = { point in Task { @MainActor in onPan?(point) } }
     view.pixelImage = image
     view.pixelSize = canvasSize
     view.imageBounds = imageBounds
@@ -288,6 +312,8 @@ final class PixelScroller: NSScrollView {
   var imageBounds = CGRect.zero
   var focal = CGPoint(x: 0.5, y: 0.5)
   var onVisible: ((CGRect) -> Void)?
+  var onUserPan: ((CGPoint) -> Void)?
+  private var programmatic = false
   var onFit: (() -> Void)?
   private let canvas = PixelCanvas()
   private var scale: CGFloat = 0
@@ -303,7 +329,7 @@ final class PixelScroller: NSScrollView {
         forName: NSView.boundsDidChangeNotification,
         object: contentView, queue: .main
       ) { [weak self] _ in
-        MainActor.assumeIsolated { self?.reportVisible() }
+        MainActor.assumeIsolated { self?.reportVisible(user: true) }
       })
   }
   required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -321,6 +347,8 @@ final class PixelScroller: NSScrollView {
     reportVisible()
   }
   func updateScale() {
+    programmatic = true
+    defer { programmatic = false }
     guard let pixelImage else { return }
     if canvas.image !== pixelImage { canvas.image = pixelImage }
     canvas.onFit = onFit
@@ -352,6 +380,8 @@ final class PixelScroller: NSScrollView {
       return
     }
     lastNavigation = request.id
+    programmatic = true
+    defer { programmatic = false }
     initialPosition = true
     contentView.scroll(
       to: NavigatorGeometry.origin(
@@ -360,7 +390,7 @@ final class PixelScroller: NSScrollView {
     reflectScrolledClipView(contentView)
     reportVisible()
   }
-  private func reportVisible() {
+  private func reportVisible(user: Bool = false) {
     let size = canvas.bounds.size
     guard size.width > 0, size.height > 0 else { return }
     let rect = contentView.bounds.intersection(canvas.bounds)
@@ -369,5 +399,8 @@ final class PixelScroller: NSScrollView {
       CGRect(
         x: rect.minX / size.width, y: rect.minY / size.height,
         width: rect.width / size.width, height: rect.height / size.height))
+    if user && !programmatic && initialPosition {
+      onUserPan?(CGPoint(x: rect.midX / size.width, y: rect.midY / size.height))
+    }
   }
 }
