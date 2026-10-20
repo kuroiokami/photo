@@ -201,3 +201,17 @@ The user clarified two primary workflows: wire/news photographers delivering pro
 - [ ] Benchmark representative 10k/40k collections: first preview, metadata/decision indexing, scrolling, filtering, sorting, memory and large batch save/cancel/recovery. Full detail remains deliberate.
 
 Current source browsing still uses normal XMP synchronization; it must not be presented as a safe card-culling wizard. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).
+
+
+## Pre-copy review and installable distribution design — 2026-10-20
+
+Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decisions/0016-protected-source-review.md) and [distribution](DISTRIBUTION.md). These are implementation/release designs, not shipped capabilities.
+
+- [x] Audit current decision writes, ingest scope/manifests and app packaging; define the review boundary, frozen scopes, destination identity transfer and recovery requirements.
+- [ ] Implement review-only store/context and source mutation guards, including queued retries/history, second windows, child folders and relaunch. Prove no image/sidecar/directory changes on a writable disposable source.
+- [ ] Implement explicit source-wide copy choices, reviewed/unreviewed counts, pair expansion/conflicts and immutable file/family plans.
+- [ ] Implement journaled two-destination decision/edit handover and destination-only XMP, preserving provenance and later destination edits across interruption/retry.
+- [ ] Complete guided review/copy/resume native acceptance and representative 10k/40k concurrent-copy measurements before claiming that scale.
+- [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, license and hardware support before publishing.
+- [ ] With owner-provided Developer ID/notarization setup, produce and validate a stapled app/DMG on a clean recipient Mac, including upgrade/local-data persistence and offline launch.
+- [ ] Publish only an explicitly authorized, accepted beta artifact with checksum, installation instructions and tested platform/camera limits. Intel/universal builds, automatic updating and App Store distribution remain separate acceptance work.

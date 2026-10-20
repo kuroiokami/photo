@@ -9,6 +9,8 @@ A native macOS app for fast folder browsing, culling and organization for public
 | **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
 | **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
 | [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
+| [Review-before-copy plan](docs/PRE_COPY_CULLING.md) | Protected source review, explicit copy choices and safe decision transfer; not implemented yet |
+| [Distribution plan](docs/DISTRIBUTION.md) | Path to a signed, notarized download other people can install |
 | [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
 
 ## Quick installation
