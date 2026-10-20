@@ -254,6 +254,6 @@ See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained
 - [x] Add changelog, CODEOWNERS, pinned least-privilege CI, Actions dependency updates and automated repository hygiene/secret checks.
 - [x] Audit reachable history and repository metadata before public visibility; retain only intentional fixtures and preserve unrelated local edits.
 - [x] Verify public visibility and GitHub protections/security settings; record actual settings in PROJECT_STATUS.md.
-- [ ] Complete final-head public CI delivery through PR #14; do not bypass required checks.
+- [x] Validate the combined implementation/standards tree in public CI; deliver through PR #14 with final-head required checks. Exact check/merge evidence is recorded in the PR and tracker.
 
 Signed/notarized app distribution and broader platform/native acceptance remain separate milestones.
