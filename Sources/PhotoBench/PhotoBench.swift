@@ -81,9 +81,17 @@ private struct PhotoBench {
       print("Generated synthetic JPEG/PNG corpus.")
       return
     }
+    if arguments.first == "--workspace", arguments.count == 2 {
+      let report = try await WorkspaceBenchmark.run(folder: URL(fileURLWithPath: arguments[1]))
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     guard arguments.first == "--folder", arguments.count == 2 else {
       print("Usage: PhotoBench --folder /path/to/folder > report.json")
       print("       PhotoBench --generate /new/temp/folder [count]")
+      print("       PhotoBench --workspace /path/to/folder > workspace-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }

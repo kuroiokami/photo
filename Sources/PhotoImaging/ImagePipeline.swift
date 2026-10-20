@@ -6,15 +6,33 @@ import PhotoCore
 /// CGImage is immutable. Sharing the decoded image never shares mutable drawing state.
 public struct PhotoPreview: @unchecked Sendable {
   public let image: CGImage
+  public var sourceKind: PreviewSource = .image
+  public var decodedWidth: Int { image.width }
+  public var decodedHeight: Int { image.height }
   public let originalWidth: Int
   public let originalHeight: Int
   public var byteCost: Int { image.bytesPerRow * image.height }
 }
 
+public enum PreviewSource: String, Sendable {
+  case image = "Image"
+  case embedded = "Embedded preview"
+  case raw = "Rendered RAW"
+}
+
 public enum PreviewError: LocalizedError {
   case unreadable
+  case embeddedUnavailable
+  case detailTooLarge
   public var errorDescription: String? {
-    "This image could not be read. It may be damaged, unsupported, or no longer available."
+    switch self {
+    case .unreadable:
+      "This image could not be read. It may be damaged, unsupported, or no longer available."
+    case .embeddedUnavailable:
+      "No readable embedded preview. RAW rendering is available through 100% inspection on supported cameras."
+    case .detailTooLarge:
+      "Full detail exceeds the 256 MiB decoded-image limit. Fit preview remains available."
+    }
   }
 }
 
@@ -27,24 +45,27 @@ private enum ImageDecoder {
       let options = [kCGImageSourceShouldCache: false] as CFDictionary
       guard let source = CGImageSourceCreateWithURL(url as CFURL, options),
         let type = CGImageSourceGetType(source) as String?,
-        ["public.jpeg", "public.png"].contains(type),
+        ["public.jpeg", "public.png", "com.sony.arw-raw-image"].contains(type),
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
         let width = properties[kCGImagePropertyPixelWidth] as? Int,
         let height = properties[kCGImagePropertyPixelHeight] as? Int
       else { throw PreviewError.unreadable }
+      let raw = type == "com.sony.arw-raw-image"
       let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
       let thumbnailOptions: [CFString: Any] = [
-        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceCreateThumbnailFromImageAlways: !raw,
+        kCGImageSourceCreateThumbnailFromImageIfAbsent: false,
         kCGImageSourceCreateThumbnailWithTransform: true,
         kCGImageSourceThumbnailMaxPixelSize: maximumPixelSize,
         kCGImageSourceShouldCacheImmediately: true,
       ]
       guard
         let image = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary)
-      else { throw PreviewError.unreadable }
+      else { throw raw ? PreviewError.embeddedUnavailable : PreviewError.unreadable }
       try Task.checkCancellation()
       return PhotoPreview(
-        image: image, originalWidth: orientation >= 5 ? height : width,
+        image: image, sourceKind: raw ? .embedded : .image,
+        originalWidth: orientation >= 5 ? height : width,
         originalHeight: orientation >= 5 ? width : height)
     }
   }

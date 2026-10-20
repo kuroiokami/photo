@@ -9,14 +9,15 @@ let package = Package(
     .executable(name: "PhotoBench", targets: ["PhotoBench"]),
   ],
   targets: [
-    .target(name: "PhotoCore"),
+    .systemLibrary(name: "CSQLite"),
+    .target(name: "PhotoCore", dependencies: ["CSQLite"]),
     .target(name: "PhotoImaging", dependencies: ["PhotoCore"]),
     .target(
       name: "PhotoUI", dependencies: ["PhotoCore", "PhotoImaging"],
       resources: [.process("Resources")]),
-    .executableTarget(name: "PhotoApp", dependencies: ["PhotoUI"]),
+    .executableTarget(name: "PhotoApp", dependencies: ["PhotoUI", "PhotoCore"]),
     .executableTarget(name: "PhotoBench", dependencies: ["PhotoCore", "PhotoImaging"]),
-    .testTarget(name: "PhotoCoreTests", dependencies: ["PhotoCore"]),
+    .testTarget(name: "PhotoCoreTests", dependencies: ["PhotoCore", "CSQLite"]),
     .testTarget(name: "PhotoUITests", dependencies: ["PhotoUI", "PhotoCore", "PhotoImaging"]),
   ]
 )

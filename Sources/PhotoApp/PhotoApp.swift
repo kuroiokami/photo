@@ -1,4 +1,5 @@
 import AppKit
+import PhotoCore
 import PhotoUI
 import SwiftUI
 
@@ -11,7 +12,20 @@ struct PhotoApplication {
   }
 }
 
+private final class PhotoDelegate: NSObject, NSApplicationDelegate {
+  func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    guard DecisionSaveQueue.shared.hasPending else { return .terminateNow }
+    Task {
+      await DecisionSaveQueue.shared.flush()
+      sender.reply(toApplicationShouldTerminate: true)
+    }
+    return .terminateLater
+  }
+}
+
 private struct PhotoScene: App {
+  @NSApplicationDelegateAdaptor(PhotoDelegate.self) private var delegate
+
   var body: some Scene {
     WindowGroup("Photo") {
       WorkspaceView()

@@ -2,133 +2,93 @@
 
 Last updated: 2026-10-19
 
-This is the current handoff for humans and AI contributors. Update it in the same change as any implementation, setup, validation, or roadmap change. Read [AGENTS.md](AGENTS.md) before working. The [development plan](docs/DEVELOPMENT_PLAN.md) contains milestone acceptance criteria; architecture decisions live in `docs/decisions/`.
+This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
 ## Current state
 
-Photo is a native macOS photo workflow application using SwiftUI, Swift 6 language mode, and Swift Package Manager. The Phase 2 read-only JPEG/PNG browsing slice is implemented. It opens real folders in a contact sheet with a selected preview; samples remain available. The development app bundle is unsigned and is not an installable release. The browsing slice now has paired real-camera measurements, mixed-format/large-folder validation, and reference-machine targets recorded in [PERFORMANCE.md](docs/PERFORMANCE.md). Wider hardware/camera coverage remains open. The validated chunk was merged into `main` through [PR #1](https://github.com/kuroiokami/photo/pull/1) as `24b7cff` on 2026-10-19. Local `main` is updated; the user’s pre-existing development-plan edit remains unstaged.
+Photo is a native SwiftUI/SwiftPM macOS 14+ folder-first photo culling app. The fast-culling implementation is pushed on `codex/fast-culling` in [draft PR #2](https://github.com/kuroiokami/photo/pull/2), in separate RAW/EXIF, ratings/persistence, and detail-view chunks. Original image bytes and embedded metadata remain untouched. Sony ARW browsing uses embedded previews; genuine RAW rendering happens only on explicit 100% inspection.
 
-## Installation and first run
+## Installation and use
 
-1. Use macOS 14 or newer and install Xcode or Apple Command Line Tools with Swift 6.0 or newer. For Command Line Tools, run `xcode-select --install` if they are not already installed. A full Xcode installation is optional for command-line development.
-2. Confirm that the selected toolchain provides `swift --version` and `swift format --version`. If not, select or update the Apple toolchain before building.
-3. Clone and enter the repository:
+Use macOS 14+, Apple Swift 6+ and built-in `swift format`. Clone `https://github.com/kuroiokami/photo.git`, enter the checkout, then run `swift run Photo`. For a Finder-launchable development bundle: `sh scripts/build-app.sh`, then `open .build/Photo.app`. The helper now seals the local bundle with an ad-hoc signature; it is not Developer ID signed, notarized or an installable release. No external packages, API keys or Package.resolved are required. System SQLite, ImageIO, Core Image and Foundation XML supply storage/imaging support.
 
-   ```sh
-   git clone https://github.com/kuroiokami/photo.git
-   cd photo
-   ```
+- Command-O opens visible regular JPEG/PNG/Sony ARW files in one folder, case-insensitively. No recursion or symlink following. Command-R reloads and preserves selection where possible. No live file watching.
+- Arrows navigate; up/down move a grid row, Home/End select ends. Navigate menu commands keep browsing available after preview/control interactions. Space toggles preview, Escape hides it. Thumbnail size and split pane are adjustable.
+- P/X/U set pick/reject/unflagged; 0–5 set independent stars. Shift applies and advances once. Auto-advance is visible, initially off and remembered. Reject never deletes or moves an image. Edit menu provides Undo/Redo.
+- Filters combine flag state and minimum stars; Clear Filters restores all. Rating sort is highest first. EXIF sorts are numeric, missing-last, with natural filename ties. Sorting waits for metadata indexing and preserves selection. The optional inspector shows capture time, camera/lens, exposure, ISO, focal length and dimensions; a compact exposure strip stays visible.
+- Fit shows a fast bounded preview with source/resolution badge. 100% or double-click requests genuine detail around the pointer; scroll/drag to pan and inspect the navigator. One image pixel equals one physical display pixel. Fit/double-click returns; changing photo resets to Fit. Unsupported/oversized RAW detail retains the fit preview with an error/retry state.
+- Samples are temporary. Real decisions persist in `~/Library/Application Support/Photo/decisions.sqlite`; normal quit drains queued saves. The UI distinguishes Saving, Saved, local-only failures and XMP conflict.
 
-4. Build and launch:
+## Storage and recovery
 
-   ```sh
-   swift run Photo
-   ```
+SQLite saves decisions and pending sync before sidecar writes. ARW uses `basename.xmp`; JPEG/PNG use `filename.jpg.xmp` / `filename.png.xmp`. Other apps may not recognize JPEG/PNG sidecars. RAW+JPEG remain separate items. XMP stores stars independently of flags, preserves unrelated properties/develop settings semantically, and writes coordinated atomic replacements. Entities, symlinks, malformed/ambiguous packets and unsafe collisions are not rewritten.
 
-There are no external package dependencies, API keys, or environment files to configure. SwiftPM generates `.build/` locally. No `Package.resolved` exists while there are no external dependencies; commit it if dependencies are introduced. Alternatively, open `Package.swift` in Xcode and run the Photo scheme.
+Read-only folders retain local decisions and expose Retry XMP Sync. Reload imports external decisions when no local edit is pending. External changes conflicting with pending decisions require Use My Decisions or Use External Decisions. File identities plus replacement fingerprints and captured request identities protect queued decisions from attaching to replaced files. Direct Lightroom round-trip verification remains pending; field compatibility must not be presented as tested application interoperability. Sudden process termination can lose changes still marked Saving.
 
-For a native local app bundle, run `sh scripts/build-app.sh`, then `open .build/Photo.app`. This unsigned, unnotarized development bundle supports Finder launch and UI inspection. There is no DMG, signed release, installer, or release download yet.
+## Feature status
 
-## How to use the current app
+| Capability | State |
+| --- | --- |
+| Native shell, samples, lazy contact sheet and selected preview | Implemented; native checks passed |
+| JPEG/PNG and case-insensitive Sony ARW | Implemented; real ARW/JPEG checks passed |
+| Embedded-only RAW fit, provenance, separate image workers and LRU caches | Implemented; benchmarked on the reference Mac |
+| EXIF inspector/background indexing and numeric sorts | Implemented; numeric/timezone tests and native inspector/ISO checks passed |
+| Independent flags/stars, shortcuts, filters, auto-advance and Undo/Redo | Implemented; automated and native checks passed |
+| Durable local SQLite and preserving XMP sync/conflicts | Implemented; fixture tests, native undo/reload and database restart tests passed |
+| Fit/physical-pixel 100%, pan, navigator, explicit Apple RAW rendering | Implemented; fixture and local real-RAW tests passed; native detail/scroll checks passed |
+| Lightroom application-level interchange | Not verified |
+| Other RAW/HEIC, pairing, multi-select, batch file organization | Planned |
+| RAW histogram, focus peaking, exposure adjustment, comparison | Planned |
+| Wider hardware/camera/macOS/accessibility coverage and release distribution | Pending |
 
-- Launch with three synthetic samples. Choose File → Open Folder… (Command-O) or the toolbar/sidebar button to browse a real folder.
-- The contact sheet includes visible regular JPEG/PNG files in that folder only, in natural filename order. No recursion or symlink following.
-- Click to select; double-click to show the preview. Left/right arrows move one photo, up/down move a grid row, and Home/End select the first/last photo. Compact Mac keyboards use Fn-left/right for Home/End.
-- Space toggles preview; Escape hides it. Drag the split divider to resize the preview. Use the thumbnail-size slider to adjust density.
-- Command-R reloads the folder, clears caches, and retains selection if possible. There is no automatic filesystem watching; externally edited or removed cached images may remain visible until Reload.
-- Errors have explicit states. Use Try Again in the preview, Reload for thumbnails/folders, or choose another folder. Cancelling the picker preserves the current collection.
-- Show Sample Collection returns to bundled samples. Quit with Command-Q or stop the launching terminal with Control-C.
-- Browsing does not write original image bytes or metadata. Selections and folder history are not persisted between launches.
+## Latest reliability follow-up — 2026-10-19
 
-## Features and delivery status
+The large-folder follow-up adds a read-only `PhotoBench --workspace` mode with a temporary database, real concurrent metadata/decision indexing, first-preview timing, sorting and sampled main-actor gaps. It fixes per-photo whole-directory ARW collision scans, repeated SQLite opens/schema setup, redundant path-map writes, late-session metadata reads, external-decision rating order and misleading corrupt-detail memory errors. See [decision 0005](docs/decisions/0005-large-folder-persistence.md) and the [aggregate report](docs/benchmarks/2026-10-19-large-folder.json).
 
-| Capability | Status | Notes |
-| --- | --- | --- |
-| Native SwiftUI macOS shell | Implemented | macOS 14+, SwiftPM executable and local dev bundle |
-| Bundled sample collection | Implemented | Three generated PNGs with recorded provenance |
-| Contact sheet and selected preview | Implemented | Real JPEG/PNG folders and samples; density slider and split pane |
-| Keyboard navigation | Implemented and interactively checked | Arrow keys, Home/End, Space, Escape, Command-O/R |
-| File and preview adapters | Implemented | Actor-based enumeration and ImageIO downsampling; EXIF orientation |
-| General metadata reader/persistence | Interfaces/planned | Original dimensions shown; no metadata writes |
-| Formatting, build, and automated tests | Locally verified | Shared script passed all 18 tests; extension test has eight argument cases |
-| GitHub Actions | Verified for tuned browser code | [Final PR checks passed](https://github.com/kuroiokami/photo/actions/runs/39268234733) for `d59f67e`; merged as `24b7cff` |
-| Real-folder browsing and asynchronous previews | Implemented | Separate serial decode lanes, LRU caches, session cancellation, retry |
-| Reference-machine performance targets | Verified | 17 real 50 MP JPEGs, 2,000 mixed JPEG/PNG files, 50,000-item selection stress; see performance report |
-| Ratings, flags, filtering, undo, persistence | Planned: Phase 3 | Metadata ownership and semantics need decisions |
-| Broader format support and performance validation | Planned: Phase 4 | No RAW/HEIC/color-management claims yet |
-| Accessibility review and release packaging | Planned: Phase 4 | Signing and distribution not implemented |
+Observed initial/repeat decision loading for 2,000 synthetic ARW-name/XMP pairs fell from 35.90/35.53 seconds to 2.27/0.66 seconds. These are persistence fixtures with invalid image bytes, not camera compatibility evidence. For 2,000 valid synthetic JPEG/PNG files, initial/repeat loading fell from 2.54/1.73 seconds to 1.90/0.43 seconds; first preview stayed about 44 ms during indexing. Single before/after process runs, uncontrolled OS caches, and synthetic EXIF limits are documented in PERFORMANCE.md.
 
-## Checks and validation evidence
+All nine user-supplied ARWs were copied into an isolated shallow test folder and checked individually for embedded previews, genuine full detail and byte preservation. All are Sony ILCE-7CR: eight orientation-1 images and one orientation-8 portrait. This broadens file/orientation coverage, not camera-model coverage. Preview phase p95 was 21.72 ms and cached p95 0.014 ms, but first preview in a fresh workspace process during indexing took 179.61 ms; the first thumbnail took 166.85 ms. Those first-open observations exceed 150 ms and remain explicit optimization work. Do not substitute the post-thumbnail preview phase for startup latency.
 
-Run the same checks as CI:
+The final local suite passed **42 tests** (29 core + 13 UI/imaging), with the optional real-camera test enabled and checking all nine ARWs. CI without that local corpus executes 41 and skips one. New regressions cover eight ARW extension case spellings with actual sync/restart, external-rating reorder/selection, 10,000-item navigation followed by a late metadata/session change, and corrupt detail diagnostics. FULL SQLite synchronization, conflict checks and original-image protection remain in place.
 
-```sh
-sh scripts/check.sh
-```
+Native checks confirmed pick/stars, external XMP conflict detection, Use External Decisions moving the selected item to the top of Rating sort, genuine 9504 × 6336 detail, one-step navigation resetting Fit, and opening/End navigation in a 2,000-image collection. Native picker observations sometimes reported a disabled confirmation button even though Return successfully confirmed the folder. Picker experiments were discarded; the existing implementation remains. These are functional checks, not measured frame/input latency. Lightroom application-level exchange remains unverified because the earlier isolated import UI could not be controlled; no new Lightroom verification is claimed.
 
-Format Swift sources before checking:
+Implementation follow-up `cf294d2` passed both [push CI](https://github.com/kuroiokami/photo/actions/runs/39313486697) and [PR CI](https://github.com/kuroiokami/photo/actions/runs/39313494704). The final locally signed app verifies successfully. After native checks, the original user collection/selection was restored without editing its decisions; all nine source and copy hashes were rechecked, and the three disposable test folders plus their private manifest were removed. PR #2 remains a draft and has not been merged. A documentation-only follow-up records this observed evidence.
 
-```sh
-sh scripts/format.sh
-```
+## Validation
 
-Phase 2 local evidence, 2026-10-19: `sh scripts/check.sh` passed formatting, compilation, and all 13 tests in the actual repository with Apple Swift 6.4 on arm64. This includes retry after restoring read permission. Coverage includes initial/invalid/cleared selection, clamped navigation, empty collections, natural sorting and filtering, late folder results, sample reset during a pending load, selection restoration, removed folders, image decoding/orientation, source-byte preservation, cancellation, and cache budgets.
+Historical fast-culling evidence before the reliability follow-up: `sh scripts/format.sh` formats; `sh scripts/check.sh` performs strict lint, warnings-as-errors build and Swift Testing. The real-camera-enabled local run passed **35 tests** (23 core + 12 UI/imaging), with `PHOTO_RAW_TEST_FOLDER` pointing at a disposable folder. The recovery follow-up adds one fault-injection case: the final standard run passed **37 tests**, with the optional real-camera case skipped (38 registered tests: 26 core + 12 UI/imaging). Without that environment variable the real-camera integration case is skipped; CI must not be described as testing personal ARWs. Tests cover existing browsing/session/cache behavior, EXIF numeric/timezone handling, source-byte preservation, independent decisions, filtered advancement/empty recovery, rating ordering, Undo/Redo, restart persistence, external conflicts, namespace/develop preservation, malformed/entity/symlink sidecars, read-only retry, replacement identity, ordered quit-time saves, full-detail orientation/limits/cancellation, and local genuine Sony RAW detail. Ambiguous case-only filenames are representable only on case-sensitive volumes; that test branch is conditional.
 
-Native UI inspection using a local development `.app` verified selection/scroll retention on Reload, grid focus after picker cancellation, and launch, Command-O folder selection, immediate arrow-key navigation after launch/folder load, scrolling to the final item with End, corrupt-file error presentation, empty-folder state without stale previews, picker cancellation preserving the collection, Command-R error recovery for a moved folder, return to samples, and the accessible thumbnail-size increment action. The disposable collection held 240 synthetic PNGs and one corrupt JPEG. UI testing found and fixed lost focus after folder loading and split-pane resets. This is functional evidence, not a real-camera performance benchmark. Minimum macOS version, Intel architecture, and production-size libraries remain untested.
+Reference release results: three 61 MP Sony ARWs returned embedded previews at p95 19.31 ms and cached p95 0.016 ms, sampled CLI peak RSS 87.16 MiB. Seventeen real 50 MP JPEGs returned preview p95 142.14 ms and cached p95 0.017 ms, peak RSS 447.38 MiB. All hashes matched and image failures were zero. These are pipeline timings from small corpora with uncontrolled OS caches, not UI frame timing or universal camera guarantees. See the aggregate report and performance limits.
 
-The check script discovers the selected toolchain's installed Testing macro plugin when present; this handles a Command Line Tools plugin-discovery issue. The local toolchain also emitted linker search-path warnings for absent developer framework directories; builds and tests completed successfully.
+Native validation additionally confirmed visible/remembered Auto-advance, picks filtering and undo recovery, actual 9504 × 6336 RAW detail, ratings during scrolling, Retina sample scale, and double-click entry to detail. The final native build also passed double-click entry followed by one-step arrow navigation/reset to Fit, Space hide/show after preview interaction, and the corrected empty-filter message. Auto-advance persisted through restart and was restored to its original off setting. Disposable personal-photo copies were removed after rechecking original hashes; the app was left on samples. An isolated Lightroom catalog was created for an interchange attempt, but its import controls were not usable through the available UI automation. Zero photos were imported; the disposable catalog was confirmed closed and removed, and both original/copy ARW hashes matched. After explicit user approval, the original catalog identity was verified and Lightroom was quit; process checks confirmed it had closed. No imports or edits were made in the original catalog. The round trip therefore remains unverified. Minimum macOS and Intel remain untested. Linker warnings about missing developer framework directories were nonblocking in the local CLT toolchain.
 
-Phase 2 remote evidence, 2026-10-19: [Swift checks run 39261955925](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed on `codex/folder-browser` for implementation commit `6904965`, including all 13 tests. [Draft PR #1](https://github.com/kuroiokami/photo/pull/1) contains the reviewable chunk. Later documentation-only commits record this observed code-revision result; inspect their own checks before merging.
+## Architecture and next work
 
-Historical initial remote evidence, 2026-10-19: [Swift checks run 39257940587](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed on `main` for commit `e297d22`. Formatting, build, and tests completed successfully on the macOS runner. This records that specific code revision; later commits must be checked against their own runs.
+PhotoCore remains independent of AppKit/SwiftUI: workspace models, metadata/sort/decision semantics, async service boundaries and actor-isolated SQLite/XMP. PhotoImaging owns ImageIO property/preview reads and a separate Core Image detail lane. PhotoUI supplies native scrolling, focused-window commands and SwiftUI contact sheet/inspector. PhotoApp drains saves on normal termination.
 
-## Performance validation follow-up — 2026-10-19
+Cache budgets remain 24 MiB thumbnails / 64 MiB fit previews; one full-detail image is limited to 256 MiB decoded bytes. Visible views, transient decoders and OS/GPU allocations are additional. In-progress ImageIO/Core Image work is cooperatively cancellable around synchronous calls, not interrupted mid-call. No speculative RAW rendering or prefetch is implemented.
 
-The user reported that their real folder generally worked and authorized measurement, fixes, and merge of PR #1. The current check script passes all 18 tests, including eight Unicode filename/extension variants. Paired release runs found and fixed redundant same-image decoding and linear selection scans. Image workers now persist across sessions, temporary decoder objects have local autorelease pools, and cached previews bypass the cold-load debounce.
+Next: investigate first-open RAW/decoder latency; broaden Sony camera models and real-EXIF/large-folder native frame measurements; verify Lightroom round trips; add RAW+JPEG pairing and batch organization; evaluate focus/exposure inspection; review accessibility, minimum macOS/Intel and release packaging. License and distribution requirements remain open.
 
-Median real-camera results across three alternating runs: concurrent identical previews 1628.8 → 203.1 ms, selection lookup p95 7.1260 → 0.0009 ms in a virtual 50,000-item collection, and sampled CLI peak RSS 531.2 → 418.6 MiB. All source hashes matched. The 2,000-file folder loaded below the local 250 ms target; individual cold 50 MP previews remained about 0.24 seconds. See [aggregate evidence and limits](docs/PERFORMANCE.md).
-
-The rebuilt native app loaded a temporary mixed folder containing copies of 17 real-camera JPEGs plus six generated PNGs with Unicode names and `.jpg`/`.jpeg`/uppercase/mixed-case variants. Rapid navigation, portrait preview, and selection retention on Reload passed. The native app also opened and scrolled the 2,000-file mixed corpus. Its sampled debug RSS ranged from 216.9 to 312.3 MiB, ending at 296.1 MiB; this is not a matched-lifetime comparison with the earlier native sample. UI testing found and fixed selected-tile visibility after preview/grid reflow. The final native check kept photo 2,000 visible after hiding/reopening the preview. Grid reflow now coalesces intermediate layouts and reveals the selected item after layout settles. Both final PR checks passed for `d59f67e`: [push workflow](https://github.com/kuroiokami/photo/actions/runs/39268234733) and [pull-request workflow](https://github.com/kuroiokami/photo/actions/runs/39268244114). Review found no remaining blocking issues after the decoding, indexing, cancellation, and reflow fixes. [PR #1](https://github.com/kuroiokami/photo/pull/1) was squash-merged as `24b7cff` on 2026-10-19. Preserve the pre-existing local edit in `docs/DEVELOPMENT_PLAN.md`; it is unrelated to this change and must not be included in the commit.
-
-## Next work and open decisions
-
-1. Plan 1:1 preview zoom for sharpness checking, while keeping reference-machine benchmarks current as the corpus grows.
-2. Decide supported RAW/HEIC formats and the next preview/zoom capabilities.
-3. Confirm ratings/labels and catalog-versus-XMP ownership before Phase 3 persistence work.
-4. Broaden accessibility, large-folder, minimum-macOS, and Intel verification; design distribution signing/sandbox behavior before release.
-
-No live folder watching, recursion, multi-selection, 1:1 zoom, RAW/HEIC decoding, persistent catalogs, ratings, or metadata writes are implemented. Decoded caches are capped at 24 MiB (thumbnails) and 64 MiB (previews); visible image views and transient decoder/OS allocations are additional. Persistent per-window workers limit decode work to one thumbnail plus one preview at a time, including across folder switches; cancellation is cooperative around filesystem/ImageIO calls.
-
-License and distribution requirements remain open. Proposed MVP exclusions remain destructive editing, cloud sync, collaboration, AI ranking, advanced search, and multi-user catalogs.
-
-## Architecture handoff
-
-- **PhotoCore** owns models, `WorkspaceState`, asynchronous read-only protocols, and shallow local file enumeration. Keep it independent of SwiftUI and AppKit.
-- **PhotoImaging** owns ImageIO adapters, immutable decoded images, serial work lanes, and LRU caches. The preview protocol now has an associated Sendable result type; no external API consumers or data migrations exist.
-- **PhotoUI** owns views and sample resources. Observable UI state is main-actor isolated.
-- **PhotoApp** owns process startup and SwiftUI scenes.
-- File reads are implemented; metadata writes and persistence are not. Folder generations and view cancellation reject superseded results. See decision 0002 for cache and UI boundaries.
+Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
 
-### 2026-10-19 — Real-camera validation and tuning
+- **2026-10-19 — Reliability and large-folder measurements:** added isolated workspace benchmarks, bounded ARW sidecar checks and actor-owned SQLite reuse; fixed external rating order, old-session reads and corrupt-detail errors. Expanded the real-camera test from the first file to every supplied ARW. All nine ILCE-7CR copies and 42 local tests passed; first-open latency and Lightroom exchange remain open.
 
-- Added repeatable release benchmarks, aggregate-only evidence, local regression targets, and original-byte hash verification.
-- Removed redundant concurrent decoding, bounded temporary decoder retention, reused workers across folder sessions, bypassed cached-preview debounce, and indexed selection off the main actor.
-- Passed all 18 tests and both final PR workflows; verified native real/mixed/large-folder interactions and the grid-reflow fix. Reviewed and merged PR #1 as `24b7cff`, then updated local `main` while preserving the unrelated development-plan edit.
+- **2026-10-19 — Fast culling:** implemented embedded Sony ARW/EXIF (`bb4e9a3`), durable ratings/flags/filtering/XMP (`406637a`), and genuine detail inspection with interaction hardening. Full local checks and reference benchmarks passed; delivery/remote evidence follows below.
+- **2026-10-19 — Browser tuning:** prior JPEG/PNG browser merged through [PR #1](https://github.com/kuroiokami/photo/pull/1) as `24b7cff`; [merged-main CI passed](https://github.com/kuroiokami/photo/actions/runs/39268580403). Prior paired performance evidence remains in PERFORMANCE.md.
+- **2026-10-19 — Foundation:** SwiftUI/SwiftPM modules, samples, contributor/tracking docs and CI established; historical [initial CI](https://github.com/kuroiokami/photo/actions/runs/39257940587) passed.
 
+### Delivery follow-up
 
-### 2026-10-19 — Read-only folder browsing
+All three implementation chunks are pushed to `origin/codex/fast-culling`. A final fault-injection regression now covers a crash after atomic XMP publication but before SQLite acknowledgement: reopening recognizes matching decisions and completes the acknowledgement without rewriting the sidecar. Modal folder dialogs also disable app decision undo/redo commands. The follow-up passed strict lint, warnings-as-errors build, 26 core tests and 11 UI/imaging tests; the optional real-camera case was skipped after disposable files were removed. Native preview-click → one-step arrow navigation → Fit reset and Space hide/show passed. Remote delivery evidence follows below.
 
-- Added shallow JPEG/PNG folder browsing, cancellation-safe folder sessions, natural sorting, EXIF-oriented downsampling, and separate bounded image caches.
-- Replaced the sample filmstrip with a Photo Mechanic-informed contact sheet, density slider, resizable preview, native menu actions, keyboard navigation, and recoverable errors.
-- Added a local development app bundle helper; local checks passed all 13 tests and the native interactions listed above were verified. Real-camera performance budgets remain open.
-- Published implementation commit `6904965` in [draft PR #1](https://github.com/kuroiokami/photo/pull/1); its [remote CI run](https://github.com/kuroiokami/photo/actions/runs/39261955925) passed. That initial draft was subsequently tuned, validated, and merged; see the performance follow-up above.
+The retained-filter follow-up now waits for decision loading before publishing filtered results and restarts metadata/decision tasks on sample-session changes. A path-to-identity table also prevents an image replacement from automatically inheriting a predecessor's leftover XMP: it presents an explicit image-replaced conflict. Both behaviors have restart/reload regressions; the standard suite passed with 37 executed tests and the optional real-camera case skipped. The paths table is created additively for existing local development databases.
 
+### Remote and final native evidence — 2026-10-19
 
-### 2026-10-19 — Initial foundation
+Implementation commit `371d83d` passed both [push CI](https://github.com/kuroiokami/photo/actions/runs/39276938844) and [PR CI](https://github.com/kuroiokami/photo/actions/runs/39276972124). Prior `fc38508` checks also passed. PR #2 remains a draft and has not been merged. A documentation-only follow-up records these observed results; it does not change tested implementation code.
 
-- Established repository conventions, development milestones, and the native macOS architecture decision.
-- Added SwiftUI sample workspace, synthetic resources, service boundaries, local checks, and five tests.
-- Added GitHub Actions and this maintained project tracker with AI handoff instructions.
-- Local checks and the initial remote GitHub Actions run passed. Published the foundation on `main` as `e297d22`; interactive UI verification remains pending.
+The final native build confirmed a retained Picks filter survives Reload with the same selected photo/stars, Show Sample Collection reloads sample decisions, Clear Filters restores samples, and sample P/U shortcuts work afterward. The locally signed bundle verifies successfully. Photo is left on samples with Auto-advance off. All disposable photo/synthetic/interchange copies and the isolated Lightroom test catalog were removed after validation. Only the user's original development-plan edit remains unstaged.
