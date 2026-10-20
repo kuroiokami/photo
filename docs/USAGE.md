@@ -37,7 +37,7 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 
 - **News or wire deadline:** copy and verify, begin culling as verified photos arrive, caption the keepers and prepare delivery copies in **Deliver / Edit**. Lightroom is optional. JPEG/PNG delivery copies can carry embedded captions/copyright. RAW files still require a RAW-capable editor; Photo does not yet render publication JPEGs, apply its local crop to exports or upload to an agency.
 - **Wedding or large shoot:** keep the shoot under Photo Home, verify both copies, cull in passes with flags/stars and compare similar frames. Add shared rights/event metadata, then individual captions/keywords. Rename survivors before importing into Lightroom or another editor. A 10–40k-photo shoot is a design target, not a newly verified performance claim.
-- **Review before copying — planned:** a guided, local-only source-review mode will retain decisions without writing to the card and let you copy a reviewed subset. This is not implemented yet. Opening a card directly uses normal browsing: ratings and metadata may write sidecars there. Use verified ingest before making decisions on a card today.
+- **Review before copying — planned:** a guided, local-only source-review mode will retain decisions without writing to the card and let you copy a reviewed subset. This is not implemented yet. Opening a card directly uses normal browsing: ratings and metadata may write sidecars there. Use verified ingest before making decisions on a card today. The [review-before-copy design](PRE_COPY_CULLING.md) defines the upcoming protected mode, copy choices and recovery requirements.
 
 
 ## 2. Workspace and saved folders
