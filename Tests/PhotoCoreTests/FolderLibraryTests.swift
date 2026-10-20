@@ -34,6 +34,33 @@ struct FolderLibraryTests {
     #expect(FileManager.default.fileExists(atPath: child.path))
     #expect(FolderLibrary(defaults: defaults).roots.isEmpty)
   }
+  @Test func homeMigrationReplacementAndRemovalPreserveSavedFolders() throws {
+    let suite = "PhotoTests." + UUID().uuidString
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let first = URL(fileURLWithPath: "/Volumes/Photos", isDirectory: true)
+    let second = URL(fileURLWithPath: "/Volumes/Archive", isDirectory: true)
+    let shoot = first.appendingPathComponent("Wedding")
+    defaults.set([first.path, second.path], forKey: "Photo.folders.roots")
+    defaults.set(shoot.path, forKey: "Photo.folders.selected")
+    let library = FolderLibrary(defaults: defaults)
+    #expect(library.home == first)
+    library.setHome(second)
+    #expect(library.roots == [second, first])
+    #expect(library.selected?.path == shoot.path)
+    #expect(library.children.isEmpty)
+    let restored = FolderLibrary(defaults: defaults)
+    #expect(restored.home == second)
+    #expect(restored.selected?.path == shoot.path)
+    restored.remove(second)
+    let withoutHome = FolderLibrary(defaults: defaults)
+    #expect(withoutHome.home == nil)
+    #expect(withoutHome.roots == [first])
+    #expect(withoutHome.selected?.path == shoot.path)
+    withoutHome.setHome(shoot)
+    #expect(withoutHome.roots == [shoot, first])
+    #expect(FolderLibrary(defaults: defaults).home?.path == shoot.path)
+  }
   @Test func directoryReaderIsShallowNaturalAndSkipsHiddenAndLinks() async throws {
     let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
       .appendingPathComponent(UUID().uuidString)

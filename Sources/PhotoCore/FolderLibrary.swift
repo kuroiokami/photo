@@ -35,6 +35,7 @@ public struct FolderSidebarRow: Identifiable, Sendable {
 @MainActor
 @Observable
 public final class FolderLibrary {
+  public private(set) var home: URL?
   public private(set) var roots: [URL]
   public private(set) var expanded: Set<String>
   public private(set) var children: [String: [URL]] = [:]
@@ -51,13 +52,23 @@ public final class FolderLibrary {
   ) {
     self.defaults = defaults
     self.reader = reader
-    roots = (defaults.stringArray(forKey: "Photo.folders.roots") ?? []).map {
+    let savedRoots = (defaults.stringArray(forKey: "Photo.folders.roots") ?? []).map {
       URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL
+    }
+    roots = savedRoots
+    if let savedHome = defaults.string(forKey: "Photo.folders.home") {
+      home = savedHome.isEmpty ? nil : savedRoots.first { $0.path == savedHome }
+    } else {
+      // Existing installations keep their first saved folder as their starting place.
+      home = savedRoots.first
     }
     expanded = Set(defaults.stringArray(forKey: "Photo.folders.expanded") ?? [])
     if let path = defaults.string(forKey: "Photo.folders.selected") {
       let candidate = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
       selected = roots.contains(where: { Self.contains($0, candidate) }) ? candidate : nil
+    }
+    if defaults.string(forKey: "Photo.folders.home") == nil {
+      defaults.set(home?.path ?? "", forKey: "Photo.folders.home")
     }
   }
   public var rows: [FolderSidebarRow] {
@@ -72,6 +83,14 @@ public final class FolderLibrary {
     }
     for root in roots { append(root, root: root, depth: 0) }
     return result
+  }
+  /// A navigation starting point, never a filesystem move or a recursive photo index.
+  public func setHome(_ directory: URL) {
+    let folder = directory.standardizedFileURL
+    home = folder
+    roots.removeAll { $0.path == folder.path }
+    roots.insert(folder, at: 0)
+    persist()
   }
   public func add(_ directory: URL) {
     let folder = directory.standardizedFileURL
@@ -89,6 +108,7 @@ public final class FolderLibrary {
   public func remove(_ directory: URL) {
     let directory = directory.standardizedFileURL
     roots.removeAll { $0.path == directory.path }
+    if home?.path == directory.path { home = nil }
     if let selected, !roots.contains(where: { Self.contains($0, selected) }) { self.selected = nil }
     // Forget only unloaded/unused cache state; never touch filesystem contents.
     let retained = { (path: String) in
@@ -140,6 +160,7 @@ public final class FolderLibrary {
     }
   }
   private func persist() {
+    defaults.set(home?.path ?? "", forKey: "Photo.folders.home")
     defaults.set(roots.map(\.path), forKey: "Photo.folders.roots")
     defaults.set(Array(expanded), forKey: "Photo.folders.expanded")
     if let selected {

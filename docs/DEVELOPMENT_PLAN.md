@@ -183,5 +183,21 @@ This scope implements normal-ingest arrivals, not continuous source watching or 
 - [x] Make the first editing interoperability boundary explicit: Photo-local composition, with Adobe crop/orientation exchange and applied export still planned.
 - [x] Replace repeated README material with linked, complete installation and usage guides, retaining the technical workflow and evidence documents.
 - [x] Complete strict regression checks and optimized packaging; exact native outcomes and delivery are recorded in PROJECT_STATUS.md.
-- [ ] Recheck the final corrected crop/detail view and physical pinch on an unlocked Mac; broaden accessibility/platform acceptance.
+- [x] Recheck the final corrected crop/detail view and persisted composition after relaunch on an unlocked Mac.
+- [ ] Complete physical pinch and broader accessibility/platform acceptance.
 - [ ] Follow with verified crop/orientation exchange/export, locked-ratio/straightening, color classes, external editors and other audited gaps according to priority.
+
+## Photo Home and deadline-first workflow — 2026-10-20
+
+The user clarified two primary workflows: wire/news photographers delivering promptly without requiring Lightroom, and wedding/photoshoot photographers culling 10–40k frames before a separate editor. Favor immediate embedded previews, reversible keyboard decisions and short routes to output. Folder-wide collection performance at this scale needs measured acceptance; do not imply it has been established.
+
+- [x] Replace technical folder wording with Photo folder, Backup folder, Shoot name and a folder chooser prompt.
+- [x] Add remembered Photo Home as the first browsable sidebar folder; retain other saved folders and load subfolders on demand. Changing Home never moves photos.
+- [x] Present copy setup in numbered steps and make Deliver / Edit independent of Lightroom in the interface and guides.
+- [ ] Add guided source review before copying: local-only decisions, no source-sidecar writes, restart/reconnect protection and an explicit reviewed copy scope. Reuse verified copying and image-family publication; do not weaken source identity checks or backup verification.
+- [ ] Carry reviewed decisions and metadata to new copy identities safely; verify source/sidecar hashes unchanged and correct family/selection scope after filtering.
+- [ ] Add a publication output route: reviewed keeper scope, caption/rights checks, derived JPEG rendering with orientation/crop/color validation, named output presets and an external editor option. Upload/FTP remains separate scope.
+- [ ] Provide a resumable guided flow connecting source → optional review → copy destinations → organization → publication/editor, without blocking direct folder browsing or keyboard culling.
+- [ ] Benchmark representative 10k/40k collections: first preview, metadata/decision indexing, scrolling, filtering, sorting, memory and large batch save/cancel/recovery. Full detail remains deliberate.
+
+Current source browsing still uses normal XMP synchronization; it must not be presented as a safe card-culling wizard. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).

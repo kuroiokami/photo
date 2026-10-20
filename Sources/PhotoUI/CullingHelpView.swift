@@ -32,7 +32,7 @@ struct CullingHelpView: View {
             "Pinch over the preview to magnify; two-finger scrolling pans. Click thumbnail stars or its flag menu to decide directly. Rotate/mirror/crop is saved in Photo only and does not transfer to Lightroom yet. At 100%, click the zoom navigator to center a new area or drag its white frame. With the navigator focused, arrows pan and Shift moves one view at a time. Click a thumbnail to resume photo navigation."
           )
           Text(
-            "Hover over controls for explanations. Reject never deletes photos. RAW+JPEG grouping targets both files of a unique pair. Auto-advance applies only to single-photo decisions. Rename before Lightroom import; use the Lightroom tab for the handoff checklist."
+            "Hover over controls for explanations. Reject never deletes photos. RAW+JPEG grouping targets both files of a unique pair. Auto-advance applies only to single-photo decisions. Choose Photo Home for your usual photo folder. Rename before delivery or editor import; use Deliver / Edit to prepare copies."
           ).foregroundStyle(.secondary)
           Text(
             "Review Selection freezes a burst while you cull individual photos; End Review returns to the folder. Labels adds up to two remembered EXIF rows. Verified Photo ingest arrivals appear automatically. IPTC & Keywords has separate, persistent Undo/Redo for the latest 20 metadata batches."

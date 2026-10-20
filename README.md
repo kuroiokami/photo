@@ -1,6 +1,6 @@
 # Photo
 
-A native macOS app for fast folder browsing, culling and organization before Lightroom Classic. Built with SwiftUI and Swift Package Manager; normal RAW browsing prioritizes embedded JPEG previews.
+A native macOS app for fast folder browsing, culling and organization for publication or an editing workflow. Built with SwiftUI and Swift Package Manager; normal RAW browsing prioritizes embedded JPEG previews.
 
 ## Start here
 
@@ -8,7 +8,7 @@ A native macOS app for fast folder browsing, culling and organization before Lig
 | --- | --- |
 | **[Installation](docs/INSTALLATION.md)** | Requirements, developer tools, clone/build, app installation, updates and troubleshooting |
 | **[Complete usage guide](docs/USAGE.md)** | Workspace, selection, stars/flags, trackpad zoom, compare, rotate/mirror/crop, ingest, rename, IPTC and recovery |
-| [Ingest → Lightroom workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
+| [Copy, cull and deliver workflow](docs/WORKFLOW.md) | Operational sequence, metadata ownership and detailed interchange/recovery limits |
 | [Project tracker](PROJECT_STATUS.md) | Implemented/planned/verified status, evidence and current handoff for humans and AI |
 
 ## Quick installation
@@ -26,7 +26,7 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 
 ## Main features
 
-- Folder-first JPEG/PNG/Sony/Canon/Olympus browsing, saved sidebar roots and clickable subfolders.
+- Folder-first JPEG/PNG/Sony/Canon/Olympus browsing, a remembered Photo Home, saved folders and clickable subfolders.
 - Large preview above a bottom filmstrip, plus a full contact sheet.
 - Independent stars and pick/reject flags, interactive thumbnail controls, batch decisions, filters and Undo.
 - Async EXIF indexing, numeric sorting, optional inspector and configurable thumbnail labels.
@@ -35,7 +35,7 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 - Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
 - Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.
 - Field-specific IPTC patches, presets, hierarchical keywords, persistent metadata batch Undo and preserving XMP synchronization.
-- Optional verified metadata handoff copies for Lightroom Classic.
+- Verified delivery copies with metadata for publication, Lightroom Classic or another editor.
 
 Original image bytes remain untouched. Image edits are currently Photo-local and do not transfer to Lightroom or handoff copies; ratings/flags/descriptions have their separate XMP synchronization. See the [usage boundaries](docs/USAGE.md#14-current-boundaries) and tracker before relying on interoperability. Real CRW, application-level Lightroom round trips and wider platform/accessibility acceptance remain open.
 
