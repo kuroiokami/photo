@@ -15,7 +15,7 @@ Designed, not implemented: [Review before copying](docs/PRE_COPY_CULLING.md) and
 
 [Distribution](docs/DISTRIBUTION.md) records a Developer ID-signed, notarized DMG as the recommended first downloadable beta. Read-only artifact inspection confirms the current app is arm64-only, ad-hoc signed with no TeamIdentifier, a development bundle ID and fixed 0.1.0/build 1. Clean staging, release version/identity, signing/hardened runtime/timestamp, actual notarization/stapling, clean-Mac/upgrade tests and owner-selected licensing remain work. Intel support is not established. No certificate/account credentials were inspected and no app was submitted or published. Apple primary references were checked for the release recommendation.
 
-Validation: documentation-only change; local Markdown file links, guide/status consistency and Git whitespace checks pass. Source/artifact inspection was read-only. No runtime code changed, so build/tests/native acceptance were not rerun. Delivery will be recorded with the review.
+Validation: documentation-only change; local Markdown file links, guide/status consistency and Git whitespace checks pass. Source/artifact inspection was read-only. No runtime code changed, so build/tests/native acceptance were not rerun. Delivery: [PR #11](https://github.com/kuroiokami/photo/pull/11); its description records observed final-head remote checks and merge status.
 
 ## Photo Home and plain-language workflow — 2026-10-20
 
