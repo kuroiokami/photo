@@ -27,9 +27,11 @@ swift run Photo
 Quit any running Photo development app before rebuilding its bundle. To build a local app that can be opened from Finder:
 
 ```sh
-sh scripts/build-app.sh
+sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
+
+Omit `--release` for a faster debug build when developing. Use `--release` when judging browsing responsiveness.
 
 This bundle is ad-hoc signed locally and unnotarized; it is for development, not distribution. Alternatively, open `Package.swift` in Xcode and run the Photo scheme.
 
@@ -84,6 +86,15 @@ sh scripts/benchmark.sh --workspace "/path/to/photo/folder" > /tmp/photo-workspa
 
 The workspace mode uses a fresh temporary SQLite database and never writes input images or sidecars. It records initial/repeat decision loading, EXIF indexing, ISO/rating sorting and a sampled main-actor timer gap. The gap includes scheduler delays and is not frame time.
 
+For a read-only full-detail comparison (three passes, aggregate statistics only):
+
+```sh
+sh scripts/benchmark.sh --detail "/path/to/photo/folder" --baseline > /tmp/detail-before.json
+sh scripts/benchmark.sh --detail "/path/to/photo/folder" > /tmp/detail-after.json
+```
+
+The baseline includes the old deferred image's first viewport draw; its offscreen pixels may remain deferred, so only the progressive run reports full completion. Run the commands sequentially without other heavy work; process initialization and shared OS caches affect results. See the performance report for measured evidence and memory limits.
+
 The original release-mode benchmark measures folder/image loading, cached navigation, indexed selection, and sampled process memory. It verifies source hashes before/after and emits aggregate statistics only. See the [report and reproducibility notes](docs/PERFORMANCE.md) for corpus limits, targets, and synthetic-folder generation. Do not interpret pipeline timing as UI frame time.
 
 ## Structure
@@ -117,9 +128,9 @@ The local app bundle is now **ad-hoc signed**, without a distribution certificat
 
 ### Sharpness inspection
 
-Choose **100%** or double-click the preview to inspect around the pointer. One image pixel maps to one physical display pixel, including Retina displays. Scroll with a trackpad/wheel or drag to pan; the navigator outlines the visible region. Double-click the detail image or choose **Fit** to return. Selection changes reset to Fit.
+Choose **100%** or double-click the preview to inspect around the pointer. One image pixel maps to one physical display pixel, including Retina displays. Scroll with a trackpad/wheel or drag to pan; the navigator outlines the visible region. Double-click the detail image or choose **Fit** to return. Selection changes reset to Fit. For RAWs, genuine 100% focus detail appears around the zoom point first, then the full image finishes in the background at the same quality. The ready region is labeled; surrounding pixels remain black while loading. Pan position is preserved as the full image arrives. **Cancel** returns immediately to Fit and cancels subsequent work; an in-progress Apple render call finishes before the worker can stop.
 
-Ordinary ARW browsing uses the embedded JPEG; its badge shows its actual resolution. **100%** explicitly requests Apple RAW rendering and displays **Rendered RAW**. Unsupported cameras, missing previews and oversized full-detail requests have recoverable states. RAW rendering support depends on macOS; embedded JPEG appearance can differ from Apple rendering. The 256 MiB limit applies to the decoded detail image, not total app/transient decoder memory. RAW histograms, focus peaking and editing are not implemented.
+Ordinary ARW browsing uses the embedded JPEG; its badge shows its actual resolution. **100%** explicitly requests Apple RAW rendering and displays **Rendered RAW**. Unsupported cameras, missing previews and oversized full-detail requests have recoverable states. RAW rendering support depends on macOS; embedded JPEG appearance can differ from Apple rendering. The combined 256 MiB limit covers the decoded full image plus its temporary focus region, not total app/transient decoder memory. RAW histograms, focus peaking and editing are not implemented.
 
 See the [culling design and research](docs/CULLING_DESIGN.md) and [current tracker](PROJECT_STATUS.md) for validation and interoperability limits.
 

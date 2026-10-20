@@ -1,0 +1,70 @@
+{
+  "baseline": {
+    "failures": 0,
+    "fileCount": 4,
+    "firstInspection": {
+      "count": 12,
+      "maximumMilliseconds": 468.19025,
+      "p50Milliseconds": 266.943167,
+      "p95Milliseconds": 468.19025
+    },
+    "focusRegions": 0,
+    "initialInspectionMilliseconds": 468.19025,
+    "mode": "baseline-full-image",
+    "notes": [
+      "Three passes in natural filename order; no full-detail image cache. First request includes process/decoder/context initialization.",
+      "Viewport request is 1600 \u00d7 1200 physical pixels plus a bounded margin. RAW processing settings and scale are unchanged.",
+      "Separate processes share OS file/driver caches; these are service timings, not native input/frame latency.",
+      "Baseline first inspection includes the deferred CGImage's first viewport draw; baseline fullCompletion is absent because that draw need not render every offscreen pixel.",
+      "Peak RSS includes Core Image/decoder/transient memory and is not the 256 MiB decoded-image limit."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 662.0625,
+    "requests": 12,
+    "schemaVersion": 1
+  },
+  "baselineRevision": "b4cf5e7 (legacy detail algorithm, including first viewport draw)",
+  "corpus": "4 Sony ILCE-7CR ARWs, 9504 \u00d7 6336 oriented pixels, 3 passes per process",
+  "limitations": [
+    "One sequential paired process run; OS file/driver caches were not flushed. Small n=12 makes p95 the maximum.",
+    "Viewport-first versus eager full-image rendering have different offscreen work; no baseline full-completion claim.",
+    "No private names, paths, hashes, EXIF or image payloads are included."
+  ],
+  "logicalCPUCount": 18,
+  "measuredDate": "2026-10-19",
+  "optimized": {
+    "failures": 0,
+    "fileCount": 4,
+    "firstInspection": {
+      "count": 12,
+      "maximumMilliseconds": 351.081792,
+      "p50Milliseconds": 122.212417,
+      "p95Milliseconds": 351.081792
+    },
+    "focusRegions": 12,
+    "fullCompletion": {
+      "count": 12,
+      "maximumMilliseconds": 1151.794125,
+      "p50Milliseconds": 940.400541,
+      "p95Milliseconds": 1151.794125
+    },
+    "initialInspectionMilliseconds": 351.081792,
+    "logicalCPUCount": 18,
+    "mode": "progressive-focus-then-full",
+    "notes": [
+      "Three passes in natural filename order; no full-detail image cache. First request includes process/decoder/context initialization.",
+      "Viewport request is 1600 \u00d7 1200 physical pixels plus a bounded margin. RAW processing settings and scale are unchanged.",
+      "Separate processes share OS file/driver caches; these are service timings, not native input/frame latency.",
+      "Baseline first inspection includes the deferred CGImage's first viewport draw; baseline fullCompletion is absent because that draw need not render every offscreen pixel.",
+      "Peak RSS includes Core Image/decoder/transient memory and is not the 256 MiB decoded-image limit."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 850.84375,
+    "physicalMemoryGiB": 128,
+    "requests": 12,
+    "schemaVersion": 1
+  },
+  "physicalMemoryGiB": 128
+}
