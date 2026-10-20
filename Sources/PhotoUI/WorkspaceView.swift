@@ -16,6 +16,11 @@ private typealias MarqueeStorage = SwiftUI.State<SelectionMarquee?>
 private typealias FolderLibraryStorage = SwiftUI.State<FolderLibrary>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
+private struct SelectionReveal: Equatable {
+  let id: String?
+  let index: Int?
+}
+
 private struct GridLayout: Equatable {
   let size: CGSize
   let thumbnailSize: Double
@@ -30,6 +35,7 @@ public struct WorkspaceView: View {
   @BoolStorage private var choosingFolder = false
   @ColumnStorage private var gridColumns = 1
   @SizeStorage private var thumbnailSize = 160
+  @SizeStorage private var filmstripSize = 120
   @PipelineStorage private var thumbnails = ImagePipeline(byteLimit: 24 * 1024 * 1024)
   @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
@@ -55,12 +61,15 @@ public struct WorkspaceView: View {
         collectionHeader
         filterBar
         Divider()
-        HSplitView {
-          contactSheet.frame(
-            minWidth: 320, idealWidth: 650, maxWidth: .infinity, maxHeight: .infinity)
-          if showPreview {
-            previewPane.frame(minWidth: 280, idealWidth: 410, maxWidth: .infinity)
+        VStack(spacing: 0) {
+          if showPreview && !workspace.photos.isEmpty {
+            previewPane.frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
           }
+          contactSheet
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(
+              height: showPreview && !workspace.photos.isEmpty ? thumbnailEdge * 0.7 + 88 : nil)
         }
         Divider()
         statusBar
@@ -87,9 +96,11 @@ public struct WorkspaceView: View {
         Button {
           showPreview.toggle()
         } label: {
-          Label("Preview", systemImage: "sidebar.right")
+          Label(
+            showPreview ? "Contact Sheet" : "Preview",
+            systemImage: showPreview ? "square.grid.3x3" : "rectangle.bottomthird.inset.filled")
         }
-        .help("Show or hide preview (Space)")
+        .help("Switch between large preview with bottom filmstrip and contact sheet (Space).")
       }
     }
     .sheet(isPresented: $showingHelp) { CullingHelpView() }
@@ -178,6 +189,12 @@ public struct WorkspaceView: View {
         .font(.caption).foregroundStyle(.secondary)
       }
       Spacer(minLength: 8)
+      Picker("Browsing view", selection: $showPreview) {
+        Text("Contact Sheet").tag(false)
+        Text("Preview").tag(true)
+      }.pickerStyle(.segmented).labelsHidden().frame(width: 205)
+        .help(
+          "Preview above a horizontal filmstrip, or a full contact sheet. Space switches views.")
       Picker(
         "Sort",
         selection: Binding(
@@ -194,16 +211,36 @@ public struct WorkspaceView: View {
         Text("EXIF \(workspace.indexedCount)/\(workspace.photos.count)")
           .font(.caption).foregroundStyle(.secondary)
       }
-      Image(systemName: "square.grid.3x3").foregroundStyle(.secondary)
-      Slider(value: $thumbnailSize, in: 110...240, step: 10)
-        .frame(width: 100).accessibilityLabel("Thumbnail size")
+      Image(systemName: showPreview ? "rectangle.split.3x1" : "square.grid.3x3").foregroundStyle(
+        .secondary)
+      Slider(
+        value: Binding(
+          get: { thumbnailEdge },
+          set: { value in
+            if showPreview { filmstripSize = value } else { thumbnailSize = value }
+          }), in: showPreview ? 90...170 : 110...240, step: 10
+      )
+      .frame(width: 100).accessibilityLabel("Thumbnail size")
     }
-    .padding(.horizontal, 20).padding(.vertical, 14)
+    .padding(.horizontal, 16).padding(.vertical, 8)
+  }
+
+  private var thumbnailEdge: Double { showPreview ? filmstripSize : thumbnailSize }
+
+  private func framedThumbnail(_ photo: PhotoItem) -> some View {
+    thumbnail(photo)
+      .id(photo.id)
+      .background(
+        GeometryReader { tile in
+          Color.clear.preference(
+            key: PhotoTileFrames.self,
+            value: [photo.id: tile.frame(in: .named("ContactSheetViewport"))])
+        })
   }
 
   private var contactSheet: some View {
     GeometryReader { geometry in
-      let columns = max(1, Int((geometry.size.width - 32) / (thumbnailSize + 16)))
+      let columns = showPreview ? 1 : max(1, Int((geometry.size.width - 32) / (thumbnailSize + 16)))
       Group {
         switch workspace.loadState {
         case .loading:
@@ -242,23 +279,21 @@ public struct WorkspaceView: View {
           }
         case .ready:
           ScrollViewReader { proxy in
-            ScrollView {
-              LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-                spacing: 16
-              ) {
-                ForEach(workspace.photos) { photo in
-                  thumbnail(photo)
-                    .id(photo.id)
-                    .background(
-                      GeometryReader { tile in
-                        Color.clear.preference(
-                          key: PhotoTileFrames.self,
-                          value: [photo.id: tile.frame(in: .named("ContactSheetViewport"))])
-                      })
-                }
+            ScrollView(showPreview ? .horizontal : .vertical) {
+              if showPreview {
+                LazyHStack(alignment: .top, spacing: 12) {
+                  ForEach(workspace.photos) { photo in
+                    framedThumbnail(photo).frame(width: thumbnailEdge + 16)
+                  }
+                }.padding(12)
+              } else {
+                LazyVGrid(
+                  columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+                  spacing: 16
+                ) {
+                  ForEach(workspace.photos) { photo in framedThumbnail(photo) }
+                }.padding(16)
               }
-              .padding(16)
             }
             .coordinateSpace(name: "ContactSheetViewport")
             .onPreferenceChange(PhotoTileFrames.self) { tileFrames = $0 }
@@ -295,15 +330,16 @@ public struct WorkspaceView: View {
               }
             }.clipped()
             .onAppear {
-              if let id = workspace.selectedID { proxy.scrollTo(id) }
+              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
             }
-            .onChange(of: workspace.selectedID) {
+            .onChange(of: SelectionReveal(id: workspace.selectedID, index: workspace.selectedIndex))
+            {
               guard marquee == nil else { return }
-              if let id = workspace.selectedID { proxy.scrollTo(id) }
+              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
             }
             .task(
               id: GridLayout(
-                size: geometry.size, thumbnailSize: thumbnailSize, showsPreview: showPreview)
+                size: geometry.size, thumbnailSize: thumbnailEdge, showsPreview: showPreview)
             ) {
               // Lazy-grid positions settle after pane/density reflow. Coalesce
               // intermediate layouts, then reveal the current selection once.
@@ -323,6 +359,11 @@ public struct WorkspaceView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .onChange(of: columns, initial: true) { gridColumns = columns }
+      .onChange(of: showPreview) {
+        tileFrames = [:]
+        marquee = nil
+        gridFocused = true
+      }
       .focusable().focused($gridFocused).focusEffectDisabled()
       .onKeyPress(.leftArrow, phases: .down) { press in
         workspace.moveSelection(by: -1, extending: press.modifiers.contains(.shift))
@@ -378,7 +419,7 @@ public struct WorkspaceView: View {
         PhotoImageView(
           photo: photo, pipeline: thumbnails, maximumPixelSize: 480, sessionID: workspace.sessionID
         )
-        .frame(height: thumbnailSize * 0.7)
+        .frame(height: thumbnailEdge * 0.7)
         .clipShape(RoundedRectangle(cornerRadius: 4))
         HStack(spacing: 4) {
           Image(systemName: decision.flag.symbol).accessibilityLabel(decision.flag.title)
@@ -435,76 +476,98 @@ public struct WorkspaceView: View {
   }
 
   private var previewPane: some View {
-    VStack(spacing: 0) {
-      HStack {
-        Text("PREVIEW").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-        Spacer()
+    VStack(spacing: 6) {
+      HStack(spacing: 12) {
+        Text(workspace.selectedPhoto?.filename ?? "PREVIEW")
+          .font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
+        Spacer(minLength: 0)
         Button {
-          showInspector.toggle()
+          workspace.moveSelection(by: -1)
+          gridFocused = true
         } label: {
-          Image(systemName: "info.circle")
+          Image(systemName: "chevron.left")
         }
-        .buttonStyle(.plain).accessibilityLabel("Show shooting information")
-        .help("Show or hide camera, lens, capture time and image dimensions.")
+        .disabled(workspace.selectedIndex == nil || workspace.selectedIndex == 0)
+        .accessibilityLabel("Previous photo")
+        Text(
+          workspace.selectedIndex.map { "\($0 + 1) of \(workspace.photos.count)" } ?? "No selection"
+        )
+        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+        Button {
+          workspace.moveSelection(by: 1)
+          gridFocused = true
+        } label: {
+          Image(systemName: "chevron.right")
+        }
+        .disabled(
+          workspace.selectedIndex == nil || workspace.selectedIndex == workspace.photos.count - 1
+        )
+        .accessibilityLabel("Next photo")
+        Toggle(isOn: $showInspector) { Image(systemName: "info.circle") }
+          .toggleStyle(.button).accessibilityLabel("Shooting information")
+          .help("Show camera, lens, capture time and dimensions beside the preview.")
         Button {
           showPreview = false
           gridFocused = true
         } label: {
-          Image(systemName: "xmark")
+          Image(systemName: "square.grid.3x3")
         }
-        .buttonStyle(.plain).accessibilityLabel("Close preview").help(
-          "Hide preview (Space or Escape).")
-      }.padding(16)
+        .accessibilityLabel("Show contact sheet")
+        .help("Show the full contact sheet (Space or Escape).")
+      }.buttonStyle(.borderless).padding(.horizontal, 12).padding(.top, 8)
       if let photo = workspace.selectedPhoto {
-        DetailPreviewView(
-          photo: photo, pipeline: previews, detailPipeline: detailPipeline,
-          sessionID: workspace.sessionID
-        )
-        .id("\(workspace.sessionID)-\(photo.id)")
-        .padding(.horizontal, 16)
-        VStack(spacing: 8) {
-          decisionControls(photo)
-          if let metadata = workspace.metadata[photo.id] {
-            Text(metadata.shootingSummary).font(.caption.monospacedDigit()).foregroundStyle(
-              .secondary)
-            if showInspector {
-              VStack(alignment: .leading, spacing: 4) {
-                Text(metadata.camera ?? "Camera unavailable")
-                Text(metadata.lens ?? "Lens unavailable")
-                Text(metadata.captureTimeText ?? "Capture time unavailable")
-                Text(
-                  metadata.focalLength.map { "\($0.formatted()) mm" } ?? "Focal length unavailable")
-                Text("\(metadata.pixelWidth) × \(metadata.pixelHeight)")
+        HStack(alignment: .top, spacing: 12) {
+          DetailPreviewView(
+            photo: photo, pipeline: previews, detailPipeline: detailPipeline,
+            sessionID: workspace.sessionID
+          )
+          .id("\(workspace.sessionID)-\(photo.id)")
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          if showInspector {
+            ScrollView {
+              VStack(alignment: .leading, spacing: 8) {
+                Text("SHOOTING INFORMATION").font(.caption.weight(.semibold))
+                if let metadata = workspace.metadata[photo.id] {
+                  Text(metadata.camera ?? "Camera unavailable")
+                  Text(metadata.lens ?? "Lens unavailable")
+                  Text(metadata.captureTimeText ?? "Capture time unavailable")
+                  Text(metadata.shootingSummary)
+                  Text(
+                    metadata.focalLength.map { "\($0.formatted()) mm" }
+                      ?? "Focal length unavailable")
+                  Text("\(metadata.pixelWidth) × \(metadata.pixelHeight)")
+                } else if workspace.indexing && photo.fileURL != nil {
+                  ProgressView("Reading shooting information…")
+                } else {
+                  Text("No shooting information available.").foregroundStyle(.secondary)
+                }
               }.font(.caption).textSelection(.enabled)
-            }
+                .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+            }.frame(width: 220).frame(maxHeight: .infinity)
+              .background(Color.white.opacity(0.025))
           }
-          Text(photo.filename).font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
+        }.padding(.horizontal, 12)
+        ViewThatFits(in: .horizontal) {
           HStack {
-            Button {
-              workspace.moveSelection(by: -1)
-              gridFocused = true
-            } label: {
-              Image(systemName: "chevron.left")
-            }
-            .disabled(workspace.selectedIndex == 0).accessibilityLabel("Previous photo")
-            Text("\((workspace.selectedIndex ?? 0) + 1) of \(workspace.photos.count)")
-              .font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(minWidth: 80)
-            Button {
-              workspace.moveSelection(by: 1)
-              gridFocused = true
-            } label: {
-              Image(systemName: "chevron.right")
-            }
-            .disabled(workspace.selectedIndex == workspace.photos.count - 1).accessibilityLabel(
-              "Next photo")
-          }.buttonStyle(.borderless)
-        }.padding(16)
+            decisionControls(photo)
+            Spacer(minLength: 8)
+            shootingSummary(photo)
+          }
+          decisionControls(photo)
+        }.padding(.horizontal, 12).padding(.bottom, 6)
       } else {
         ContentUnavailableView("Select a photo", systemImage: "photo")
       }
-    }
-    .frame(maxHeight: .infinity)
-    .background(Color.black.opacity(0.2))
+    }.background(Color.black.opacity(0.2))
+  }
+
+  private func shootingSummary(_ photo: PhotoItem) -> some View {
+    Text(
+      workspace.metadata[photo.id]?.shootingSummary
+        ?? (workspace.indexing && photo.fileURL != nil
+          ? "Reading shooting information…" : "No shooting information")
+    )
+    .font(.caption.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
   }
 
   private var filterBar: some View {

@@ -36,3 +36,21 @@ This is a proposed backlog for the app's fast culling → organization → Light
 5. **Discoverability and access:** native hover help and a Quick Start sheet are implemented. A dismissible first-use walkthrough, configurable thumbnail shooting-information labels, VoiceOver/keyboard-only coverage and shortcut customization remain planned. Rectangle selection currently covers the viewport and does not auto-scroll.
 
 FTP/publishing, catalog indexing and editing are not needed for this delivery. Prioritize latency, safe organization and reliable Lightroom interchange before broadening the product.
+
+## Preview-screen review — 2026-10-20
+
+Inspected the current Preview Window article and its illustrated large-image/bottom-filmstrip/right-info arrangement, the 2-Up reference/active-pane workflow, critical-focus controls, thumbnail-label customization and live ingest documentation. This is a product-fit assessment; it does not establish comparative speed. Photo’s requested Preview layout is implemented in this follow-up; the additions below are proposed work.
+
+| Priority | Addition | Why it helps culling / implementation boundary |
+| --- | --- | --- |
+| Next | Pin a reference for two-photo comparison; optionally link pan/zoom | Judge adjacent burst frames while keeping the stronger frame fixed. Budget both detail images explicitly and keep expensive RAW work deliberate. |
+| Next | Selected-only review set | Isolate a burst or shortlist in the filmstrip without changing ratings/flags. Define what happens when selection changes so photos do not unexpectedly disappear. |
+| Next | Configurable thumbnail/Info fields | Let photographers choose exposure, focal length, capture time or camera labels from already indexed EXIF. Keep the filmstrip compact and reserve room for filenames/decisions. |
+| After culling polish | Live verified arrivals and optional ingest naming/metadata presets | Remove manual Reload while ingesting. Publish stable, verified files; preserve selection, decisions and collision protection. |
+| After interchange verification | Metadata Undo, field history, richer vocabulary and code replacement | Speed repetitive captioning without copying unrelated values; keep existing XMP preservation and conflict handling. |
+| Deliberate inspection | Histogram and highlight/shadow overlays with explicit source labels | Embedded JPEG or rendered RGB information must not be described as sensor RAW exposure data. Measure their cost before adding background work. |
+| Usability | Review-only full-screen mode, adjustable panels and keyboard/accessibility passes | Give the photo more room on small displays while keeping an obvious route back to the contact sheet. |
+
+Recommended next implementation: pinned 2-Up comparison, followed by selected-only review and configurable EXIF labels. Lightroom round-trip verification remains acceptance work alongside these proposals. Arbitrary zoom magnifications, rotation/crop editing, external-editor integration and publishing are lower priority for the current fast-culling scope.
+
+References: [Preview Window and screen illustrations](https://docs.camerabits.com/support/solutions/articles/48001144384-the-preview-window), [2-Up previews](https://docs.camerabits.com/support/solutions/articles/48000340032-viewing-2-up-previews), [critical focus and linked scrolling](https://docs.camerabits.com/support/solutions/articles/48000207552-how-to-zoom-and-check-for-critical-focus), [thumbnail labels](https://docs.camerabits.com/support/solutions/articles/48000960641-customize-thumbnail-labels-in-contact-sheets), [live ingest](https://docs.camerabits.com/support/solutions/articles/48000341503-live-ingest).

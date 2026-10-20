@@ -1,6 +1,6 @@
 # Project tracker
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
@@ -47,6 +47,14 @@ Read-only folders retain local decisions and expose Retry XMP Sync. Reload impor
 | Other RAW/HEIC, full vocabulary dictionary, live arrivals | Planned |
 | RAW histogram, focus peaking, exposure adjustment, comparison | Planned |
 | Wider hardware/camera/macOS/accessibility coverage and release distribution | Pending |
+
+## Preview and bottom filmstrip — 2026-10-20
+
+Preview now fills the upper browsing area above a lazy, horizontally scrolling thumbnail strip. An explicit Contact Sheet / Preview control and Space switch views; Escape returns to the full grid and double-click opens Preview. Shared selection, filters, sorting, decisions and metadata targets remain intact. The strip uses one-photo arrow steps, retains Command/Shift/rectangle selection, and reveals the focused identity/index after navigation/reordering. Filmstrip and grid keep separate in-session sizes. Compact filename/navigation and decision/exposure controls surround the image; optional shooting information sits in a separate scrollable right pane. Empty/filtered/error collections use the full browsing area. Missing EXIF gets an unavailable message after indexing. Detail still resets to Fit on view/photo changes; decoding and cache budgets are unchanged. See [ADR 0010](docs/decisions/0010-preview-filmstrip.md).
+
+Reviewed current Camera Bits screen illustrations and workflow documentation. The [updated assessment](docs/PHOTO_MECHANIC_REVIEW.md#preview-screen-review--2026-10-20) recommends pinned 2-Up comparison next, followed by selected-only review and configurable EXIF labels. Live verified arrivals, ingest naming/metadata presets, metadata Undo/history and source-labeled exposure tools remain proposals.
+
+Validation: final strict formatting/build/check passed with **81 registered tests (53 core + 28 UI/imaging), 79 executed and two optional RAW skips**. Existing smoke rendering covers samples and empty state. An isolated native release build confirmed the large-preview/bottom-filmstrip proportions, Shift-arrow group selection, batch Pick on two temporary samples, Undo and Space switching to the contact sheet. A subsequent correction handles missing EXIF and selection reveal after index changes; final standard release bundle builds and verifies. Native automation could not reconnect to the previous Photo window; it was closed before replacing the standard bundle. The Mac then locked, blocking final standard-app/compact-window/long-filmstrip/native-inspector checks. These checks remain pending an unlocked screen; no final native pass is claimed. No personal photo decisions or metadata were applied. The unused synthetic long-strip fixture and isolated review bundle were removed.
 
 ## Navigator and interface polish — 2026-10-19
 
@@ -159,3 +167,5 @@ The final native build confirmed a retained Picks filter survives Reload with th
 - **2026-10-19 — Detail polish:** profile and accelerate first 100% inspection with full-quality progressive RAW rendering, bounded strips, cancellation, explicit worker completion and release bundles; retain measured memory/whole-image tradeoffs.
 
 - **2026-10-19 — Navigator/UX:** interactive detail overview, focused panning and accessible actions; clearer batch decisions and workflow controls, with native checks and regression coverage.
+
+- **2026-10-20 — Preview layout:** large upper preview, horizontal bottom filmstrip, separate optional information pane, retained grid and shared selection/decisions. Reviewed Photo Mechanic screens and ranked next culling features; final native checks await an unlocked Mac.

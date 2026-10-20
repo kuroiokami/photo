@@ -17,3 +17,9 @@ Reviewed the contact sheet, folder sidebar, preview/inspector, zoom controls, na
 Navigator focus changes arrow/Home/End menu actions to panning. Outside that focus they retain photo navigation/range selection. Hover help and Quick Start explain the behavior. Reopening workflow clears stale review plans, requiring a fresh review before applying.
 
 Remaining: full VoiceOver and keyboard-only traversal, minimum-size window verification, Intel/minimum macOS coverage, native frame/input measurements and independent photographer usability testing. Accessibility labels/actions being present does not establish full VoiceOver usability. No screenshots containing personal photos are stored in Git.
+
+## Preview layout follow-up — 2026-10-20
+
+The preview is now above a horizontal bottom filmstrip, with an explicit full Contact Sheet view. Filename/navigation and decisions use compact horizontal controls; the optional information pane sits beside the image. Separate in-session thumbnail sizes and full-area empty/filter/error states keep the two modes usable.
+
+Native verification on an isolated release build passed layout proportions, range selection, sample batch Pick, Undo and Space-to-grid. Final changes add missing-EXIF feedback and selected-index reveal; automated checks and standard release packaging passed. A locked Mac prevented final standard-app, compact-window, long-filmstrip and inspector checks. Those are pending, alongside full VoiceOver and platform coverage. The temporary review bundle and unused synthetic fixture were removed; no personal metadata was edited.
