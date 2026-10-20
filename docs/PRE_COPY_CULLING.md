@@ -23,7 +23,7 @@ Before choosing a source, explain that review work is kept on this Mac and is no
 | Everything except rejects | Include unflagged and unreviewed photos; exclude explicit rejects |
 | Current selection | Freeze the exact selected physical file identities, independent of later filters or navigation |
 
-These are source-wide choices across its subfolders, not an accidental snapshot of the currently filtered screen. “Current selection” is the deliberate exception. Expose **unreviewed photos left on source**, unsupported files and conflicts before starting. Do not label unflagged files as rejected or imply that unreviewed photos were inspected.
+These are source-wide choices across its subfolders, not an accidental snapshot of the currently filtered screen. “Current selection” is the deliberate exception. Source-wide scopes wait for complete inventory and any decision indexing they require; do not treat unknown flags as unflagged. A frozen Current selection can proceed as soon as its own identities and required family/metadata dependencies are validated, without waiting for the rest of a 40k-photo source scan. This is the earliest deadline-oriented route. Expose **unreviewed photos left on source**, unsupported files and conflicts before starting. Do not label unflagged files as rejected or imply that unreviewed photos were inspected.
 
 A photo is explicitly reviewed when a user makes a decision, including an explicit clear; loading its preview or moving past it does not count. Existing imported stars/flags can seed decisions but do not mark a photo reviewed in this session. Distinguish **Unreviewed** from **Reviewed, unflagged** in the copy summary. Undo restores review state together with its decision.
 
