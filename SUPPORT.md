@@ -1,9 +1,13 @@
 # Getting help
 
-Start with [Installation](docs/INSTALLATION.md), [Usage](docs/USAGE.md) and [copy/recovery workflows](docs/WORKFLOW.md). The [tracker](PROJECT_STATUS.md) records known limits and actual verification; the app's Help menu contains the walkthrough and shortcuts.
+New to Photo? Start with [Installation](docs/INSTALLATION.md) and the [User guide](docs/USAGE.md). The app's Help menu includes a walkthrough and keyboard shortcuts. For copying and recovery, see [Copy, cull and deliver](docs/WORKFLOW.md).
 
-For a reproducible bug or a feature proposal, [open an issue](https://github.com/kuroiokami/photo/issues/new/choose) using the matching form. Include the app commit/build, macOS version, camera/file format and a small reproducible sequence. Say whether the source is a card, protected review or working copy, and whether copying completed at both destinations.
+## Bugs and ideas
 
-Remove names, client details, paths, GPS and private metadata from logs/screenshots. Use synthetic or redistributable fixtures; do not upload a personal library, catalog or memory-card archive. For a security problem, follow [SECURITY.md](SECURITY.md).
+[Open an issue](https://github.com/kuroiokami/photo/issues/new/choose) to report a bug or suggest an improvement. Include your app build or commit, macOS version, camera/file format and steps that reproduce the problem. For copying issues, mention whether you were reviewing a card or working copies and how far copying got at each destination.
 
-Photo is maintained on a best-effort basis. There is no support SLA. A public source repository is not a signed/notarized app download; use the installation guide until an accepted release is published.
+Please remove private names, folder locations, GPS data and client information from screenshots and logs. Small synthetic or redistributable examples are helpful; don't upload personal libraries or catalogs. Report security issues through [private reporting](SECURITY.md).
+
+## Project status
+
+Photo is in active development and maintained as time allows. Check the [roadmap](ROADMAP.md) for planned work and the [tracker](PROJECT_STATUS.md) for tested cameras, platforms and known limits. You can build from source today; a signed installer is still planned.

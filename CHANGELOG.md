@@ -4,6 +4,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Documentation
+
+- Simplified the README and contribution/support guides, added a public roadmap, and kept detailed validation in the project tracker.
+
 ### Added
 
 - Native macOS 14+ folder browsing, saved Photo Home/subfolders and Preview/contact-sheet layouts.
