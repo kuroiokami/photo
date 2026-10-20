@@ -2,7 +2,7 @@
 
 Photo is a native, folder-first culling app. This guide covers getting the source, building an optimized app, putting it in Applications, updating it, and troubleshooting installation.
 
-**Current delivery:** a local development build. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. A license has not been selected. For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
+**Current delivery:** a local development build. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. Photo is licensed under [Apache-2.0](../LICENSE); see [NOTICE](../NOTICE). For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
 
 ## Contents
 

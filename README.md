@@ -1,6 +1,11 @@
 # Photo
 
+[![Swift checks](https://github.com/kuroiokami/photo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/ci.yml)
+[![Repository standards](https://github.com/kuroiokami/photo/actions/workflows/repository.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/repository.yml)
+
 A native macOS app for fast folder browsing, culling and organization for publication or an editing workflow. Built with SwiftUI and Swift Package Manager; normal RAW browsing prioritizes embedded JPEG previews.
+
+**Development preview:** build from source; a signed/notarized download has not been released. See the [changelog](CHANGELOG.md) and [tracker](PROJECT_STATUS.md) for status and verification limits.
 
 ## Start here
 
@@ -62,4 +67,6 @@ Read [CONTRIBUTING](CONTRIBUTING.md), [AGENTS](AGENTS.md) and [development miles
 
 ## License and distribution
 
-No license has been selected. Choose one before external distribution or outside contributions. Builds, personal libraries and local catalogs are excluded from Git.
+Licensed under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE). Builds, private libraries, catalogs and signing material are excluded from Git. Photo is an independent project; other product names describe workflow references or interoperability targets.
+
+Contributions follow [CONTRIBUTING](CONTRIBUTING.md) and the [repository standards](docs/REPOSITORY_STANDARDS.md). For help use [SUPPORT](SUPPORT.md); for vulnerabilities use [SECURITY](SECURITY.md). Follow the [community conduct](CODE_OF_CONDUCT.md).

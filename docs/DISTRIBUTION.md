@@ -24,14 +24,14 @@ Read-only inspection of `.build/Photo.app` found:
 | Resources | SwiftPM resource bundles copied into wrapper | Stage from scratch so removed/renamed resources cannot linger; verify all embedded code/resources |
 | Installer/download | None | Signed/notarized DMG with Applications shortcut, release notes and checksum |
 | Updates | Manual rebuild/copy | First beta: quit, replace complete app; signed automatic updates can follow separately |
-| License | Not selected | Owner selects distribution/source-license terms before publication |
+| License | Apache-2.0, selected by the owner | Include LICENSE/NOTICE with source and app distributions |
 
 No signing certificate, developer account status or notarization credentials were inspected. No software was submitted to Apple and no installer was published during this design work.
 
 ## Owner prerequisites
 
 - Apple Developer Program membership and a Developer ID Application signing identity on the release machine. Apple currently lists **US$99 per membership year**, with local currency where available: [membership details](https://developer.apple.com/programs/whats-included/).
-- Confirm the public app name, stable bundle identifier, support contact, license/distribution terms and intended hardware support. No license is selected automatically by this plan.
+- Confirm the public app name, stable bundle identifier, support contact and intended hardware support. The owner selected Apache-2.0; retain LICENSE/NOTICE in distributions.
 - Configure notarization credentials through Keychain or protected CI secrets. Do not put passwords, certificate private keys or API keys into the repository or release artifacts.
 
 No account purchase, agreement acceptance, certificate/private-key handling or public publishing is needed merely to implement the packaging scripts. Those owner-dependent steps occur when preparing the first signed release.
@@ -73,5 +73,5 @@ Do not add automatic updating, telemetry, a paid licensing system or store integ
 
 - **Packaging foundation:** clean versioned release bundle and DMG scripts, development/release identity separation, resource/signature checks, documented secret inputs and a reproducible artifact manifest. No credentials required for implementing the unsigned/local checks.
 - **Signed beta candidate:** owner-provided signing/notarization setup; actual Accepted submissions, stapled tickets and Gatekeeper/clean-Mac acceptance. Not achievable from the existing ad-hoc signature alone.
-- **Public beta:** selected license, verified supported machines, recipient installation/update instructions, honest limitations, signed artifact and checksum published through an explicit release action.
+- **Public beta:** Apache-2.0 notices, verified supported machines, recipient installation/update instructions, honest limitations, signed artifact and checksum published through an explicit release action.
 - **Wider release:** measured large-library performance, broader camera/macOS/accessibility/Intel coverage and, if desired, an independently reviewed update/store path.

@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a reproducible problem in Photo.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "For security issues use Security → Report a vulnerability. Redact private paths, photos, client details and metadata."
+  - type: input
+    id: build
+    attributes:
+      label: Build or commit
+      description: "Git commit or app build; say if built from main or another branch."
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS and hardware
+      placeholder: "macOS version, Apple silicon or Intel, camera and file extension"
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow
+      options:
+        - Browsing / preview / comparison
+        - Protected source review
+        - Copying / verification / resume
+        - Ratings / flags / filters
+        - IPTC / XMP / keywords
+        - Rename / recovery / delivery
+        - Installation / other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: "Use disposable or synthetic files. For copying include scope, pair option and which verification stage completed."
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: "Errors, small screenshots or redistributable fixture references. Do not upload personal libraries, catalogs or credentials."

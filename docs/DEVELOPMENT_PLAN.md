@@ -106,7 +106,7 @@ Acceptance evidence and actual checks belong in PROJECT_STATUS.md and docs/PERFO
 - [ ] Add other Sony models, real diverse EXIF at large scale, native frame-time measurements and other storage media.
 - [ ] Verify application-level Lightroom round trips in an isolated catalog; the prior import UI attempt remains unverified.
 
-Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing, minimum-macOS/Intel and licensing limits remain open.
+Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md and PERFORMANCE.md. Existing release/signing and minimum-macOS/Intel limits remain open; Apache-2.0 is now selected.
 
 ## Accepted ingest/metadata/camera follow-up — 2026-10-19
 
@@ -212,7 +212,7 @@ Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decis
 - [x] Implement explicit source-wide copy choices, reviewed/unreviewed counts, pair expansion/conflicts and immutable file/family plans.
 - [x] Implement journaled two-destination decision/edit handover and destination-only XMP, preserving provenance and later destination edits across interruption/retry.
 - [ ] Complete guided review/copy/resume native acceptance and representative 10k/40k concurrent-copy measurements before claiming that scale.
-- [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, license and hardware support before publishing.
+- [ ] Add clean, versioned release-bundle/DMG tooling without changing the development command. Confirm release identity, icon, inclusion of Apache-2.0 notices and hardware support before publishing.
 - [ ] With owner-provided Developer ID/notarization setup, produce and validate a stapled app/DMG on a clean recipient Mac, including upgrade/local-data persistence and offline launch.
 - [ ] Publish only an explicitly authorized, accepted beta artifact with checksum, installation instructions and tested platform/camera limits. Intel/universal builds, automatic updating and App Store distribution remain separate acceptance work.
 
@@ -247,3 +247,12 @@ See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained
 - [ ] Finish physical removable-card, broad VoiceOver/compact-display and representative 10k/40k concurrent-copy acceptance; exact automated/native evidence belongs in the tracker.
 
 [ADR 0019](decisions/0019-reviewed-copy-handover.md) records implementation choices and limits. A new transfer of later source decisions needs a fresh list/shoot folder; replay over existing destination work is deliberately refused.
+
+## Public repository standards — 2026-10-20
+
+- [x] Adopt owner-selected Apache-2.0 with NOTICE, contributor/support/security/conduct policies and issue/PR templates.
+- [x] Add changelog, CODEOWNERS, pinned least-privilege CI, Actions dependency updates and automated repository hygiene/secret checks.
+- [x] Audit reachable history and repository metadata before public visibility; retain only intentional fixtures and preserve unrelated local edits.
+- [ ] Verify public visibility, GitHub protections/security settings and final-head CI delivery; record actual results in PROJECT_STATUS.md.
+
+Signed/notarized app distribution and broader platform/native acceptance remain separate milestones.

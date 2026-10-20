@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation and usage
+    url: https://github.com/kuroiokami/photo/blob/main/SUPPORT.md
+    about: Read the guides and reporting advice first.
+  - name: Report a security vulnerability privately
+    url: https://github.com/kuroiokami/photo/security/advisories/new
+    about: Do not publish vulnerabilities in public issues.
