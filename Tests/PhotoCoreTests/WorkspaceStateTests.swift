@@ -51,4 +51,45 @@ struct WorkspaceStateTests {
     #expect(state.selectedID == photos[5_000].id)
   }
 
+  @Test func rangeAnchorAndKeyboardExtensionAreStable() {
+    let state = WorkspaceState()
+    let photos = state.photos
+    state.select(photos[0].id)
+    state.selectMultiple(photos[2].id, extending: false, range: true)
+    #expect(state.selectedIDs.count == 3)
+    state.moveSelection(by: -1, extending: true)
+    #expect(state.selectedIDs == Set(photos.prefix(2).map(\.id)))
+    #expect(state.firstSelectedPhoto == photos[0])
+    state.selectMultiple(photos[0].id, extending: true, range: false)
+    #expect(state.selectedIDs == [photos[1].id])
+    state.invertSelection()
+    #expect(state.selectedIDs == [photos[0].id, photos[2].id])
+    state.deselectAll()
+    #expect(state.selectedPhoto == nil)
+    state.selectAllVisible()
+    #expect(state.selectedIDs.count == 3)
+    #expect(state.selectedPhoto == photos[0])
+  }
+  @Test func togglingGroupFlagsPreservesIndependentStarsAndUndo() async {
+    let state = WorkspaceState()
+    state.autoAdvance = false
+    await state.loadDecisions()
+    let photos = state.photos
+    state.applyDecision(rating: 4, flag: .pick)
+    state.select(photos[1].id)
+    state.applyDecision(rating: 2)
+    state.selectGroup(Set(photos.prefix(2).map(\.id)))
+    #expect(state.decisionSelectionReady)
+    state.togglePicks()
+    #expect(state.decisions[photos[0].id]?.rating == 4)
+    #expect(state.decisions[photos[1].id]?.rating == 2)
+    #expect(state.decisions[photos[1].id]?.flag == .pick)
+    state.togglePicks()
+    #expect(state.decisions[photos[0].id]?.flag == .unflagged)
+    state.undoDecision()
+    #expect(state.decisions[photos[1].id]?.flag == .pick)
+    state.selectPicks()
+    #expect(state.selectedIDs == Set(photos.prefix(2).map(\.id)))
+  }
+
 }

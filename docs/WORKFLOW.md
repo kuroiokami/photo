@@ -57,3 +57,13 @@ Location created and location shown have distinct meanings and must not be confl
 Lightroom Classic 15+ can place heavy edits in ACR companions in addition to XMP, so both are carried without interpreting or rewriting ACR bytes. [Adobe sidecar documentation](https://helpx.adobe.com/uk/lightroom-classic/desktop/organize-photos-in-lightroom-classic/create-xmp-acr-files.html). Modern flags are documented by [Adobe](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html); actual application-level exchange in this build remains unverified. No original Lightroom catalog was edited for these checks.
 
 Remaining: isolated Lightroom round trip across RAW/JPEG/PNG and flags/hierarchies/structured locations; real CRW and broader camera/mode/macOS coverage; removable/network-drive failure testing; first-open profiling; live arrivals, richer vocabulary management, and release/accessibility work.
+
+## Saved locations, selections and one-field edits
+
+Opened folders stay in the sidebar until explicitly removed. Use a disclosure arrow to discover immediate subfolders, then click a folder name to browse it. This keeps browsing shallow and fast; removing a shortcut does not delete anything. The last selected location restores on launch. A disconnected location stays listed so it can be retried.
+
+Select a group with Command-click, Shift-click, Shift-arrow, Command-A or a rectangle over the viewport. Flag buttons and P/X/U apply to the full selection. T toggles picks; Command-T selects visible picks. Batch decisions do not auto-advance. Rectangle selection does not auto-scroll.
+
+For a shared copyright across 50 photos, select the group and open IPTC & Keywords with Command-I. Its initial values come from the first selected representative in current contact-sheet order. Edit Copyright notice and click the overlapping-rectangles button beside that row. Review the 50 before/after values, then Apply Reviewed Fields. That preview contains only Copyright notice, even if other fields are checked. Existing captions, location, keywords, stars and develop settings remain per photo. Clear must be explicitly checked to delete a value. Applying retains the selection; the combined Preview Metadata Changes button instead reviews every checked nonempty field and the chosen keyword action.
+
+Hover help and Help → Photo Quick Start & Shortcuts explain these actions. The [Photo Mechanic review](PHOTO_MECHANIC_REVIEW.md) records shortcut differences and remaining workflow priorities.

@@ -121,3 +121,15 @@ Record exact counts, timings, native checks and CI evidence in PROJECT_STATUS.md
 - [ ] Add live arrivals, full keyword dictionary import/export/synonyms, automatic ingest metadata/naming presets, metadata Undo and clock correction if prioritized.
 
 Implemented is distinct from complete release acceptance: keep first-open latency, actual interoperability and minimum-platform coverage explicit in the tracker. Preserve existing image bytes, use disposable copies for all mutation tests, and update evidence with every delivery.
+
+## Accepted folder and batch usability follow-up — 2026-10-19
+
+- [x] Merge existing fast-culling and ingestion/metadata work into main, retaining validation evidence.
+- [x] Persist opened folder shortcuts and last selection; lazily expand and browse subfolders; explicit removal never deletes files.
+- [x] Stable range/additive selection, Shift-arrow, visible batch flags, viewport rectangle selection and contextual metadata access.
+- [x] Preview a single IPTC field from the first selected photo across a group, preserve all other fields and retain selection after applying.
+- [x] Adopt appropriate Photo Mechanic shortcuts, native tooltips and optional Quick Start help; document deliberate shortcut differences.
+- [x] Audit current Camera Bits documentation and record prioritized gaps in PHOTO_MECHANIC_REVIEW.md.
+- [ ] Add first-use walkthrough, rectangle edge auto-scroll, mixed-value summaries and metadata Undo if prioritized.
+
+Test and delivery outcomes are tracked in PROJECT_STATUS.md; the existing Lightroom, latency and release acceptance limits remain open.

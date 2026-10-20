@@ -10,7 +10,7 @@ Photo opens JPEG, PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM System ORF fol
 
 The Workflow panel adds verified dual-destination ingest, multi-selection and RAW+JPEG grouping, reviewed bulk rename/Undo, IPTC presets and hierarchical keywords, and a Lightroom Classic handoff. See the [workflow guide](docs/WORKFLOW.md) for usage, recovery and verified camera coverage. Other RAW formats, HEIC and release distribution remain planned. Reference-machine browsing targets and before/after results are recorded in the [performance report](docs/PERFORMANCE.md). Wider hardware/library coverage remains open; this is a working development build.
 
-The workflow changes are currently in draft [PR #3](https://github.com/kuroiokami/photo/pull/3), stacked on the unmerged culling PR. After cloning, use `git switch --track origin/codex/ingest-metadata-cameras` to try this development version before building. The default branch does not include these unmerged features yet.
+The fast-culling and ingest/metadata changes are merged into `main`. Use the default branch for development. See the [Photo Mechanic review](docs/PHOTO_MECHANIC_REVIEW.md) for adopted interactions and the prioritized remaining work.
 
 ## Requirements and installation
 
@@ -35,8 +35,8 @@ This bundle is ad-hoc signed locally and unnotarized; it is for development, not
 
 ## Usage
 
-- Choose **File → Open Folder…** (Command-O) or use the Open Folder button. Only the selected folder's visible regular `.jpg`, `.jpeg`, `.png`, `.arw`, `.cr2`, `.cr3`, `.crw`, and `.orf` files are listed, in natural filename order. Subfolders and symbolic links are excluded.
-- Click a thumbnail to select it. Left/right arrows move one photo; up/down arrows move one grid row. Home/End select the first/last image. On compact Mac keyboards, Fn-left/right provide Home/End.
+- Choose **File → Open Folder…** (Command-O) or use the Open Folder button. Only the selected folder's visible regular `.jpg`, `.jpeg`, `.png`, `.arw`, `.cr2`, `.cr3`, `.crw`, and `.orf` files are listed, in natural filename order. Expand a sidebar arrow and click a subfolder to display its images. Opened roots and the last folder survive restarts until you remove the sidebar shortcut; removing it leaves files on disk. Symbolic links and hidden directories are excluded.
+- Click a thumbnail to select it. ⌘-click adds/removes individual photos; Shift-click or Shift-arrow extends a range from its anchor. Drag a rectangle across visible thumbnails to select a group (⌘/Shift adds; no edge auto-scroll). Use the selection flag buttons or P/X/U to flag them together, preserving stars. ⌘A selects all, ⌘D deselects, ⇧⌘O inverts, T toggles picks and ⌘T selects visible picks. Left/right arrows move one photo; up/down arrows move one grid row. Home/End select the first/last image. On compact Mac keyboards, Fn-left/right provide Home/End.
 - Space toggles the preview; Escape hides it. Double-clicking a thumbnail shows it. Drag the split divider to resize the contact sheet and preview.
 - Adjust the thumbnail-size slider to change grid density. Click a thumbnail to return keyboard focus to the grid after using another control.
 - **File → Reload Folder** (Command-R) rescans the folder, clears cached images, and preserves the selection if the file still exists. Filesystem changes are not watched automatically.
@@ -54,6 +54,12 @@ In **Bulk Rename**, choose Selection/Visible/All files, set a naming template an
 In **IPTC & Keywords**, check fields to apply; blank unchecked fields stay untouched. **Clear** is explicit. Preview changes before applying. Save layered author/shoot/subject presets. Use keyword Append/Replace/Remove/Clear; `Wildlife|Birds|Heron` records a hierarchy and its leaf keyword.
 
 **Lightroom** prepares an optional verified copy of non-rejected photos and companions. Its JPEG/PNG copies can embed prepared metadata without recompressing pixels; original library bytes stay untouched. In Lightroom Classic, import that folder with **Add**. Actual Lightroom application round trips remain unverified. Follow the [workflow guide](docs/WORKFLOW.md) before working on an existing catalog.
+
+### Batch IPTC and discoverability
+
+Select your photos, then press **⌘I** (or I / ⌘K) for IPTC & Keywords. Values come from the first selected photo in contact-sheet order. Edit a field such as Copyright notice, then click its **overlapping rectangles** button to preview only that field across the target set. Review the before/after values and click **Apply Reviewed Fields**. Other fields retain each photo's values. Typing automatically checks a field for the combined preview; **Clear** explicitly removes a value. Applying metadata keeps the group selected. RAW+JPEG grouping expands targets to both files; the editor shows the physical target count.
+
+**⌘G** opens Ingest and **M** opens Bulk Rename. ⌘M remains macOS Minimize. Hover over controls for explanations; choose **Help → Photo Quick Start & Shortcuts** or the sidebar Quick Start button for an optional guide. Browser shortcuts yield to native text editing while the workflow panel is open. See the [workflow review and remaining gaps](docs/PHOTO_MECHANIC_REVIEW.md).
 
 ## Development checks
 
@@ -91,7 +97,7 @@ See the [development plan](docs/DEVELOPMENT_PLAN.md), [folder-browser decision](
 
 ## Current limits
 
-No recursion, live folder watching, multi-selection, other RAW/HEIC formats, destructive editing, or installable release. Fit previews are capped at 2560 pixels on their longest edge; thumbnails at 480. ARW previews can be smaller than these caps. Full detail is requested separately and limited to a single decoded image of at most 256 MiB. Cached data can remain visible after external edits until Reload. Cache limits exclude visible view images and transient decoder/OS allocations; they are not a total application memory cap.
+No recursive photo collection, live folder watching, additional RAW formats beyond those listed above, HEIC, destructive editing, or installable release. Multi-selection and clickable subfolder navigation are implemented. Fit previews are capped at 2560 pixels on their longest edge; thumbnails at 480. ARW previews can be smaller than these caps. Full detail is requested separately and limited to a single decoded image of at most 256 MiB. Cached data can remain visible after external edits until Reload. Cache limits exclude visible view images and transient decoder/OS allocations; they are not a total application memory cap.
 
 ## License
 
@@ -105,7 +111,7 @@ The current feature branch adds Sony `.arw` (case-insensitive) embedded previews
 
 Use **P** to pick, **X** to reject, **U** to clear the flag, and **0–5** for stars. Flags and stars are independent. Hold Shift to apply and advance, or enable the remembered Auto-advance checkbox. Reject never deletes a photo. Undo history is per folder session and resets on Reload/new folder. Use Decisions and Edit menus for commands and Undo/Redo (Command-Z / Shift-Command-Z). Filter by flag and minimum stars; Clear Filters restores the full folder. Rating sort places highest stars first.
 
-Decisions save in `~/Library/Application Support/Photo/decisions.sqlite` and synchronize to XMP sidecars. ARW uses `name.xmp`; JPEG/PNG uses `name.jpg.xmp`/`name.png.xmp` (other apps may not read these). Original images are untouched. Saved locally / XMP pending means the local decision is durable; Retry XMP Sync retries the sidecar. A conflict offers Use My Decisions or Use External Decisions and never silently overwrites an external edit. Normal quit waits for queued saves; sudden process termination can lose a change still marked Saving. Samples are not persisted.
+Decisions save in `~/Library/Application Support/Photo/decisions.sqlite` and synchronize to XMP sidecars. Supported RAW formats use `name.xmp`; JPEG/PNG uses `name.jpg.xmp`/`name.png.xmp` (other apps may not read these). Original images are untouched. Saved locally / XMP pending means the local decision is durable; Retry XMP Sync retries the sidecar. A conflict offers Use My Decisions or Use External Decisions and never silently overwrites an external edit. Normal quit waits for queued saves; sudden process termination can lose a change still marked Saving. Samples are not persisted.
 
 The local app bundle is now **ad-hoc signed**, without a distribution certificate or notarization, so macOS can validate native panel services. It remains a development build.
 
@@ -117,4 +123,4 @@ Ordinary ARW browsing uses the embedded JPEG; its badge shows its actual resolut
 
 See the [culling design and research](docs/CULLING_DESIGN.md) and [current tracker](PROJECT_STATUS.md) for validation and interoperability limits.
 
-For optional real-camera integration checks, set `PHOTO_RAW_TEST_FOLDER` to a disposable folder containing supported Sony ARWs when running `sh scripts/check.sh`. That test checks every ARW directly inside the supplied folder for embedded previews, full RAW detail and unchanged source hashes; it does not recurse. CI skips it without the environment variable; personal files are never checked into the repository.
+For optional real-camera integration checks, set `PHOTO_RAW_TEST_FOLDER` to a disposable folder containing supported RAW files when running `sh scripts/check.sh`. That test checks every supported RAW directly inside the supplied folder for embedded previews, full RAW detail and unchanged source hashes; it does not recurse. CI skips it without the environment variable; personal files are never checked into the repository.
