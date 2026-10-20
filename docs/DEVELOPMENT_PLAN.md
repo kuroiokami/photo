@@ -253,6 +253,7 @@ See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained
 - [x] Adopt owner-selected Apache-2.0 with NOTICE, contributor/support/security/conduct policies and issue/PR templates.
 - [x] Add changelog, CODEOWNERS, pinned least-privilege CI, Actions dependency updates and automated repository hygiene/secret checks.
 - [x] Audit reachable history and repository metadata before public visibility; retain only intentional fixtures and preserve unrelated local edits.
-- [ ] Verify public visibility, GitHub protections/security settings and final-head CI delivery; record actual results in PROJECT_STATUS.md.
+- [x] Verify public visibility and GitHub protections/security settings; record actual settings in PROJECT_STATUS.md.
+- [ ] Complete final-head public CI delivery through PR #14; do not bypass required checks.
 
 Signed/notarized app distribution and broader platform/native acceptance remain separate milestones.
