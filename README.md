@@ -15,7 +15,7 @@ Photo is open source and in active development. You can build it from source tod
 
 ## What you can do
 
-| | |
+| Feature | What it does |
 | --- | --- |
 | **Browse without importing** | Open a folder or memory card. Keep favorite folders in the sidebar and explore their subfolders. |
 | **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. |
