@@ -54,3 +54,29 @@ Inspected the current Preview Window article and its illustrated large-image/bot
 The full approved comparison/review/labels/arrivals/metadata-Undo list is implemented; broader native/accessibility acceptance and workflow interoperability are the next priorities. Lightroom round-trip verification remains acceptance work alongside these proposals. Arbitrary zoom magnifications, rotation/crop editing, external-editor integration and publishing are lower priority for the current fast-culling scope.
 
 References: [Preview Window and screen illustrations](https://docs.camerabits.com/support/solutions/articles/48001144384-the-preview-window), [2-Up previews](https://docs.camerabits.com/support/solutions/articles/48000340032-viewing-2-up-previews), [critical focus and linked scrolling](https://docs.camerabits.com/support/solutions/articles/48000207552-how-to-zoom-and-check-for-critical-focus), [thumbnail labels](https://docs.camerabits.com/support/solutions/articles/48000960641-customize-thumbnail-labels-in-contact-sheets), [live ingest](https://docs.camerabits.com/support/solutions/articles/48000341503-live-ingest).
+
+## Basic editing audit and first implementation — 2026-10-20
+
+Read the installed Photo Mechanic’s **Image, Edit, File and Tools menus**, and opened its existing selected image in Preview to inspect zoom/crop/rotation/metadata/inspection controls. Closed only that newly opened preview afterward; no image-edit/file-operation commands were applied to its personal photos. Cross-checked Camera Bits documentation. This is a feature inventory and workflow assessment, not a comparative performance or usability study.
+
+The user chose **rotate/mirror and crop first**. The first implementation includes direct thumbnail stars/flags, contact-sheet rotation/mirror/crop context actions, a crop editor, crop copy/paste, persistent Photo-local composition, session Undo and trackpad magnification. Adobe crop/orientation interchange and applied export remain acceptance/implementation work; local display edits are not claimed to transfer to Lightroom.
+
+| Basic Photo Mechanic function | Photo status / next work |
+| --- | --- |
+| Contact-sheet stars and tag controls | Interactive stars and independent pick/reject/unflag menu; selection-wide actions, persistence and Undo. Tags are adapted to picks. |
+| Rotate left/right and horizontal/vertical mirror | Implemented as protected Photo-local composition, including selected batches and thumbnails. No hard JPEG rotation. |
+| Crop preview, move/resize and removal | Implemented rectangular Photo-local crop with corner handles, numeric percentages, grid/shield, ratio seeds, Cancel/Apply/Clear and Reset. |
+| Copy/paste crop from contact sheet | Implemented normalized crop copy/paste to a selection, retaining each target’s other edits. |
+| Locked-ratio resizing, crop angle/straightening and crop settings snapshots | Remaining; current ratios seed a centered crop and subsequent resizing is free. |
+| Zoom levels, linked inspection and navigator | Magnification, Fit/exact physical 100%, pan/navigator and linked comparison implemented. Physical pinch device coverage remains separately recorded. |
+| IPTC template/snapshots, keyword panels and structured keywords | Reviewed presets, one-field/batch patches and hierarchy implemented; full snapshots/code replacement/dictionary features remain gaps. |
+| Color classes and remapping to stars | Planned after the user’s rotate/crop priority; stars and flags remain independent. |
+| Set/import/reverse-geocode GPS; capture-clock correction | Not implemented. Existing metadata remains preserved. |
+| External editor / droplet integration | Planned. Existing manual Lightroom Classic handoff is distinct from launching an editor. |
+| Copy/move, rename and saved output | Verified ingest/handoff copies and reviewed rename exist. General move/copy browser, crop-applied export and output resizing remain gaps. |
+| Histogram and highlight/shadow inspection | Planned with explicit preview/rendered-source labels; no claim of sensor-RAW exposure measurement. |
+| Selection by crop/rotation/rating/date; Find/Replace and saved selection files | Selected review/picks/filter/rating selection exists in part; broader selectors/search/selection files remain gaps. |
+| Resolution/ICC conversion, RAW→DNG, embedded-JPEG extraction, metadata stripping, hard JPEG rotation | Not implemented; separate conversion/destructive utilities are outside this first composition chunk. |
+| Slideshows, print, email/FTP/upload and publishing | Not implemented; lower priority for the folder-first culling/Lightroom goal. |
+
+References: [current Image menu](https://camerabits.freshdesk.com/support/solutions/articles/48001282950-image-menu), [current contact-sheet controls](https://docs.camerabits.com/support/solutions/articles/48000207551), [legacy documented soft rotation](https://docs.camerabits.com/support/solutions/articles/48001252577--legacy-rotate-photos), [legacy documented crop interactions/copy/paste](https://docs.camerabits.com/support/solutions/articles/48001252575--legacy-crop-tool-in-photo-mechanic), [external editor workflow](https://docs.camerabits.com/support/solutions/articles/48001077633-sending-photos-from-photo-mechanic-to-external-editors). Legacy articles are labeled deliberately; the installed app supplied the current menu/preview inventory.

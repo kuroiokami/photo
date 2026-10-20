@@ -16,6 +16,9 @@ private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
 private typealias TileFramesStorage = SwiftUI.State<[String: CGRect]>
 private typealias MarqueeStorage = SwiftUI.State<SelectionMarquee?>
 private typealias FolderLibraryStorage = SwiftUI.State<FolderLibrary>
+private typealias CropPhotoStorage = SwiftUI.State<PhotoItem?>
+private typealias CropClipboardStorage = SwiftUI.State<PhotoCrop?>
+private typealias GestureSizeStorage = SwiftUI.State<Double?>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
 private struct SelectionReveal: Equatable {
@@ -50,6 +53,9 @@ public struct WorkspaceView: View {
   @BoolStorage private var showingWorkflow = false
   @BoolStorage private var showingHelp = false
   @TileFramesStorage private var tileFrames: [String: CGRect] = [:]
+  @CropPhotoStorage private var croppingPhoto: PhotoItem?
+  @CropClipboardStorage private var copiedCrop: PhotoCrop?
+  @GestureSizeStorage private var pinchSize: Double?
   @MarqueeStorage private var marquee: SelectionMarquee?
   private let metadataReader = ImageMetadataReader()
 
@@ -76,7 +82,7 @@ public struct WorkspaceView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(
               height: showPreview && !workspace.photos.isEmpty
-                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 108 : 88)
+                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 120 : 100)
                   + Double(thumbnailLabels.count * 20) : nil)
         }
         Divider()
@@ -111,6 +117,12 @@ public struct WorkspaceView: View {
         .help("Switch between large preview with bottom filmstrip and contact sheet (Space).")
       }
     }
+    .sheet(item: $croppingPhoto) { photo in
+      CropEditor(
+        photo: photo, edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), pipeline: previews,
+        sessionID: workspace.sessionID
+      ) { crop in workspace.setCrop(crop, for: photo) }
+    }
     .sheet(isPresented: $showingHelp) { CullingHelpView() }
     .task {
       if workspace.directory == nil, let saved = folderLibrary.selected {
@@ -124,7 +136,10 @@ public struct WorkspaceView: View {
     .onChange(of: thumbnailLabels) {
       UserDefaults.standard.set(thumbnailLabels.map(\.rawValue), forKey: "Photo.thumbnailLabels")
     }
-    .onChange(of: workspace.sessionID) { comparison.close() }
+    .onChange(of: workspace.sessionID) {
+      comparison.close()
+      croppingPhoto = nil
+    }
     .onChange(of: workspace.selectedID) { comparison.resetViewports() }
     .onChange(of: showPreview) { comparison.resetViewports() }
     .sheet(isPresented: $showingWorkflow) { WorkflowView(model: workflowModel) }
@@ -132,15 +147,17 @@ public struct WorkspaceView: View {
       \.workspaceActions,
       WorkspaceActions(
         workspace: workspace,
-        canDecide: !choosingFolder && !showingWorkflow && !showingHelp
+        canDecide: !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
         workflow: showWorkflow, help: { showingHelp = true },
         canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
-          && !showingHelp,
+          && !showingHelp && croppingPhoto == nil,
         comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
-        canCompare: workspace.photos.count > 1
+        canCompare: workspace.photos.count > 1,
+        crop: { croppingPhoto = workspace.selectedPhoto }, copyCrop: copyCrop, pasteCrop: pasteCrop,
+        canPasteCrop: copiedCrop != nil
       )
     )
     .task(id: workspace.sessionID) {
@@ -345,6 +362,17 @@ public struct WorkspaceView: View {
                 }.padding(16)
               }
             }
+            .simultaneousGesture(
+              MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
+                if pinchSize == nil { pinchSize = thumbnailEdge }
+                let size = (pinchSize ?? thumbnailEdge) * value.magnification
+                if showPreview {
+                  filmstripSize = min(170, max(90, size))
+                } else {
+                  thumbnailSize = min(240, max(110, size))
+                }
+              }.onEnded { _ in pinchSize = nil }
+            )
             .coordinateSpace(name: "ContactSheetViewport")
             .onPreferenceChange(PhotoTileFrames.self) { tileFrames = $0 }
             .simultaneousGesture(
@@ -462,72 +490,146 @@ public struct WorkspaceView: View {
     let information = thumbnailLabels.map { $0.label(workspace.metadata[photo.id]) }
     let spokenValue = (["\(decision.flag.title), \(decision.rating) stars"] + information).joined(
       separator: ", ")
-    return Button {
-      let modifiers = NSApp.currentEvent?.modifierFlags ?? []
-      workspace.selectMultiple(
-        photo.id, extending: modifiers.contains(.command), range: modifiers.contains(.shift))
-      gridFocused = true
-    } label: {
-      VStack(alignment: .leading, spacing: 8) {
+    return VStack(alignment: .leading, spacing: 6) {
+      Button {
+        selectThumbnail(photo)
+      } label: {
         PhotoImageView(
-          photo: photo, pipeline: thumbnails, maximumPixelSize: 480, sessionID: workspace.sessionID
+          photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
+          edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID
         )
-        .frame(height: thumbnailEdge * 0.7)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        HStack(spacing: 4) {
-          Image(systemName: decision.flag.symbol).accessibilityLabel(decision.flag.title)
-          Text(
-            String(repeating: "★", count: decision.rating)
-              + String(repeating: "☆", count: 5 - decision.rating)
-          )
-          .accessibilityLabel("\(decision.rating) stars")
-        }.font(.caption2).foregroundStyle(.secondary)
-        if workspace.groupPairs, workspace.pairedCount(photo) > 1 {
-          Text("RAW + JPEG").font(.caption2).foregroundStyle(.secondary)
-        }
-        Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
-          .foregroundStyle(selected ? Color.white : Color.secondary)
-        thumbnailInformation(photo)
+        .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
       }
-      .padding(8)
-      .background(
-        selected ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.025),
-        in: RoundedRectangle(cornerRadius: 7)
-      )
-      .overlay(
-        RoundedRectangle(cornerRadius: 7).strokeBorder(
-          selected ? Color.accentColor : .clear, lineWidth: 2)
-      )
-      .contentShape(Rectangle())
+      .buttonStyle(.plain)
+      .accessibilityLabel("Select \(photo.filename)").accessibilityValue(spokenValue)
+      .accessibilityAddTraits(selected ? .isSelected : [])
+      .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
+      thumbnailDecisions(photo, selected: selected)
+      Button {
+        selectThumbnail(photo)
+      } label: {
+        VStack(alignment: .leading, spacing: 4) {
+          if workspace.groupPairs, workspace.pairedCount(photo) > 1 {
+            Text("RAW + JPEG").font(.caption2)
+          }
+          Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
+          thumbnailInformation(photo)
+        }.foregroundStyle(selected ? Color.white : Color.secondary).frame(
+          maxWidth: .infinity, alignment: .leading
+        ).contentShape(Rectangle())
+      }.buttonStyle(.plain)
+      if workspace.imageEdits[photo.id]?.isEdited == true {
+        Text(workspace.imageEdits[photo.id]?.crop != nil ? "Cropped · Photo edit" : "Photo edit")
+          .font(.caption2).foregroundStyle(.secondary)
+      }
     }
-    .buttonStyle(.plain).help(
-      photo.filename
-        + "\nClick to select; ⌘-click adds/removes; Shift-click selects a range. P/X/U flags the selection."
+    .padding(8)
+    .background(
+      selected ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.025),
+      in: RoundedRectangle(cornerRadius: 7)
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 7).strokeBorder(
+        selected ? Color.accentColor : .clear, lineWidth: 2)
     )
     .contextMenu {
       ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
         Button(flag.title + " Selection") {
-          if !workspace.selectedIDs.contains(photo.id) {
-            workspace.selectMultiple(photo.id, extending: false, range: false)
-          }
-          workspace.applyDecision(flag: flag)
-        }.disabled(
-          !workspace.decisionsReady.contains(photo.id)
-            || (selected && !workspace.decisionSelectionReady))
+          workspace.applyThumbnailDecision(to: photo.id, flag: flag)
+        }.disabled(!thumbnailReady(photo))
       }
+      Menu("Stars") {
+        ForEach(0...5, id: \.self) { rating in
+          Button(rating == 0 ? "Clear Stars" : "\(rating) Stars") {
+            workspace.applyThumbnailDecision(to: photo.id, rating: rating)
+          }
+        }
+      }.disabled(!thumbnailReady(photo))
+      Divider()
+      ForEach([PhotoEditAction.counterclockwise, .clockwise, .horizontal, .vertical], id: \.self) {
+        action in
+        Button(action.rawValue + " Selection") {
+          prepareThumbnail(photo)
+          workspace.editSelection(action)
+        }.disabled(!thumbnailReady(photo))
+      }
+      Button("Crop…") {
+        prepareThumbnail(photo)
+        croppingPhoto = photo
+      }.disabled(!thumbnailReady(photo))
+      Button("Copy Crop") { copiedCrop = workspace.imageEdits[photo.id]?.crop }.disabled(
+        workspace.imageEdits[photo.id]?.crop == nil)
+      Button("Paste Crop to Selection") {
+        prepareThumbnail(photo)
+        pasteCrop()
+      }.disabled(copiedCrop == nil || !thumbnailReady(photo))
+      Button("Clear Crop from Selection") {
+        prepareThumbnail(photo)
+        workspace.editSelection(.clearCrop)
+      }.disabled(!thumbnailReady(photo))
+      Button("Reset Image Edits for Selection") {
+        prepareThumbnail(photo)
+        workspace.editSelection(.reset)
+      }.disabled(!thumbnailReady(photo))
       Divider()
       Button("Edit IPTC & Keywords…") {
-        if !workspace.selectedIDs.contains(photo.id) {
-          workspace.selectMultiple(photo.id, extending: false, range: false)
-        }
+        prepareThumbnail(photo)
         showWorkflow(2)
       }
     }
-    .accessibilityLabel("Select \(photo.filename)")
-    .accessibilityValue(spokenValue)
-    .accessibilityAddTraits(selected ? .isSelected : [])
-    .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
   }
+  private func selectThumbnail(_ photo: PhotoItem) {
+    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+    workspace.selectMultiple(
+      photo.id, extending: modifiers.contains(.command), range: modifiers.contains(.shift))
+    gridFocused = true
+  }
+  private func prepareThumbnail(_ photo: PhotoItem) {
+    if !workspace.selectedIDs.contains(photo.id) {
+      workspace.selectMultiple(photo.id, extending: false, range: false)
+    }
+  }
+  private func thumbnailReady(_ photo: PhotoItem) -> Bool {
+    workspace.decisionsReady.contains(photo.id)
+      && (!workspace.selectedIDs.contains(photo.id) || workspace.decisionSelectionReady)
+  }
+  private func thumbnailDecisions(_ photo: PhotoItem, selected: Bool) -> some View {
+    let decision = workspace.decisions[photo.id] ?? CullingDecision()
+    return HStack(spacing: 0) {
+      Menu {
+        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
+          Button(flag.title) {
+            workspace.applyThumbnailDecision(to: photo.id, flag: flag)
+            gridFocused = true
+          }
+        }
+      } label: {
+        Image(systemName: decision.flag.symbol).frame(width: 18, height: 24)
+      }
+      .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+      .accessibilityLabel("Flag \(photo.filename)").accessibilityValue(decision.flag.title).help(
+        "Flag this photo, or the selected group when this photo is selected. Reject never deletes files."
+      )
+      ForEach(1...5, id: \.self) { rating in
+        Button {
+          let current = selected ? workspace.selectionSummary.rating : decision.rating
+          workspace.applyThumbnailDecision(to: photo.id, rating: current == rating ? 0 : rating)
+          gridFocused = true
+        } label: {
+          Image(systemName: rating <= decision.rating ? "star.fill" : "star").font(
+            .system(size: 11)
+          ).frame(maxWidth: .infinity).frame(height: 24).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel("\(rating) stars for \(photo.filename)")
+          .help(
+            "Set \(rating) stars for this photo or selected group. Click the current rating again to clear; flags stay independent."
+          )
+      }
+    }.foregroundStyle(.secondary).disabled(!thumbnailReady(photo))
+  }
+  private func copyCrop() {
+    copiedCrop = workspace.selectedPhoto.flatMap { workspace.imageEdits[$0.id]?.crop }
+  }
+  private func pasteCrop() { if let copiedCrop { workspace.pasteCrop(copiedCrop) } }
 
   private func thumbnailInformation(_ photo: PhotoItem) -> some View {
     ForEach(thumbnailLabels) { field in
@@ -584,6 +686,26 @@ public struct WorkspaceView: View {
         .help("Show the full contact sheet (Space or Escape).")
       }.buttonStyle(.borderless).padding(.horizontal, 12).padding(.top, 8)
       if let photo = workspace.selectedPhoto {
+        HStack {
+          Button {
+            workspace.editSelection(.counterclockwise)
+          } label: {
+            Label("Rotate Left", systemImage: "rotate.left")
+          }
+          Button {
+            workspace.editSelection(.clockwise)
+          } label: {
+            Label("Rotate Right", systemImage: "rotate.right")
+          }
+          Menu("Mirror") {
+            Button("Horizontally") { workspace.editSelection(.horizontal) }
+            Button("Vertically") { workspace.editSelection(.vertical) }
+          }
+          Button("Crop…") { croppingPhoto = workspace.selectedPhoto }
+          Spacer()
+          Text(workspace.editStatus).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        }.buttonStyle(.borderless).font(.caption).padding(.horizontal, 12).disabled(
+          !workspace.decisionSelectionReady)
         if comparison.enabled { comparisonControls }
         HStack(alignment: .top, spacing: 12) {
           if let reference = comparison.reference {
@@ -592,7 +714,8 @@ public struct WorkspaceView: View {
                 .lineLimit(1).truncationMode(.middle)
               DetailPreviewView(
                 photo: reference, pipeline: previews, detailPipeline: referenceDetails,
-                sessionID: workspace.sessionID, comparison: comparison, pane: .reference
+                sessionID: workspace.sessionID, comparison: comparison, pane: .reference,
+                edit: workspace.imageEdits[reference.id] ?? PhotoEdit()
               )
               .id("reference-\(workspace.sessionID)-\(reference.id)")
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -605,7 +728,8 @@ public struct WorkspaceView: View {
             }
             DetailPreviewView(
               photo: photo, pipeline: previews, detailPipeline: detailPipeline,
-              sessionID: workspace.sessionID, comparison: comparison, pane: .active
+              sessionID: workspace.sessionID, comparison: comparison, pane: .active,
+              edit: workspace.imageEdits[photo.id] ?? PhotoEdit()
             )
             .id("active-\(workspace.sessionID)-\(photo.id)")
           }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -882,7 +1006,12 @@ public struct WorkspaceView: View {
       }
       Label(
         workspace.selectedID.flatMap { workspace.saveStatus[$0] } ?? "Originals stay untouched",
-        systemImage: "checkmark.shield")
+        systemImage: "checkmark.shield"
+      ).lineLimit(1)
+      if !workspace.editStatus.isEmpty {
+        Text(workspace.editStatus).lineLimit(1).help(
+          "Photo-local rotation, mirror and crop saving status.")
+      }
       Spacer()
       Text(workspace.selectedPhoto?.filename ?? "No selection").lineLimit(1)
       Text("·  \(workspace.photos.count) photos")
@@ -891,8 +1020,11 @@ public struct WorkspaceView: View {
   }
 
   private func openFolder() {
-    guard !choosingFolder else { return }
+    guard !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil else {
+      return
+    }
     choosingFolder = true
+    NSApp.activate()
     let panel = NSOpenPanel()
     panel.title = "Open Photo Folder"
     panel.prompt = "Open Folder"
@@ -917,7 +1049,7 @@ public struct WorkspaceView: View {
         gridFocused = true
       }
     }
-    if let window = NSApp.keyWindow {
+    if let window = NSApp.keyWindow ?? NSApp.mainWindow {
       panel.beginSheetModal(for: window, completionHandler: completion)
     } else {
       panel.begin(completionHandler: completion)

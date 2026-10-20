@@ -17,6 +17,10 @@ struct WorkspaceActions {
   let toggleComparison: @MainActor () -> Void
   let pinReference: @MainActor () -> Void
   let canCompare: Bool
+  let crop: @MainActor () -> Void
+  let copyCrop: @MainActor () -> Void
+  let pasteCrop: @MainActor () -> Void
+  let canPasteCrop: Bool
 }
 
 private struct WorkspaceActionsKey: FocusedValueKey {
@@ -38,11 +42,15 @@ public struct WorkspaceCommands: Commands {
   public var body: some Commands {
     if actions?.canDecide == true {
       CommandGroup(replacing: .undoRedo) {
-        Button("Undo Decision") { actions?.workspace.undoDecision() }
-          .keyboardShortcut("z", modifiers: .command).disabled(actions?.workspace.canUndo != true)
-        Button("Redo Decision") { actions?.workspace.redoDecision() }
-          .keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
-            actions?.workspace.canRedo != true)
+        Button("Undo " + (actions?.workspace.undoTitle ?? "Change")) {
+          actions?.workspace.undoDecision()
+        }
+        .keyboardShortcut("z", modifiers: .command).disabled(actions?.workspace.canUndo != true)
+        Button("Redo " + (actions?.workspace.redoTitle ?? "Change")) {
+          actions?.workspace.redoDecision()
+        }
+        .keyboardShortcut("z", modifiers: [.command, .shift]).disabled(
+          actions?.workspace.canRedo != true)
       }
     }
     if actions?.canDecide == true {
@@ -137,6 +145,25 @@ public struct WorkspaceCommands: Commands {
           .keyboardShortcut(.escape, modifiers: [])
       }.disabled(actions?.canDecide != true)
     }
+    CommandMenu("Image") {
+      Group {
+        ForEach([PhotoEditAction.counterclockwise, .clockwise, .horizontal, .vertical], id: \.self)
+        {
+          action in
+          Button(action.rawValue) { actions?.workspace.editSelection(action) }
+        }
+        Divider()
+        Button("Crop…") { actions?.crop() }.keyboardShortcut("c", modifiers: [.command, .shift])
+        Button("Copy Crop") { actions?.copyCrop() }.disabled(
+          actions?.workspace.selectedID.map { actions?.workspace.imageEdits[$0]?.crop != nil }
+            != true)
+        Button("Paste Crop to Selection") { actions?.pasteCrop() }.disabled(
+          actions?.canPasteCrop != true)
+        Button("Clear Crop") { actions?.workspace.editSelection(.clearCrop) }
+        Button("Reset Image Edits") { actions?.workspace.editSelection(.reset) }
+        Button("Retry Image Edit Save") { actions?.workspace.retryImageEditSave() }
+      }.disabled(actions?.canDecide != true || actions?.workspace.decisionSelectionReady != true)
+    }
     CommandMenu("Review") {
       if actions?.canDecide == true {
         Button(actions?.comparison.enabled == true ? "Single Image" : "Compare Photos") {
@@ -224,7 +251,7 @@ public struct WorkspaceCommands: Commands {
     CommandGroup(after: .newItem) {
       Button("Open Folder…") { actions?.openFolder() }
         .keyboardShortcut("o", modifiers: .command)
-        .disabled(actions == nil)
+        .disabled(actions?.canDecide != true)
       Button("Reload Folder") { actions?.reload() }
         .keyboardShortcut("r", modifiers: .command)
         .disabled(actions?.canReload != true)

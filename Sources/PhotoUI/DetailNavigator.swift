@@ -1,3 +1,4 @@
+import PhotoCore
 import SwiftUI
 
 struct DetailPanActions {
@@ -18,6 +19,7 @@ private typealias NavigatorFocus = SwiftUI.FocusState<Bool>
 
 struct DetailNavigator: View {
   let image: CGImage
+  var edit = PhotoEdit()
   let imageSize: CGSize
   let visible: CGRect
   let navigate: @MainActor (CGPoint) -> Void
@@ -30,7 +32,7 @@ struct DetailNavigator: View {
       x: visible.minX * size.width, y: visible.minY * size.height,
       width: visible.width * size.width, height: visible.height * size.height)
     ZStack(alignment: .topLeading) {
-      Image(decorative: image, scale: 1).resizable()
+      EditedBitmap(image: image, edit: edit)
       Path { path in
         path.addRect(CGRect(origin: .zero, size: size))
         path.addRect(rectangle)

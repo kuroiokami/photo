@@ -9,7 +9,7 @@ enum ComparisonPane: Hashable {
 struct ComparisonRequest: Equatable {
   enum Action: Equatable {
     case fit
-    case zoom(CGPoint)
+    case zoom(CGPoint, scale: Double = 1)
     case pan(CGPoint)
   }
   let id = UUID()
@@ -24,6 +24,7 @@ final class ComparisonSession {
   private var requests: [ComparisonPane: ComparisonRequest] = [:]
   private struct Viewport {
     var zoom = false
+    var scale = 1.0
     var center = CGPoint(x: 0.5, y: 0.5)
   }
   private var viewports: [ComparisonPane: Viewport] = [:]
@@ -47,14 +48,17 @@ final class ComparisonSession {
     linked = value
     guard value, enabled else { return }
     let active = viewports[.active] ?? Viewport()
-    requests[.reference] = ComparisonRequest(action: active.zoom ? .zoom(active.center) : .fit)
+    requests[.reference] = ComparisonRequest(
+      action: active.zoom ? .zoom(active.center, scale: active.scale) : .fit)
   }
-  func zoom(_ value: Bool, center: CGPoint, from pane: ComparisonPane) {
+  func zoom(_ value: Bool, center: CGPoint, scale: Double = 1, from pane: ComparisonPane) {
     let point = bounded(center)
-    viewports[pane] = Viewport(zoom: value, center: point)
+    viewports[pane] = Viewport(zoom: value, scale: InspectionZoom.bounded(scale), center: point)
     guard enabled, linked else { return }
-    viewports[pane.other] = Viewport(zoom: value, center: point)
-    requests[pane.other] = ComparisonRequest(action: value ? .zoom(point) : .fit)
+    viewports[pane.other] = Viewport(
+      zoom: value, scale: InspectionZoom.bounded(scale), center: point)
+    requests[pane.other] = ComparisonRequest(
+      action: value ? .zoom(point, scale: InspectionZoom.bounded(scale)) : .fit)
   }
   func pan(_ point: CGPoint, from pane: ComparisonPane) {
     let point = bounded(point)

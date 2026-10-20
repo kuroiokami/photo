@@ -1,5 +1,7 @@
 # Ingest, cull, organize and hand off to Lightroom Classic
 
+For setup, read [Installation](INSTALLATION.md). For the complete interface/control reference, read [Usage](USAGE.md).
+
 Implemented development workflow, updated 2026-10-20. Read [PROJECT_STATUS](../PROJECT_STATUS.md) for current validation and delivery. This workflow targets Lightroom **Classic** and local files; cloud Lightroom is not an equivalent interchange target.
 
 ## Recommended order
@@ -95,3 +97,7 @@ Apply Reviewed Fields commits the entire local batch and its history in one SQLi
 Undo/Redo changes only the batch's owned fields and keyword sets. Unrelated captions, ratings, flags, locations and develop settings retain their current values. All target identities and owned values are checked before recording intent. Replaced/missing files or later external changes to an owned field stop the whole replay with an explanation. Review current metadata before proceeding; no force-overwrite history command is provided. Restore renamed/moved files to their expected names before replaying older history.
 
 Sidecar writes remain coordinated atomic replacements per file, not a multi-file filesystem transaction. Read-only folders, interrupted synchronization or conflicting sidecars leave locally saved intent pending for Retry XMP Sync. Cancellation before commit changes no batch intent; after commit the remaining files stay pending. Journal entries contain owned before/after values and file identity/path references, not copies of original images or unrelated XMP packets. Do not delete the SQLite database as a recovery step.
+
+## Photo-local composition edits
+
+Rotate/mirror/crop can now be used in the contact sheet or preview; see the [editing guide](USAGE.md#8-rotate-mirror-and-crop). They are saved in the local SQLite database and rendered consistently without rewriting image bytes. They are not yet written to Adobe crop/orientation fields, imported from external crop settings or baked into handoff copies. Lightroom handoff continues to carry originals plus existing companions/prepared descriptive metadata. Do not expect Photo-local composition to appear in Lightroom yet. Ratings, flags, IPTC and keywords retain their separate preserving XMP workflow.
