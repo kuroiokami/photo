@@ -23,6 +23,13 @@ Install/build it with the [installation guide](INSTALLATION.md). The [tracker](.
 
 ## 1. A first culling session
 
+### Learn the workflow in the app
+
+Open **Workflow → Ingest** for a small introduction, then choose **Show Walkthrough**. The five steps cover choosing a starting point, verified copying, two-pass culling, captions and delivery, with deadline and wedding examples. **Not Now** hides the invitation for that panel session. **Don’t Show Again**, or the walkthrough’s **Don’t show the ingest introduction again** checkbox, remembers your choice between launches. This hides only the introduction; important source-protection/save messages remain visible.
+
+Reopen it from **Help → Photo Quick Start & Shortcuts → Workflow Walkthrough**, or the **Workflow Walkthrough** button in the workflow panel. Uncheck the same checkbox to restore the ingest invitation. The guide never runs a file operation or changes photo decisions; it does not open automatically over browsing or while copying.
+
+
 1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Review Before Copying** for local-only review (copying the review is not available yet).
 2. **Scan in Fit.** Use the large Preview and bottom filmstrip, or press **Space** for the Contact Sheet grid.
 3. **Make decisions.** Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** for stars. Flags and stars are independent. Reject does not delete anything.

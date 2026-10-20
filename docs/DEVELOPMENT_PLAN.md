@@ -200,7 +200,7 @@ The user clarified two primary workflows: wire/news photographers delivering pro
 - [ ] Provide a resumable guided flow connecting source → optional review → copy destinations → organization → publication/editor, without blocking direct folder browsing or keyboard culling.
 - [ ] Benchmark representative 10k/40k collections: first preview, metadata/decision indexing, scrolling, filtering, sorting, memory and large batch save/cancel/recovery. Full detail remains deliberate.
 
-Current source browsing still uses normal XMP synchronization; it must not be presented as a safe card-culling wizard. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).
+Ordinary source browsing still uses normal XMP synchronization. Explicit Review Before Copying now offers protected local-only review, but copying that review is not implemented; it must not be presented as a completed card-culling wizard. See [ADR 0015](decisions/0015-photo-home-and-workflow-routes.md).
 
 
 ## Pre-copy review and installable distribution design — 2026-10-20
@@ -225,3 +225,13 @@ Detailed plans: [protected source review](PRE_COPY_CULLING.md), [ADR 0016](decis
 - [x] Expose Review Before Copying and an explicit review-only banner/status. Block copy/handoff until reviewed scope and transfer are implemented.
 - [ ] Complete native/platform/removable-card/performance acceptance; exact observed checks are in PROJECT_STATUS.md.
 - [ ] Implement reviewed copy choices and durable handover as the next chunk; retain source bytes, XMP preservation, destination identity binding and two-copy verification.
+
+
+## Workflow guidance — 2026-10-20
+
+- [x] Add a non-blocking Ingest introduction and five-step walkthrough with concrete deadline/large-shoot examples, navigation and plain language.
+- [x] Remember explicit permanent dismissal; retain Help/workflow access and allow re-enabling. Keep operational protection/error banners independent.
+- [x] Explain current protected-review copying and local-image-edit limits before relying on them; recommend verified-copy/early-culling for current output.
+- [ ] Connect the future reviewed-copy/resume implementation to guidance when durable handover is available. This explanatory walkthrough does not complete the operation-wizard milestone.
+
+See [ADR 0018](decisions/0018-workflow-walkthrough.md); validation is maintained in the tracker.

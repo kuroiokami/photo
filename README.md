@@ -36,6 +36,7 @@ Quit Photo before replacing its app bundle. This is a locally ad-hoc signed deve
 - Selected-only review and RAW+JPEG grouping.
 - Protected review before copying: stars, flags, Undo and Photo-local edits stay on this Mac; copying this review is not available yet.
 - Non-destructive Photo-local rotate/mirror/crop, crop copy/paste and session Undo.
+- Dismissible ingest introduction and a reopenable five-step workflow walkthrough with deadline/large-shoot examples.
 - Dual-destination verified ingest with automatic verified arrivals, reviewed bulk renaming and recovery.
 - Field-specific IPTC patches, presets, hierarchical keywords, persistent metadata batch Undo and preserving XMP synchronization.
 - Verified delivery copies with metadata for publication, Lightroom Classic or another editor.

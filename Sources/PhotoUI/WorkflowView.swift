@@ -8,6 +8,9 @@ private typealias WorkflowStorage<Value> = SwiftUI.State<Value>
 struct WorkflowView: View {
   @Environment(\.dismiss) private var dismiss
   @WorkflowStorage private var model: WorkflowModel
+  @AppStorage(WorkflowGuidance.dismissalKey) private var hideIntroduction = false
+  @WorkflowStorage private var introductionDismissed = false
+  @WorkflowStorage private var showingWalkthrough = false
   @WorkflowStorage private var tab = 0
   @WorkflowStorage private var scope = "Selection"
   @WorkflowStorage private var source = ""
@@ -54,6 +57,7 @@ struct WorkflowView: View {
       HStack {
         Text("Photo workflow").font(.title2.bold())
         Spacer()
+        Button("Workflow Walkthrough") { showingWalkthrough = true }.disabled(model.busy)
         if model.busy {
           ProgressView().controlSize(.small)
           Button("Cancel Operation") { model.worker?.cancel() }
@@ -87,6 +91,7 @@ struct WorkflowView: View {
         maxWidth: .infinity, alignment: .leading)
     }
     .padding(20).frame(width: 880, height: panelHeight)
+    .sheet(isPresented: $showingWalkthrough) { WorkflowWalkthrough() }
     .interactiveDismissDisabled(model.busy && !model.backgroundable)
     .task {
       model.renamePlan = nil
@@ -127,6 +132,26 @@ struct WorkflowView: View {
   private var ingest: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 12) {
+        if !hideIntroduction && !introductionDismissed {
+          GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+              Label("New to copy and cull?", systemImage: "lightbulb").font(.headline)
+              Text(
+                "Make verified copies and choose keepers as they arrive. Or learn what protected, review-only browsing means before choosing it."
+              )
+              .fixedSize(horizontal: false, vertical: true)
+              HStack {
+                Button("Show Walkthrough") { showingWalkthrough = true }
+                Button("Not Now") { introductionDismissed = true }
+                Spacer()
+                Button("Don’t Show Again") { hideIntroduction = true }
+                  .help(
+                    "Hides this introduction between launches. The guide stays available from Help."
+                  )
+              }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+          }
+        }
         Text(
           "Copy photos and their metadata files to your photo folder and a backup. Keep the card’s subfolder layout. Matching copies are checked again; different files are never overwritten."
         ).fixedSize(horizontal: false, vertical: true)

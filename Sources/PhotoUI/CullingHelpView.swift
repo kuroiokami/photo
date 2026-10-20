@@ -1,10 +1,15 @@
 import SwiftUI
 
+private typealias HelpStorage<Value> = SwiftUI.State<Value>
+
 struct CullingHelpView: View {
+  @HelpStorage private var showingWalkthrough = false
   @Environment(\.dismiss) private var dismiss
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       Text("Quick Start & Shortcuts").font(.title2.bold())
+      Button("Workflow Walkthrough") { showingWalkthrough = true }
+        .help("Step-by-step ingest and culling examples for deadlines and large shoots.")
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
           Text(
@@ -44,6 +49,7 @@ struct CullingHelpView: View {
         Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
       }
     }.padding(24).frame(width: 720, height: 620)
+      .sheet(isPresented: $showingWalkthrough) { WorkflowWalkthrough() }
   }
   private func row(_ key: String, _ action: String) -> some View {
     GridRow {

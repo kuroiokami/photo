@@ -105,3 +105,16 @@ Sidecar writes remain coordinated atomic replacements per file, not a multi-file
 ## Photo-local composition edits
 
 Rotate/mirror/crop can now be used in the contact sheet or preview; see the [editing guide](USAGE.md#8-rotate-mirror-and-crop). They are saved in the local SQLite database and rendered consistently without rewriting image bytes. They are not yet written to Adobe crop/orientation fields, imported from external crop settings or baked into handoff copies. Lightroom handoff continues to carry originals plus existing companions/prepared descriptive metadata. Do not expect Photo-local composition to appear in Lightroom yet. Ratings, flags, IPTC and keywords retain their separate preserving XMP workflow.
+
+
+## Recommended pace and in-app walkthrough
+
+Open **Workflow → Ingest → Show Walkthrough** for examples. **Don’t Show Again** persists across launches; **Help → Photo Quick Start & Shortcuts → Workflow Walkthrough** always reopens it. Unchecking its dismissal checkbox restores the introduction. Normal browsing remains uninterrupted.
+
+For copied output today, use **ordinary verified ingest**, then **Continue Browsing** to cull verified arrivals. For a deadline, choose the essential moments in Fit, check focus only on the shortlist, caption/credit those frames accurately and prepare delivery copies. Finish required pixel processing and submission outside Photo. Lightroom is optional. Do not delay a small first delivery to rank every frame.
+
+For a large shoot, preserve the complete verified shoot and independent backup, then make a fast flag pass, compare ambiguous bursts, rank survivors with stars, apply shared metadata and rename before editor import. The 10k/40k performance target still needs representative acceptance measurements. Later decisions/metadata/renames do not mirror themselves to the initial backup.
+
+Protected **Review Before Copying** is a local-only review in this release; it cannot yet copy its results and has no unprotect control. Do not start it expecting a deliverable ingest. The next reviewed-copy chunk should offer explicit all/picks/non-rejected/selection scopes and durable decision transfer before it becomes the recommended pre-copy route. Photo-local crops/rotation are not rendered delivery edits.
+
+This recommendation combines the app’s measured embedded-preview approach and current verified-arrival behavior with Camera Bits’ [ingest documentation](https://camerabits.freshdesk.com/support/solutions/articles/48000207409-ingesting-photos) and [workflow handout](https://home.camerabits.com/wp-content/uploads/2023/06/Photo_Mechanic_101_Notes.pdf), plus Adobe’s [independent flags and ratings](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html). It is a workflow recommendation, not a comparative speed benchmark or verified editor round trip.
