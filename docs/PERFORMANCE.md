@@ -127,3 +127,23 @@ sh scripts/benchmark.sh --workspace /new/disposable/mixed-folder > workspace-rep
 ## Folder and batch usability follow-up — 2026-10-19
 
 Folder disclosure enumerates only immediate directories on a separate actor; photo loading continues through the existing session-isolated lanes. Restoring a folder opens its images before restoring expanded descendants. This change does not alter decoding, cache budgets, RAW render policy or the preceding benchmark results. No new latency/frame-rate claim is made. Rectangle hit testing uses currently laid-out grid frames and the viewport; edge auto-scroll is deferred. A 50-photo field-patch regression verifies preservation and selection, not throughput. Large folder-tree/rectangle frame-time measurements remain future acceptance work.
+
+## Progressive RAW detail — 2026-10-19
+
+A read-only release benchmark compared the legacy algorithm from `b4cf5e7` with the progressive implementation on four 60 MP Sony ILCE-7CR ARWs (9504 × 6336), three passes each on the reference 18-core/128 GiB Apple Silicon Mac. [Aggregate report](benchmarks/2026-10-19-detail.json) contains no private photo identifiers. This is one sequential paired process run; OS/driver caches were not flushed. Twelve samples make p95 equal to the maximum; these service timings are not native frame-time measurements.
+
+| Measurement | Legacy | Progressive |
+| --- | ---: | ---: |
+| First inspection median | 266.94 ms | 122.21 ms |
+| First inspection p95 / maximum | 468.19 ms | 351.08 ms |
+| Initial process request | 468.19 ms | 351.08 ms |
+| Complete eager full image median | Not measured comparably | 940.40 ms |
+| Complete eager full image p95 | Not measured comparably | 1151.79 ms |
+| Process peak RSS | 662.06 MiB | 850.84 MiB |
+| Failures / changed originals | 0 / 0 | 0 / 0 |
+
+First inspection was about 54% quicker in this run. The baseline includes a centered 1600 × 1200 first draw of the old deferred CGImage, which need not materialize every offscreen pixel. The progressive run includes the same first draw, then completes the full image eagerly off the UI thread. Do not interpret the old CGImage-return time as completed decoding or compare offscreen completion as equal work.
+
+The new worker renders a normal-quality focus patch first, reuses its context, then completes the full image in 1024-row strips with cancellation checks and cache release between strips. Small patches fit within one bounded render. No draft mode, reduced resolution or RAW processing changes ship. The temporary patch plus full decoded image stays within 256 MiB; context/decoder/GPU work is additional. RSS is higher than the viewport-only baseline because the full image is prepared eagerly. An earlier whole-surface progressive experiment peaked at about 1070 MiB; bounded strips reduced that to about 851 MiB while increasing total completion time. This is an explicit responsiveness/memory tradeoff, not a total-memory cap or a claim of region-only RAW decoding.
+
+Reproduce sequentially with `sh scripts/benchmark.sh --detail /path/to/folder --baseline` and the same command without `--baseline`. Use `sh scripts/build-app.sh --release` for native evaluation. The benchmark hashes every source before/after, uses no decision store and writes no image/sidecar files. Real-camera preservation/progressive checks use disposable copies. Minimum-platform, other-camera, native frame-time and interruption measurements remain open.

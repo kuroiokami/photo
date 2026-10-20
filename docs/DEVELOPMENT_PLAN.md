@@ -133,3 +133,14 @@ Implemented is distinct from complete release acceptance: keep first-open latenc
 - [ ] Add first-use walkthrough, rectangle edge auto-scroll, mixed-value summaries and metadata Undo if prioritized.
 
 Test and delivery outcomes are tracked in PROJECT_STATUS.md; the existing Lightroom, latency and release acceptance limits remain open.
+
+## Accepted full-detail performance follow-up — 2026-10-19
+
+- [x] Profile explicit full-detail requests and distinguish first draw from deferred/offscreen rendering.
+- [x] Show bounded, genuine full-quality focus detail first; complete the full RAW asynchronously at unchanged settings/resolution.
+- [x] Reuse the render context, own eager bitmaps, bound output strips, preserve pan and cancel subsequent work on Fit/navigation.
+- [x] Retain a combined 256 MiB region/full-image budget and release on Fit or selection changes.
+- [x] Add read-only before/after detail measurements and an optimized app bundle option.
+- [ ] Extend native frame/cancellation timing and progressive pixel/memory coverage across camera families, storage and supported macOS versions.
+
+Actual tests and measured tradeoffs belong in PROJECT_STATUS.md and PERFORMANCE.md. Progressive rendering does not claim region-only RAW decoding or instant whole-image completion.

@@ -6,10 +6,27 @@ import SwiftUI
 private struct DetailPresentation {
   var zoom = false
   var image: PhotoPreview?
+  var region: DetailRegion?
+  var fitPreview: PhotoPreview?
+  var viewport = CGSize(width: 600, height: 500)
   var fitSize = CGSize(width: 1, height: 1)
   var focal = CGPoint(x: 0.5, y: 0.5)
   var visible = CGRect(x: 0, y: 0, width: 1, height: 1)
   var error: String?
+  var display: (image: CGImage, size: CGSize, bounds: CGRect)? {
+    if let image {
+      let size = CGSize(width: image.decodedWidth, height: image.decodedHeight)
+      return (image.image, size, CGRect(origin: .zero, size: size))
+    }
+    if let region {
+      return (
+        region.preview.image,
+        CGSize(width: region.preview.originalWidth, height: region.preview.originalHeight),
+        region.bounds
+      )
+    }
+    return nil
+  }
 }
 private typealias DetailStorage = SwiftUI.State<DetailPresentation>
 
@@ -23,26 +40,38 @@ struct DetailPreviewView: View {
   var body: some View {
     VStack(spacing: 8) {
       HStack {
-        Button("Fit") { fit() }.disabled(!state.zoom)
-        Button("100%") { state.zoom = true }.disabled(state.zoom)
+        Button(state.zoom && state.image == nil ? "Cancel" : "Fit") { fit() }.disabled(!state.zoom)
+          .help("Return to Fit and cancel outstanding detail work. Decoded detail is released.")
+        Button("100%") {
+          state.error = nil
+          state.zoom = true
+        }.disabled(state.zoom)
+          .help(
+            "Inspect one image pixel per display pixel. RAW focus detail appears first; the full image follows at the same quality."
+          )
         Spacer()
         if state.zoom, state.image == nil, state.error == nil {
           ProgressView().controlSize(.small)
-          Text("Loading full detail…").font(.caption)
+          Text(state.region == nil ? "Loading 100% detail…" : "Finishing full image…").font(
+            .caption)
         }
       }.buttonStyle(.borderless)
       GeometryReader { geometry in
         ZStack(alignment: .bottomTrailing) {
-          if state.zoom, let detail = state.image {
+          if state.zoom, let display = state.display {
             PixelScrollView(
-              image: detail.image, focal: state.focal,
+              image: display.image, focal: state.focal,
+              canvasSize: display.size, imageBounds: display.bounds,
               visible: $state.visible, onFit: fit)
-            navigator(detail)
+            if let thumbnail = state.fitPreview?.image ?? state.image?.image {
+              navigator(thumbnail, width: Int(display.size.width), height: Int(display.size.height))
+            }
           } else {
             PhotoImageView(
               photo: photo, pipeline: pipeline, maximumPixelSize: 2560,
               detailed: true, sessionID: sessionID,
               onLoaded: { preview in
+                state.fitPreview = preview
                 state.fitSize = CGSize(width: preview.decodedWidth, height: preview.decodedHeight)
               }
             )
@@ -62,6 +91,11 @@ struct DetailPreviewView: View {
               })
           }
         }
+        .onChange(of: geometry.size, initial: true) { state.viewport = geometry.size }
+      }
+      if state.zoom, state.image == nil, state.region != nil {
+        Text("Rendered RAW · 100% focus region · surrounding detail is still loading")
+          .font(.caption).foregroundStyle(.secondary)
       }
       if let detail = state.image {
         Text(
@@ -83,14 +117,26 @@ struct DetailPreviewView: View {
         guard let url = photo.fileURL ?? SampleResources.url(for: photo) else {
           throw PreviewError.unreadable
         }
-        let image = try await detailPipeline.detail(for: url)
-        try Task.checkCancellation()
-        state.image = image
+        let scale = NSApp.keyWindow?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
+        let focus = DetailFocus(
+          point: state.focal,
+          viewportPixels: CGSize(
+            width: state.viewport.width * scale, height: state.viewport.height * scale))
+        for try await update in detailPipeline.updates(for: url, focus: focus) {
+          try Task.checkCancellation()
+          switch update {
+          case .region(let region): state.region = region
+          case .complete(let image):
+            state.region = nil
+            state.image = image
+          }
+        }
       } catch is CancellationError {} catch {
         guard !Task.isCancelled else { return }
         state.error = error.localizedDescription
         state.zoom = false
         state.image = nil
+        state.region = nil
       }
     }
     .onDisappear { fit() }
@@ -99,14 +145,17 @@ struct DetailPreviewView: View {
   private func fit() {
     state.zoom = false
     state.image = nil
+    state.region = nil
     state.error = nil
   }
 
-  private func navigator(_ detail: PhotoPreview) -> some View {
+  private func navigator(_ image: CGImage, width imageWidth: Int, height imageHeight: Int)
+    -> some View
+  {
     let width: CGFloat = 120
-    let height = width * CGFloat(detail.decodedHeight) / CGFloat(detail.decodedWidth)
+    let height = width * CGFloat(imageHeight) / CGFloat(imageWidth)
     return ZStack(alignment: .topLeading) {
-      Image(decorative: detail.image, scale: 1).resizable()
+      Image(decorative: image, scale: 1).resizable()
       Rectangle().stroke(.white, lineWidth: 1)
         .frame(width: width * state.visible.width, height: height * state.visible.height)
         .offset(x: width * state.visible.minX, y: height * state.visible.minY)
@@ -123,6 +172,8 @@ struct DetailPreviewView: View {
 private struct PixelScrollView: NSViewRepresentable {
   let image: CGImage
   let focal: CGPoint
+  let canvasSize: CGSize
+  let imageBounds: CGRect
   @Binding var visible: CGRect
   let onFit: () -> Void
 
@@ -135,28 +186,45 @@ private struct PixelScrollView: NSViewRepresentable {
     view.backgroundColor = .black
     view.contentView.postsBoundsChangedNotifications = true
     view.pixelImage = image
+    view.pixelSize = canvasSize
+    view.imageBounds = imageBounds
     view.focal = focal
     view.onVisible = { rect in
       // AppKit layout callbacks cannot synchronously mutate SwiftUI state.
-      Task { @MainActor in visible = rect }
+      Task { @MainActor in
+        if visible != rect { visible = rect }
+      }
     }
     view.onFit = onFit
     return view
   }
   func updateNSView(_ view: PixelScroller, context: Context) {
     view.onFit = onFit
+    view.pixelImage = image
+    view.pixelSize = canvasSize
+    view.imageBounds = imageBounds
     view.updateScale()
   }
 }
 
 private final class PixelCanvas: NSView {
-  var image: CGImage?
+  var image: CGImage? {
+    didSet {
+      guard image !== oldValue else { return }
+      drawable = image.map { NSImage(cgImage: $0, size: .zero) }
+      needsDisplay = true
+    }
+  }
+  var imageFrame = CGRect.zero
+  private var drawable: NSImage?
   var onFit: (() -> Void)?
   override var isFlipped: Bool { true }
   override func draw(_ dirtyRect: NSRect) {
-    guard let image else { return }
-    NSImage(cgImage: image, size: bounds.size).draw(
-      in: bounds,
+    NSColor.black.setFill()
+    dirtyRect.fill()
+    guard let drawable else { return }
+    drawable.draw(
+      in: imageFrame,
       from: .zero, operation: .copy, fraction: 1, respectFlipped: true,
       hints: [.interpolation: NSImageInterpolation.none])
   }
@@ -191,6 +259,8 @@ private final class BoundsObserver: @unchecked Sendable {
 
 private final class PixelScroller: NSScrollView {
   var pixelImage: CGImage?
+  var pixelSize = CGSize.zero
+  var imageBounds = CGRect.zero
   var focal = CGPoint(x: 0.5, y: 0.5)
   var onVisible: ((CGRect) -> Void)?
   var onFit: (() -> Void)?
@@ -225,16 +295,22 @@ private final class PixelScroller: NSScrollView {
   }
   func updateScale() {
     guard let pixelImage else { return }
-    canvas.image = pixelImage
+    if canvas.image !== pixelImage { canvas.image = pixelImage }
     canvas.onFit = onFit
     let newScale = window?.backingScaleFactor ?? 1
-    if scale != newScale {
+    let desiredSize = CGSize(width: pixelSize.width / newScale, height: pixelSize.height / newScale)
+    if scale != newScale || canvas.frame.size != desiredSize {
       scale = newScale
-      canvas.frame.size = CGSize(
-        width: CGFloat(pixelImage.width) / scale,
-        height: CGFloat(pixelImage.height) / scale)
+      canvas.frame.size = desiredSize
       canvas.needsDisplay = true
       initialPosition = false
+    }
+    let frame = CGRect(
+      x: imageBounds.minX / scale, y: imageBounds.minY / scale,
+      width: imageBounds.width / scale, height: imageBounds.height / scale)
+    if canvas.imageFrame != frame {
+      canvas.imageFrame = frame
+      canvas.needsDisplay = true
     }
     if !initialPosition, contentSize.width > 0, contentSize.height > 0 {
       initialPosition = true
