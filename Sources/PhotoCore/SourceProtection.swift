@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 
 public enum SourceReviewError: LocalizedError {
-  case protectedSource, sourceChanged, unavailable, copyNotReady, localData
+  case protectedSource, sourceChanged, unavailable, copyNotReady, localData, identityUnavailable
   public var errorDescription: String? {
     switch self {
     case .protectedSource:
@@ -13,6 +13,8 @@ public enum SourceReviewError: LocalizedError {
       "Source protection could not be read. No files were changed. Restore Photo’s local protection data before trying again."
     case .copyNotReady:
       "Copying a protected review is not available yet. Your review is saved on this Mac."
+    case .identityUnavailable:
+      "This folder cannot be identified safely. Use a local photo folder or mounted card for source review."
     case .localData: "Choose a source outside Photo’s local application data."
     }
   }
@@ -67,10 +69,14 @@ public final class SourceProtection: @unchecked Sendable {
       throw SourceReviewError.sourceChanged
     }
     let volume = (try? folder.resourceValues(forKeys: [.volumeUUIDStringKey]))?.volumeUUIDString
-    let device = (attributes[.systemNumber] as? NSNumber)?.stringValue ?? "unknown"
-    let inode = (attributes[.systemFileNumber] as? NSNumber)?.stringValue ?? "unknown"
+    let device = (attributes[.systemNumber] as? NSNumber)?.stringValue
+    guard let volumeID = volume ?? device,
+      let inode = (attributes[.systemFileNumber] as? NSNumber)?.stringValue
+    else {
+      throw SourceReviewError.identityUnavailable
+    }
     let created = (attributes[.creationDate] as? Date)?.timeIntervalSince1970 ?? 0
-    return "\(volume ?? device):\(inode):\(created)"
+    return "\(volumeID):\(inode):\(created)"
   }
   private func matching(_ url: URL, records: [SourceReviewSession]) throws -> SourceReviewSession? {
     guard !records.isEmpty else { return nil }
