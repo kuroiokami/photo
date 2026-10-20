@@ -401,6 +401,7 @@ struct WorkflowView: View {
       TextField("Absolute folder path", text: path).textFieldStyle(.roundedBorder)
         .accessibilityLabel(label + " folder path")
       Button("Choose…") {
+        NSApp.activate()
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.folder]
         panel.canChooseFiles = false

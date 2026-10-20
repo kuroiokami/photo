@@ -117,10 +117,15 @@ public final class WorkspaceState {
   public private(set) var minimumRating = 0
   public var totalCount: Int { allPhotos.count }
   @ObservationIgnored private let decisionStore: DecisionStore
-  private var undoStack: [DecisionChange] = []
-  private var redoStack: [DecisionChange] = []
+  private var undoStack: [WorkspaceChange] = []
+  private var redoStack: [WorkspaceChange] = []
   @ObservationIgnored private var fileIdentities: [String: String] = [:]
   @ObservationIgnored private var decisionVersions: [String: Int] = [:]
+  public private(set) var imageEdits: [String: PhotoEdit] = [:]
+  public private(set) var editStatus = ""
+  @ObservationIgnored private var editVersion = 0
+  public var undoTitle: String { undoStack.last?.title ?? "Change" }
+  public var redoTitle: String { redoStack.last?.title ?? "Change" }
   public var canUndo: Bool { !undoStack.isEmpty }
   public var canRedo: Bool { !redoStack.isEmpty }
   public private(set) var metadata: [String: PhotoMetadata] = [:]
@@ -392,6 +397,21 @@ public final class WorkspaceState {
     selectedIndex = selected.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
   }
 
+  private enum WorkspaceChange {
+    case decision(DecisionChange)
+    case edit([EditItemChange], String)
+    var title: String {
+      switch self {
+      case .decision: "Decision"
+      case .edit: "Image Edit"
+      }
+    }
+  }
+  private struct EditItemChange {
+    let photo: PhotoItem
+    let before: PhotoEdit
+    let after: PhotoEdit
+  }
   private struct DecisionItemChange {
     let photo: PhotoItem
     let before: CullingDecision
@@ -420,6 +440,9 @@ public final class WorkspaceState {
 
   private func resetDecisions() {
     reviewIDs = nil
+    imageEdits = [:]
+    editStatus = ""
+    editVersion += 1
     decisions = [:]
     selectedIDs = []
     selectionAnchorID = nil
@@ -469,9 +492,10 @@ public final class WorkspaceState {
   private func loadDecision(_ photo: PhotoItem, session: UUID) async {
     guard !decisionsReady.contains(photo.id) else { return }
     let entry: DecisionEntry
+    var edit = PhotoEdit()
     do {
       if let url = photo.fileURL {
-        entry = try await decisionStore.load(for: url)
+        (entry, edit) = try await decisionStore.loadImageState(for: url)
       } else {
         entry = DecisionEntry(decision: CullingDecision(), status: "Sample · not saved")
       }
@@ -481,6 +505,7 @@ public final class WorkspaceState {
     guard session == sessionID, !Task.isCancelled, !decisionsReady.contains(photo.id) else {
       return
     }
+    imageEdits[photo.id] = edit
     fileIdentities[photo.id] = entry.identity
     decisionRevision += 1
     decisions[photo.id] = entry.decision
@@ -526,7 +551,9 @@ public final class WorkspaceState {
     rebuildVisible(preferred: selectedID)
   }
 
-  public func applyDecision(rating: Int? = nil, flag: PhotoFlag? = nil, advance: Bool = false) {
+  public func applyDecision(
+    rating: Int? = nil, flag: PhotoFlag? = nil, advance: Bool = false, allowAutoAdvance: Bool = true
+  ) {
     guard let photo = selectedPhoto else { return }
     let targets = operationPhotos.isEmpty ? [photo] : operationPhotos
     guard targets.allSatisfy({ decisionsReady.contains($0.id) }) else { return }
@@ -539,7 +566,7 @@ public final class WorkspaceState {
       return before == after ? nil : DecisionItemChange(photo: target, before: before, after: after)
     }
     if !changes.isEmpty {
-      undoStack.append(DecisionChange(items: changes, focus: photo.id))
+      undoStack.append(.decision(DecisionChange(items: changes, focus: photo.id)))
       redoStack = []
       decisionRevision += 1
       for change in changes {
@@ -560,7 +587,7 @@ public final class WorkspaceState {
       return
     }
     let remains = matches(photo)
-    let shouldAdvance = advance || autoAdvance
+    let shouldAdvance = advance || (allowAutoAdvance && autoAdvance)
     if remains, sort != .rating {
       if shouldAdvance { moveSelection(by: 1) }
       return
@@ -568,6 +595,69 @@ public final class WorkspaceState {
     rebuildVisible(
       preferred: remains && !shouldAdvance ? photo.id : nil,
       fallback: [next, remains ? photo.id : previous].compactMap { $0 })
+  }
+
+  /// Direct tile controls retain a selected batch and suppress automatic advance.
+  public func applyThumbnailDecision(to id: String, rating: Int? = nil, flag: PhotoFlag? = nil) {
+    guard decisionsReady.contains(id) else { return }
+    if !selectedIDs.contains(id) { selectMultiple(id, extending: false, range: false) }
+    applyDecision(rating: rating, flag: flag, allowAutoAdvance: false)
+  }
+  public func editSelection(_ action: PhotoEditAction) {
+    changeEdits(operationPhotos) { $0.applying(action) }
+  }
+  public func setCrop(_ crop: PhotoCrop?, for photo: PhotoItem) {
+    changeEdits(filesRepresented(by: [photo])) { value in
+      var result = value
+      result.crop = crop
+      return result
+    }
+  }
+  public func pasteCrop(_ crop: PhotoCrop) {
+    changeEdits(operationPhotos) { value in
+      var result = value
+      result.crop = crop
+      return result
+    }
+  }
+  private func changeEdits(_ targets: [PhotoItem], transform: (PhotoEdit) -> PhotoEdit) {
+    guard !targets.isEmpty, targets.allSatisfy({ decisionsReady.contains($0.id) }) else { return }
+    let changes = targets.compactMap { photo -> EditItemChange? in
+      let before = imageEdits[photo.id] ?? PhotoEdit()
+      let after = transform(before)
+      return before == after ? nil : EditItemChange(photo: photo, before: before, after: after)
+    }
+    guard !changes.isEmpty else { return }
+    for item in changes { imageEdits[item.photo.id] = item.after }
+    undoStack.append(.edit(changes, selectedID ?? changes[0].photo.id))
+    redoStack = []
+    persistEdits(changes.map(\.photo))
+  }
+  public func retryImageEditSave() { persistEdits(operationPhotos) }
+  private func persistEdits(_ photos: [PhotoItem]) {
+    editVersion += 1
+    let version = editVersion
+    let session = sessionID
+    let writes = photos.compactMap { photo -> ImageEditWrite? in
+      guard let image = photo.fileURL, let identity = fileIdentities[photo.id] else { return nil }
+      return ImageEditWrite(
+        image: image, identity: identity, edit: imageEdits[photo.id] ?? PhotoEdit())
+    }
+    guard !writes.isEmpty else {
+      editStatus = "Sample edits · not saved"
+      return
+    }
+    editStatus = "Saving image edits…"
+    let store = decisionStore
+    DecisionSaveQueue.shared.enqueue { [weak self] in
+      let status: String
+      do {
+        try await store.saveImageEdits(writes)
+        status = "Image edits saved in Photo"
+      } catch { status = error.localizedDescription }
+      guard let self, self.sessionID == session, self.editVersion == version else { return }
+      self.editStatus = status
+    }
   }
 
   private func repositionRating(_ photo: PhotoItem) {
@@ -601,7 +691,16 @@ public final class WorkspaceState {
     undoStack.append(change)
     restore(change, undo: false)
   }
-  private func restore(_ change: DecisionChange, undo: Bool) {
+  private func restore(_ change: WorkspaceChange, undo: Bool) {
+    switch change {
+    case .decision(let decision): restoreDecision(decision, undo: undo)
+    case .edit(let items, let focus):
+      for item in items { imageEdits[item.photo.id] = undo ? item.before : item.after }
+      persistEdits(items.map(\.photo))
+      rebuildVisible(preferred: focus)
+    }
+  }
+  private func restoreDecision(_ change: DecisionChange, undo: Bool) {
     decisionRevision += 1
     for item in change.items {
       let value = undo ? item.before : item.after

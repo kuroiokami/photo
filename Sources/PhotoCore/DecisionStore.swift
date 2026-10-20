@@ -86,7 +86,7 @@ public actor DecisionStore {
     guard
       sqlite3_exec(
         db,
-        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
+        "PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS decisions (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS paths (path TEXT PRIMARY KEY, identity TEXT NOT NULL); CREATE TABLE IF NOT EXISTS descriptive (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS image_edits (identity TEXT PRIMARY KEY, payload BLOB NOT NULL); CREATE TABLE IF NOT EXISTS metadata_history (seq INTEGER PRIMARY KEY AUTOINCREMENT, undone INTEGER NOT NULL DEFAULT 0, payload BLOB NOT NULL)",
         nil, nil, nil) == SQLITE_OK
     else {
       throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))

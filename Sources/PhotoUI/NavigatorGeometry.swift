@@ -3,6 +3,7 @@ import Foundation
 struct DetailNavigationRequest: Equatable {
   let id = UUID()
   let center: CGPoint
+  var anchor = CGPoint(x: 0.5, y: 0.5)
 }
 
 /// All coordinates are in the oriented image's top-left unit square.
@@ -31,14 +32,18 @@ enum NavigatorGeometry {
         x: (location.x - offset.x) / thumbnail.width,
         y: (location.y - offset.y) / thumbnail.height), visible: visible)
   }
-  static func origin(center: CGPoint, image: CGSize, viewport: CGSize) -> CGPoint {
-    let span = CGSize(
-      width: viewport.width / max(1, image.width), height: viewport.height / max(1, image.height))
-    let point = self.center(center, visible: span)
+  static func origin(
+    center: CGPoint, image: CGSize, viewport: CGSize, anchor: CGPoint = CGPoint(x: 0.5, y: 0.5)
+  ) -> CGPoint {
     return CGPoint(
       x: image.width <= viewport.width
-        ? (image.width - viewport.width) / 2 : image.width * point.x - viewport.width / 2,
+        ? (image.width - viewport.width) / 2
+        : min(
+          image.width - viewport.width, max(0, image.width * center.x - viewport.width * anchor.x)),
       y: image.height <= viewport.height
-        ? (image.height - viewport.height) / 2 : image.height * point.y - viewport.height / 2)
+        ? (image.height - viewport.height) / 2
+        : min(
+          image.height - viewport.height,
+          max(0, image.height * center.y - viewport.height * anchor.y)))
   }
 }

@@ -173,3 +173,15 @@ Actual tests and measured tradeoffs belong in PROJECT_STATUS.md and PERFORMANCE.
 - [ ] Broaden native comparison/platform/accessibility and real ingest interruption testing; actual outcomes remain in PROJECT_STATUS.md.
 
 This scope implements normal-ingest arrivals, not continuous source watching or ingest naming/metadata automation. Lightroom application interoperability remains unverified.
+
+## Contact-sheet decisions, gestures, editing and guides — 2026-10-20
+
+- [x] Audit the installed Photo Mechanic’s basic image/metadata/file/inspection commands and document implemented versus remaining coverage.
+- [x] Separate interactive thumbnail stars/flags from selection; retain batch scope, grouping, filtering and Undo, without direct-click auto-advance.
+- [x] Add pinch magnification to preview/detail/comparison and thumbnail density; retain pan, explicit Fit/exact 100% and source-pixel geometry.
+- [x] Implement the user-prioritized rotate/mirror/crop chunk, crop copying, protected local persistence and ordered session Undo without changing original bytes.
+- [x] Make the first editing interoperability boundary explicit: Photo-local composition, with Adobe crop/orientation exchange and applied export still planned.
+- [x] Replace repeated README material with linked, complete installation and usage guides, retaining the technical workflow and evidence documents.
+- [x] Complete strict regression checks and optimized packaging; exact native outcomes and delivery are recorded in PROJECT_STATUS.md.
+- [ ] Recheck the final corrected crop/detail view and physical pinch on an unlocked Mac; broaden accessibility/platform acceptance.
+- [ ] Follow with verified crop/orientation exchange/export, locked-ratio/straightening, color classes, external editors and other audited gaps according to priority.

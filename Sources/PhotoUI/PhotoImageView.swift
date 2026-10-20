@@ -11,6 +11,7 @@ struct PhotoImageView: View {
   let photo: PhotoItem
   let pipeline: ImagePipeline
   let maximumPixelSize: Int
+  var edit = PhotoEdit()
   var detailed = false
   var sessionID: UUID?
   var onLoaded: ((PhotoPreview) -> Void)?
@@ -22,8 +23,7 @@ struct PhotoImageView: View {
     ZStack {
       Color.black.opacity(0.12)
       if let preview {
-        Image(decorative: preview.image, scale: 1)
-          .resizable().aspectRatio(contentMode: .fit)
+        EditedBitmap(image: preview.image, edit: edit)
           .accessibilityLabel(photo.filename)
       } else if let error {
         VStack(spacing: 8) {
