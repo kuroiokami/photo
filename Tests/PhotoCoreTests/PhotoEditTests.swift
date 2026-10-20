@@ -135,4 +135,63 @@ struct PhotoEditTests {
     #expect(edit == PhotoEdit())
   }
 
+  @Test func cropPasteClearResetAndReloadPreservePerFileStateAcrossGroupedPairs() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    for name in ["a.ARW", "a.JPG", "b.jpg", "c.png"] {
+      try Data(name.utf8).write(to: root.appendingPathComponent(name))
+    }
+    let workspace = WorkspaceState(
+      decisionStore: DecisionStore(databaseURL: root.appendingPathComponent("db.sqlite")))
+    await workspace.openFolder(root)
+    await workspace.loadDecisions()
+    let raw = try #require(workspace.filePhotos.first { $0.filename == "a.ARW" })
+    let jpeg = try #require(workspace.filePhotos.first { $0.filename == "a.JPG" })
+    let other = try #require(workspace.filePhotos.first { $0.filename == "b.jpg" })
+    let excluded = try #require(workspace.filePhotos.first { $0.filename == "c.png" })
+    workspace.applyThumbnailDecision(to: raw.id, rating: 4, flag: .pick)
+    workspace.applyThumbnailDecision(to: other.id, rating: 2, flag: .reject)
+    let decisions = workspace.decisions
+    workspace.setGrouping(true)
+    workspace.select(raw.id)
+    workspace.editSelection(.horizontal)
+    let firstCrop = PhotoCrop(x: 0.1, y: 0.2, width: 0.6, height: 0.5)
+    workspace.setCrop(firstCrop, for: raw)
+    workspace.select(other.id)
+    workspace.editSelection(.clockwise)
+    workspace.selectGroup([raw.id, other.id], focus: raw.id)
+    let pasted = PhotoCrop(x: 0.2, y: 0.3, width: 0.4, height: 0.4)
+    workspace.pasteCrop(pasted)
+    for photo in [raw, jpeg] {
+      #expect(workspace.imageEdits[photo.id]?.mirrored == true)
+      #expect(workspace.imageEdits[photo.id]?.crop == pasted)
+    }
+    #expect(workspace.imageEdits[other.id]?.turns == 1)
+    #expect(workspace.imageEdits[excluded.id] == PhotoEdit())
+    workspace.undoDecision()
+    #expect(
+      workspace.imageEdits[raw.id]?.crop == firstCrop
+        && workspace.imageEdits[jpeg.id]?.crop == firstCrop)
+    #expect(workspace.imageEdits[other.id]?.crop == nil)
+    workspace.redoDecision()
+    workspace.editSelection(.clearCrop)
+    #expect(
+      workspace.imageEdits[raw.id]?.crop == nil && workspace.imageEdits[other.id]?.crop == nil)
+    workspace.undoDecision()
+    workspace.editSelection(.reset)
+    #expect([raw, jpeg, other].allSatisfy { workspace.imageEdits[$0.id] == PhotoEdit() })
+    workspace.undoDecision()
+    #expect(workspace.decisions == decisions)
+    let edits = workspace.imageEdits
+    await DecisionSaveQueue.shared.flush()
+    await workspace.openFolder(root)
+    await workspace.loadDecisions()
+    #expect(!workspace.canUndo && workspace.imageEdits == edits)
+    #expect(workspace.decisions == decisions)
+    for name in ["a.ARW", "a.JPG", "b.jpg", "c.png"] {
+      #expect(try Data(contentsOf: root.appendingPathComponent(name)) == Data(name.utf8))
+    }
+  }
+
 }
