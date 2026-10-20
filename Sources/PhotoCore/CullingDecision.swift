@@ -29,6 +29,22 @@ public struct CullingDecision: Codable, Equatable, Sendable {
   }
 }
 
+/// Nil values mean the selected files disagree; stars and flags remain independent.
+public struct DecisionSelectionSummary: Equatable, Sendable {
+  public let fileCount: Int
+  public let rating: Int?
+  public let flag: PhotoFlag?
+  public init(_ decisions: [CullingDecision]) {
+    fileCount = decisions.count
+    rating = decisions.first.flatMap { first in
+      decisions.allSatisfy { $0.rating == first.rating } ? first.rating : nil
+    }
+    flag = decisions.first.flatMap { first in
+      decisions.allSatisfy { $0.flag == first.flag } ? first.flag : nil
+    }
+  }
+}
+
 public enum FlagFilter: String, CaseIterable, Sendable {
   case all = "All flags"
   case pick = "Picks"

@@ -144,3 +144,11 @@ Test and delivery outcomes are tracked in PROJECT_STATUS.md; the existing Lightr
 - [ ] Extend native frame/cancellation timing and progressive pixel/memory coverage across camera families, storage and supported macOS versions.
 
 Actual tests and measured tradeoffs belong in PROJECT_STATUS.md and PERFORMANCE.md. Progressive rendering does not claim region-only RAW decoding or instant whole-image completion.
+
+## Navigator and interface acceptance — 2026-10-19
+
+- [x] Click/drag the detail navigator with clamped bounds and keyboard/accessibility actions.
+- [x] Preserve pan through progressive detail replacement; center smaller images at true physical-pixel scale.
+- [x] Clarify mixed batch decisions, field previews, workflow labels and unavailable actions.
+- [x] Verify native navigator and workflow layouts; record limits in docs/UX_REVIEW.md.
+- [ ] Broaden compact-window, VoiceOver, keyboard-only and minimum-platform verification.

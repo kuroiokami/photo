@@ -22,7 +22,10 @@ struct CullingHelpView: View {
         row("⌘Z / ⇧⌘Z", "Undo / Redo culling decisions")
       }
       Text(
-        "For one shared IPTC value, select the photos, open IPTC & Keywords, edit a field from the first selected photo, and click its overlapping-rectangles button. Review that field’s changes, then Apply Reviewed Fields. Other fields keep each photo’s existing values. Clear is explicit."
+        "For one shared IPTC value, select the photos, open IPTC & Keywords, edit a field from the first selected photo, and click its Preview Field button. Review that field’s changes, then Apply Reviewed Fields. Other fields keep each photo’s existing values. Clear is explicit."
+      )
+      Text(
+        "At 100%, click the zoom navigator to center a new area or drag its white frame. With the navigator focused, arrows pan and Shift moves one view at a time. Click a thumbnail to resume photo navigation."
       )
       Text(
         "Hover over controls for explanations. Reject never deletes photos. RAW+JPEG grouping targets both files of a unique pair. Auto-advance applies only to single-photo decisions. Rename before Lightroom import; use the Lightroom tab for the handoff checklist."

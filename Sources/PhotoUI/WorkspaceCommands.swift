@@ -28,6 +28,7 @@ extension FocusedValues {
 
 public struct WorkspaceCommands: Commands {
   @FocusedValue(\.workspaceActions) private var actions
+  @FocusedValue(\.detailPan) private var detailPan
   public init() {}
 
   public var body: some Commands {
@@ -50,30 +51,82 @@ public struct WorkspaceCommands: Commands {
     }
     CommandMenu("Navigate") {
       Group {
-        Button("Previous Photo") { actions?.workspace.moveSelection(by: -1) }
-          .keyboardShortcut(.leftArrow, modifiers: [])
-        Button("Next Photo") { actions?.workspace.moveSelection(by: 1) }
-          .keyboardShortcut(.rightArrow, modifiers: [])
-        Button("Previous Row") { actions?.workspace.moveSelection(by: -(actions?.columns ?? 1)) }
-          .keyboardShortcut(.upArrow, modifiers: [])
-        Button("Next Row") { actions?.workspace.moveSelection(by: actions?.columns ?? 1) }
-          .keyboardShortcut(.downArrow, modifiers: [])
-        Button("Extend Selection Left") {
-          actions?.workspace.moveSelection(by: -1, extending: true)
+        Button(detailPan == nil ? "Previous Photo" : "Pan Left") {
+          if let detailPan {
+            detailPan.pan(-0.25, 0)
+          } else {
+            actions?.workspace.moveSelection(by: -1)
+          }
+        }
+        .keyboardShortcut(.leftArrow, modifiers: [])
+        Button(detailPan == nil ? "Next Photo" : "Pan Right") {
+          if let detailPan {
+            detailPan.pan(0.25, 0)
+          } else {
+            actions?.workspace.moveSelection(by: 1)
+          }
+        }
+        .keyboardShortcut(.rightArrow, modifiers: [])
+        Button(detailPan == nil ? "Previous Row" : "Pan Up") {
+          if let detailPan {
+            detailPan.pan(0, -0.25)
+          } else {
+            actions?.workspace.moveSelection(by: -(actions?.columns ?? 1))
+          }
+        }
+        .keyboardShortcut(.upArrow, modifiers: [])
+        Button(detailPan == nil ? "Next Row" : "Pan Down") {
+          if let detailPan {
+            detailPan.pan(0, 0.25)
+          } else {
+            actions?.workspace.moveSelection(by: actions?.columns ?? 1)
+          }
+        }
+        .keyboardShortcut(.downArrow, modifiers: [])
+        Button(detailPan == nil ? "Extend Selection Left" : "Pan Left One View") {
+          if let detailPan {
+            detailPan.pan(-1, 0)
+          } else {
+            actions?.workspace.moveSelection(by: -1, extending: true)
+          }
         }.keyboardShortcut(.leftArrow, modifiers: .shift)
-        Button("Extend Selection Right") {
-          actions?.workspace.moveSelection(by: 1, extending: true)
+        Button(detailPan == nil ? "Extend Selection Right" : "Pan Right One View") {
+          if let detailPan {
+            detailPan.pan(1, 0)
+          } else {
+            actions?.workspace.moveSelection(by: 1, extending: true)
+          }
         }.keyboardShortcut(.rightArrow, modifiers: .shift)
-        Button("Extend Selection Up") {
-          actions?.workspace.moveSelection(by: -(actions?.columns ?? 1), extending: true)
+        Button(detailPan == nil ? "Extend Selection Up" : "Pan Up One View") {
+          if let detailPan {
+            detailPan.pan(0, -1)
+          } else {
+            actions?.workspace.moveSelection(by: -(actions?.columns ?? 1), extending: true)
+          }
         }.keyboardShortcut(.upArrow, modifiers: .shift)
-        Button("Extend Selection Down") {
-          actions?.workspace.moveSelection(by: actions?.columns ?? 1, extending: true)
+        Button(detailPan == nil ? "Extend Selection Down" : "Pan Down One View") {
+          if let detailPan {
+            detailPan.pan(0, 1)
+          } else {
+            actions?.workspace.moveSelection(by: actions?.columns ?? 1, extending: true)
+          }
         }.keyboardShortcut(.downArrow, modifiers: .shift)
-        Button("First Photo") { actions?.workspace.moveSelection(by: Int.min) }
-          .keyboardShortcut(.home, modifiers: [])
-        Button("Last Photo") { actions?.workspace.moveSelection(by: Int.max) }
-          .keyboardShortcut(.end, modifiers: [])
+        Button(detailPan == nil ? "First Photo" : "Top Left") {
+          if let detailPan {
+            detailPan.jump(.zero)
+          } else {
+            actions?.workspace.moveSelection(by: Int.min)
+          }
+        }
+        .keyboardShortcut(.home, modifiers: [])
+        Button(detailPan == nil ? "Last Photo" : "Bottom Right") {
+          if let detailPan {
+            detailPan.jump(CGPoint(x: 1, y: 1))
+          } else {
+            actions?.workspace.moveSelection(by: Int.max)
+          }
+        }
+        .keyboardShortcut(.end, modifiers: [])
         Button("Toggle Preview") { actions?.togglePreview() }
           .keyboardShortcut(.space, modifiers: [])
         Button("Hide Preview") { actions?.hidePreview() }
