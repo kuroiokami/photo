@@ -103,8 +103,10 @@ public actor ImagePipeline: PhotoPreviewLoading {
     if let cached = memory.lookup(file, size: size, session: sessionID) { return cached }
     let trace = PhotoTrace.begin(size <= 480 ? "ThumbnailLoad" : "FitLoad")
     defer { PhotoTrace.end(trace) }
-    let stamp = disk?.key(for: file, size: size)
-    if let stamp, let cached = disk?.read(stamp), disk?.key(for: file, size: size) == stamp {
+    let stamp = disk?.stamp(for: file, size: size)
+    if let stamp, let cached = disk?.read(stamp.key),
+      disk?.matches(stamp, file: file, size: size) == true
+    {
       try Task.checkCancellation()
       PhotoTrace.event("DiskThumbnailHit", in: trace)
       diskHitCount += 1
@@ -122,10 +124,8 @@ public actor ImagePipeline: PhotoPreviewLoading {
     }
     try Task.checkCancellation()
     memory.insert(result, file: file, size: size)
-    if let stamp, disk?.key(for: file, size: size) == stamp {
-      let writing = PhotoTrace.begin("ThumbnailCacheWrite", parent: trace)
-      defer { PhotoTrace.end(writing) }
-      disk?.store(result, key: stamp)
+    if let stamp, disk?.matches(stamp, file: file, size: size) == true {
+      disk?.enqueue(result, file: file, size: size, stamp: stamp)
     }
     return result
   }
