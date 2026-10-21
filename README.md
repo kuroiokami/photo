@@ -84,4 +84,4 @@ See [Getting help](SUPPORT.md) for questions and bug reports. Please report secu
 
 ## License
 
-Photo is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution. Photo is an independent project; references to other photography apps describe workflows or interoperability.
+Photo is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. See [NOTICE](NOTICE) for attribution. Photo is an independent project; references to other photography apps describe workflows or interoperability.

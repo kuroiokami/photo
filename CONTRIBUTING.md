@@ -56,4 +56,4 @@ Maintainers publish releases after the [distribution checks](docs/DISTRIBUTION.m
 
 ## License and conduct
 
-Contributions are provided under Photo's [Apache-2.0 license](LICENSE); retain [NOTICE](NOTICE) and submit only material you have the right to contribute. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Unless explicitly stated otherwise, contributions are provided under both [MIT](LICENSE-MIT) and [Apache-2.0](LICENSE-APACHE), so recipients can choose either license. Retain [NOTICE](NOTICE) and submit only material you have the right to contribute under these terms. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).

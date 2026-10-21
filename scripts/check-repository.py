@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Check tracked project files; run checksum-pinned linters without a global install."""
 
 import argparse
@@ -19,7 +19,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = (
-    "LICENSE", "NOTICE", "README.md", "CONTRIBUTING.md", "SECURITY.md", "SUPPORT.md",
+    "LICENSE-MIT", "LICENSE-APACHE", "NOTICE", "README.md", "CONTRIBUTING.md", "SECURITY.md", "SUPPORT.md",
     "CODE_OF_CONDUCT.md", "CHANGELOG.md", ".github/CODEOWNERS",
     ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml",
     ".github/ISSUE_TEMPLATE/feature_request.yml", ".github/ISSUE_TEMPLATE/config.yml",
@@ -41,9 +41,15 @@ def metadata_check(files):
     for name in REQUIRED:
         if not (ROOT / name).is_file():
             errors.append(f"Missing required repository file: {name}")
-    license_path = ROOT / "LICENSE"
-    if license_path.is_file() and "Apache License" not in license_path.read_text():
-        errors.append("LICENSE must contain the selected Apache-2.0 terms.")
+    # Review these pins deliberately when changing the license texts or copyright.
+    license_hashes = {
+        "LICENSE-MIT": "83d29dafaabdc2ff4d1c7c5fd235433836251bbfb5dc74fa4f47f88472b7a71e",
+        "LICENSE-APACHE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    }
+    for name, expected in license_hashes.items():
+        path = ROOT / name
+        if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            errors.append(f"License text changed; review the complete terms and update its pin: {name}")
     for relative in files:
         path = ROOT / relative
         if path.is_symlink() or not path.is_file():

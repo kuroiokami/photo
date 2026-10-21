@@ -4,4 +4,4 @@
 
 These images are development fixtures, not benchmarks for RAW decoding, color management, or real photo performance.
 
-These project-created synthetic fixtures are included under the repository's Apache-2.0 license. External RAW samples are references only, with their separate license/provenance recorded in `docs/fixtures/public-raw-provenance.json`; their bytes are not distributed in Git.
+These project-created synthetic fixtures are included under the repository's MIT OR Apache-2.0 licensing. External RAW samples are references only, with their separate license/provenance recorded in `docs/fixtures/public-raw-provenance.json`; their bytes are not distributed in Git.
