@@ -72,23 +72,7 @@ public struct WorkspaceView: View {
       VStack(spacing: 0) {
         collectionHeader
         if workspace.isSourceReview {
-          VStack(alignment: .leading, spacing: 3) {
-            Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
-              .font(.callout.bold())
-            Text(
-              "Stars, flags and image edits stay on this Mac until copied. Open Workflow → Ingest to choose and copy photos with their review decisions."
-            )
-            .font(.caption).foregroundStyle(.secondary)
-            Text(
-              "\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) files reviewed in this folder"
-            )
-            .font(.caption.monospacedDigit())
-            Button("Copy Reviewed Photos…") { showWorkflow(0) }
-              .help(
-                "Prepare an explicit copy list and two verified destinations. The source stays unchanged."
-              )
-          }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
-            .background(Color.accentColor.opacity(0.10))
+          sourceReviewBanner
         }
         filterBar
         Divider()
@@ -115,7 +99,7 @@ public struct WorkspaceView: View {
     .toolbar {
       ToolbarItemGroup {
         Button {
-          showingWorkflow = true
+          showWorkflow(workflowModel.requestedTab)
         } label: {
           Label("Workflow…", systemImage: "arrow.triangle.branch")
         }
@@ -182,7 +166,7 @@ public struct WorkspaceView: View {
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
-        workflow: showWorkflow, help: { showingHelp = true },
+        workflow: { showWorkflow($0) }, help: { showingHelp = true },
         canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
           && !showingHelp && croppingPhoto == nil,
         comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
@@ -229,7 +213,7 @@ public struct WorkspaceView: View {
           "Choose your usual photo folder. Its subfolders stay browsable; nothing is moved or copied."
         )
       Button("Open Folder…", action: openFolder).disabled(choosingFolder)
-      Button("Workflow…") { showingWorkflow = true }
+      Button("Workflow…") { showWorkflow(workflowModel.requestedTab) }
         .help("Copy from a card, rename, add captions and keywords, and prepare delivery copies.")
       if workspace.directory != nil {
         Button("Show Sample Collection") {
@@ -1044,7 +1028,7 @@ public struct WorkspaceView: View {
     HStack {
       if workflowModel.busy {
         ProgressView().controlSize(.small)
-        Button("Workflow…") { showingWorkflow = true }
+        Button("Workflow…") { showWorkflow(workflowModel.requestedTab) }
         Text(workflowModel.status).lineLimit(1)
       }
       Label(
@@ -1107,7 +1091,28 @@ public struct WorkspaceView: View {
     }
   }
 
-  private func showWorkflow(_ tab: Int) {
+  private var sourceReviewBanner: some View {
+    VStack(alignment: .leading, spacing: 3) {
+      Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
+        .font(.callout.bold())
+      Text(
+        "Choose keepers here: click photos and press P to pick, X to reject, or 0–5 for stars. Then choose Copy Reviewed Photos below. Your source stays unchanged."
+      )
+      .font(.caption).foregroundStyle(.secondary)
+      Text(
+        "\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) files reviewed in this folder"
+      )
+      .font(.caption.monospacedDigit())
+      Button("Copy Reviewed Photos…") { showWorkflow(0, reviewedCopy: true) }
+        .help(
+          "Prepare an explicit copy list and two verified destinations. The source stays unchanged."
+        )
+    }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
+      .background(Color.accentColor.opacity(0.10))
+  }
+
+  private func showWorkflow(_ tab: Int, reviewedCopy: Bool = false) {
+    workflowModel.opensReviewedCopySetup = reviewedCopy
     workflowModel.requestedTab = tab
     showingWorkflow = true
   }

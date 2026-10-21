@@ -32,7 +32,7 @@ extension WorkflowModel {
         primary: destinations.0, backup: destinations.1, keepPairs: keepPairs,
         acceptMetadataChanges: acceptMetadataChanges, store: workspace.persistence)
       status =
-        "Copy list prepared. Review its counts and companions, then choose Copy Reviewed Photos. Later review changes will not change this saved list."
+        "Copy list prepared. Review its counts and companions, then choose Copy & Verify Both Copies. Later review changes will not change this saved list."
     }
   }
 
@@ -58,6 +58,8 @@ extension WorkflowModel {
       keepSourceVisible = true
       copiedReviewFolder = nil
       reviewMetadataPendingImages = []
+      reviewMetadataPending = 0
+      handoffFolder = nil
       ingestBrowseFolder = nil
       verifiedArrivals = [:]
       activeIngestRoot = PhotoPath.canonical(plan.primary)

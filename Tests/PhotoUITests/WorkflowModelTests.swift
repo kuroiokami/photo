@@ -20,6 +20,11 @@ struct WorkflowModelTests {
     }
     let workspace = WorkspaceState()
     let model = WorkflowModel(workspace: workspace)
+    let previousCopy = root.appendingPathComponent("Previous/Originals")
+    model.copiedReviewFolder = previousCopy
+    model.handoffFolder = previousCopy
+    model.reviewMetadataPending = 1
+    model.reviewMetadataPendingImages = [previousCopy.appendingPathComponent("old.png")]
     model.ingest(
       source: root.appendingPathComponent("card").path,
       primary: root.appendingPathComponent("primary").path,
@@ -29,6 +34,9 @@ struct WorkflowModelTests {
     #expect(workspace.filePhotos.count == 2)
     #expect(workspace.directory?.lastPathComponent == "DCIM")
     #expect(model.status.hasPrefix("Processed 2 files"))
+    #expect(model.copiedReviewFolder == nil)
+    #expect(model.reviewMetadataPending == 0 && model.reviewMetadataPendingImages.isEmpty)
+    #expect(model.handoffFolder != nil && model.handoffFolder != previousCopy)
   }
   @Test func oneFieldCanBeCopiedToFiftyPhotosWithoutChangingOtherFieldsOrSelection() async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

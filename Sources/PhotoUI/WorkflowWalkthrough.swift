@@ -34,7 +34,7 @@ struct WorkflowWalkthrough: View {
           case 0:
             section(
               "Need copied photos today?",
-              "Use Ingest to copy the complete shoot and choose keepers as verified photos arrive. Or use Review Before Copying to choose a smaller set first, then copy that reviewed list to both destinations."
+              "Use Ingest to copy the complete shoot and choose keepers as verified photos arrive. Or choose Choose keepers before copying, then Start Culling to choose a smaller set first, then copy that reviewed list to both destinations."
             )
             section(
               "Photos already on your computer?",
@@ -42,12 +42,12 @@ struct WorkflowWalkthrough: View {
             )
             section(
               "Want to review a source without changing it?",
-              "Review Before Copying keeps stars, flags and crops on this Mac while the source stays unchanged. Use Copy Reviewed Photos… in the source banner to prepare and copy your choices, carrying decisions and Photo-local edits to both copies. The source stays protected afterward."
+              "Start Culling opens the card’s photos in the main window. Press P on keepers; stars, flags and crops stay on this Mac while the source stays unchanged. Use Copy Reviewed Photos… in the source banner to prepare and copy your choices, carrying decisions and Photo-local edits to both copies. The source stays protected afterward."
             )
           case 1:
             section(
               "Example: a card from today’s match",
-              "Choose Copy from, your Photo folder, a Backup folder and a Shoot name. Use separate drives for independent copies. For a reviewed source, choose All Photos, Picks Only, Everything Except Rejects or Current Selection, then Prepare Copy List. Check unreviewed counts and added RAW/JPEG companions before Copy Reviewed Photos."
+              "On Choose photos, pick your Card or folder. Choose Copy the entire shoot first and Set Up Copies, or Start Culling and return through Copy Reviewed Photos in the source banner. Then choose your Photo folder, a Backup folder and a Shoot name. Use separate drives for independent copies. For a reviewed source, choose All Photos, Picks Only, Everything Except Rejects or Current Selection, then Review Copy Setup. Check unreviewed counts and added RAW/JPEG companions before Copy & Verify Both Copies."
             )
             section(
               "Keep moving",
@@ -86,7 +86,7 @@ struct WorkflowWalkthrough: View {
           default:
             section(
               "Deadline / wire: send the essential frames first",
-              "Review essential frames → copy Current Selection, or copy the full shoot while culling → check shortlist focus → add accurate captions, credit and rights → prepare delivery copies in Deliver / Edit. Finish any required image processing and agency submission outside Photo; Lightroom is optional."
+              "Choose keepers before copying → Start Culling → mark/select essential frames → copy Current Selection, or copy the full shoot while culling → check shortlist focus → add accurate captions, credit and rights → prepare delivery copies in Deliver / Edit. Finish any required image processing and agency submission outside Photo; Lightroom is optional."
             )
             section(
               "Wedding / large shoot: narrow in stages",
