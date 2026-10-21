@@ -22,6 +22,10 @@ See the [User guide](docs/USAGE.md) for controls and current limitations. Recogn
 
 Finish native review → copy → resume checks, test interruption with physical removable media, and broaden keyboard, VoiceOver and compact-window checks. Measure representative large shoots and concurrent copying before claiming 10–40k-photo performance. Continue work on first-open and full-detail responsiveness.
 
+### Make the whole workflow faster
+
+Prioritize time to the first decision and first verified deliverable alongside total copy speed. The [research and ranked experiments](docs/WORKFLOW_PERFORMANCE_RESEARCH.md) propose interaction profiling, fewer unnecessary interface updates, bounded nearby previews, storage-aware scheduling and more efficient ingest bookkeeping. These remain planned; current measurements stay in the performance notes.
+
 ### Make Photo easier to install
 
 Add clean, versioned app/DMG packaging, then Developer ID signing, notarization and installation/update checks on a clean Mac. The [distribution plan](docs/DISTRIBUTION.md) tracks the steps. Apple silicon is the current tested development setup; wider macOS and Intel support need verification.

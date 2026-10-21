@@ -328,3 +328,16 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 - [x] Verify source-change/corruption/failure recovery, pixel/source labels, clear/eviction limits and concurrent RAM lookup; keep originals untouched.
 - [x] Measure two release synthetic 115-JPEG cache-policy runs, verify repeat native browsing/relaunch and update the user guide/research/performance evidence.
 - [ ] Follow up with measured viewport-aware prefetch, media-specific concurrency, physical trackpad and representative mixed-camera/large-shoot/RSS acceptance.
+
+## End-to-end performance research — 2026-10-21
+
+Research and proposed acceptance gates: [WORKFLOW_PERFORMANCE_RESEARCH.md](WORKFLOW_PERFORMANCE_RESEARCH.md). These do not mark implementation or performance acceptance complete.
+
+- [x] Review primary sources and current browse/decision/metadata/detail/ingest code; rank opportunities and distinguish existing behavior.
+- [ ] Add local, privacy-preserving interaction/queue/copy signposts and a repeatable mixed-format, concurrent-ingest release harness.
+- [ ] Profile and reduce broad UI publication; measure time to first decision, frame hitches and large-folder sort/batch work.
+- [ ] Evaluate bounded nearby Fit/thumbnail preparation, per-volume scheduling, deferred cache writes and memory-pressure response.
+- [ ] Reuse durable append-only progress for ordinary ingest; prototype fewer source reads without dropping independent destination verification or recovery guarantees.
+- [ ] Validate optional persistent focus position, faster truthful detail and job/caption/priority conveniences with actual photographer tasks.
+
+Ship separately measured chunks. Preserve stable selection, explicit preview sources, original bytes, field-specific metadata/conflicts, durable decisions and verified publication.
