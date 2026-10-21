@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 private typealias WorkflowStorage<Value> = SwiftUI.State<Value>
 
 struct WorkflowView: View {
-  @Environment(\.dismiss) private var dismiss
+  let returnToPhotos: () -> Void
   @WorkflowStorage private var model: WorkflowModel
   @WorkflowStorage private var showingWalkthrough = false
   @WorkflowStorage private var showingStatus = false
@@ -27,7 +27,8 @@ struct WorkflowView: View {
   @WorkflowStorage private var destination = ""
   @WorkflowStorage private var embedMetadata = true
 
-  init(model: WorkflowModel) {
+  init(model: WorkflowModel, returnToPhotos: @escaping () -> Void) {
+    self.returnToPhotos = returnToPhotos
     _model = State(initialValue: model)
     _tab = State(initialValue: model.requestedTab)
   }
@@ -76,8 +77,10 @@ struct WorkflowView: View {
           ProgressView().controlSize(.small)
           Button("Cancel Operation") { model.worker?.cancel() }
         }
-        Button(model.busy && model.backgroundable ? "Continue Browsing" : "Done") { dismiss() }
-          .keyboardShortcut(.cancelAction).disabled(model.busy && !model.backgroundable)
+        Button(model.busy && model.backgroundable ? "Cull While Copying" : "Back to Photos") {
+          returnToPhotos()
+        }
+        .keyboardShortcut(.cancelAction).disabled(model.busy && !model.backgroundable)
       }
       Text("Choose keepers, copy safely, then organize and deliver.").font(.callout)
         .foregroundStyle(
@@ -106,7 +109,7 @@ struct WorkflowView: View {
       }
 
     }
-    .padding(20).frame(width: 880, height: panelHeight)
+    .padding(20).frame(maxWidth: .infinity, maxHeight: .infinity)
     .sheet(isPresented: $showingWalkthrough) { WorkflowWalkthrough() }
     .interactiveDismissDisabled(model.busy && !model.backgroundable)
     .task {
@@ -116,14 +119,9 @@ struct WorkflowView: View {
       await model.refresh()
       fieldValues = model.currentMetadata.fields
     }
-    .onChange(of: model.sourceReviewLaunch) { dismiss() }
+    .onChange(of: model.sourceReviewLaunch) { returnToPhotos() }
     .onChange(of: tab) { model.requestedTab = tab }
   }
-  private var panelHeight: CGFloat {
-    let available = (NSApp.keyWindow?.screen ?? NSScreen.main)?.visibleFrame.height ?? 840
-    return max(560, min(680, available - 80))
-  }
-
   private var scopePicker: some View {
     Picker("Apply to", selection: $scope) {
       Text("Selection").tag("Selection")
@@ -132,7 +130,8 @@ struct WorkflowView: View {
     }.pickerStyle(.segmented)
   }
   private var ingest: some View {
-    IngestWorkflowView(model: model, showWalkthrough: { showingWalkthrough = true })
+    IngestWorkflowView(
+      model: model, showWalkthrough: { showingWalkthrough = true }, returnToPhotos: returnToPhotos)
   }
   private var rename: some View {
     VStack(alignment: .leading, spacing: 12) {

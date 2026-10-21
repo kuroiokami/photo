@@ -291,3 +291,14 @@ See ADR 0022 and the tracker for observed evidence.
 - [ ] Profile batch persistence/XMP, selection summaries/observation, main-actor rating reorders and cold camera metadata before further architectural changes.
 
 See [the audit](PERFORMANCE_REVIEW.md), [evidence](PERFORMANCE.md) and tracker for measurements and exact validation limits.
+
+## Keyboard culling, in-window workflow and reject cleanup — 2026-10-20
+
+- [x] Clarify selected-only review with explicit scope, two-photo minimum and Show All Photos.
+- [x] Stabilize ordinary review/decision status layout and add Fit/100%, rotation and unconditional photo-navigation shortcuts.
+- [x] Present workflow setup in the main window with explicit return-to-photos callbacks and retained browser identity.
+- [x] Add confirmed macOS Trash removal of selected working files and exclusive companions; preserve source protection, file identity checks and shared sidecars.
+- [x] Add isolated failure/replacement/arrival/protection/selection/late-result regressions; document Finder recovery and non-atomic batches.
+- [ ] Broaden native compact-window/accessibility/platform, removable/network-volume and large-batch performance acceptance.
+
+See ADR 0023, the usage guide and tracker for actual checks and delivery.

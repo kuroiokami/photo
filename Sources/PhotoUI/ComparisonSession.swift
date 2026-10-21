@@ -30,6 +30,12 @@ final class ComparisonSession {
   private var viewports: [ComparisonPane: Viewport] = [:]
   var enabled: Bool { reference != nil }
   func request(for pane: ComparisonPane) -> ComparisonRequest? { requests[pane] }
+  func toggleInspection() {
+    let viewport = viewports[.active] ?? Viewport()
+    zoom(!viewport.zoom, center: viewport.center, from: .active)
+    requests[.active] = ComparisonRequest(
+      action: viewport.zoom ? .fit : .zoom(viewport.center))
+  }
   func pin(_ photo: PhotoItem) {
     reference = photo
     resetViewports()

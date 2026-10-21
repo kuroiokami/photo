@@ -19,6 +19,8 @@ private typealias FolderLibraryStorage = SwiftUI.State<FolderLibrary>
 private typealias CropPhotoStorage = SwiftUI.State<PhotoItem?>
 private typealias CropClipboardStorage = SwiftUI.State<PhotoCrop?>
 private typealias GestureSizeStorage = SwiftUI.State<Double?>
+private typealias TrashPlanStorage = SwiftUI.State<PhotoTrashPlan?>
+private typealias MessageStorage = SwiftUI.State<String>
 private typealias GridFocus = SwiftUI.FocusState<Bool>
 
 private struct SelectionReveal: Equatable {
@@ -57,6 +59,11 @@ public struct WorkspaceView: View {
   @CropClipboardStorage private var copiedCrop: PhotoCrop?
   @GestureSizeStorage private var pinchSize: Double?
   @MarqueeStorage private var marquee: SelectionMarquee?
+  @TrashPlanStorage private var trashPlan: PhotoTrashPlan?
+  @BoolStorage private var preparingTrash = false
+  @BoolStorage private var showingTrashError = false
+  @BoolStorage private var pendingInspection = false
+  @MessageStorage private var trashNotice = ""
   private let metadataReader = ImageMetadataReader()
 
   public init(workspace: WorkspaceState = WorkspaceState()) {
@@ -67,31 +74,22 @@ public struct WorkspaceView: View {
   public var body: some View {
     NavigationSplitView {
       sidebar
+        .disabled(showingWorkflow || preparingTrash || trashPlan != nil)
         .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 280)
     } detail: {
-      VStack(spacing: 0) {
-        collectionHeader
-        if workspace.isSourceReview {
-          sourceReviewBanner
-        }
-        filterBar
-        Divider()
-        VStack(spacing: 0) {
-          if showPreview && !workspace.photos.isEmpty {
-            previewPane.frame(maxWidth: .infinity, maxHeight: .infinity)
-            Divider()
+      ZStack {
+        browsingContent
+          .opacity(showingWorkflow ? 0 : 1)
+          .allowsHitTesting(!showingWorkflow)
+          .accessibilityHidden(showingWorkflow)
+        if showingWorkflow {
+          WorkflowView(model: workflowModel) {
+            showingWorkflow = false
+            gridFocused = true
           }
-          contactSheet
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(
-              height: showPreview && !workspace.photos.isEmpty
-                ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 120 : 100)
-                  + Double(thumbnailLabels.count * 20) : nil)
+          .background(Color(nsColor: .windowBackgroundColor))
         }
-        Divider()
-        statusBar
       }
-      .background(Color(nsColor: .underPageBackgroundColor))
     }
     .preferredColorScheme(.dark)
     .frame(minWidth: 900, minHeight: 600)
@@ -103,12 +101,15 @@ public struct WorkspaceView: View {
         } label: {
           Label("Workflow…", systemImage: "arrow.triangle.branch")
         }
-        .labelStyle(.titleOnly).disabled(choosingFolder).help(
+        .labelStyle(.titleOnly).disabled(choosingFolder || preparingTrash || trashPlan != nil).help(
           "Copy from a card, rename, add captions and keywords, and prepare delivery copies.")
         Button(action: openFolder) { Label("Open Folder", systemImage: "folder.badge.plus") }
-          .disabled(choosingFolder).help("Open Folder (⌘O)")
+          .disabled(choosingFolder || showingWorkflow || preparingTrash || trashPlan != nil).help(
+            "Open Folder (⌘O)")
         Button(action: reload) { Label("Reload", systemImage: "arrow.clockwise") }
-          .disabled(workspace.directory == nil).help("Reload Folder (⌘R)")
+          .disabled(
+            workspace.directory == nil || showingWorkflow || preparingTrash || trashPlan != nil
+          ).help("Reload Folder (⌘R)")
         Divider()
         Button {
           showPreview.toggle()
@@ -146,6 +147,7 @@ public struct WorkspaceView: View {
       }
     }
     .onChange(of: workspace.directory) {
+      trashNotice = ""
       if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
     }
     .onChange(of: thumbnailLabels) {
@@ -156,23 +158,48 @@ public struct WorkspaceView: View {
       croppingPhoto = nil
     }
     .onChange(of: workspace.selectedID) { comparison.resetViewports() }
-    .onChange(of: showPreview) { comparison.resetViewports() }
-    .sheet(isPresented: $showingWorkflow) { WorkflowView(model: workflowModel) }
+    .onChange(of: showPreview) {
+      comparison.resetViewports()
+      if pendingInspection && showPreview {
+        pendingInspection = false
+        comparison.toggleInspection()
+      }
+    }
+    .sheet(item: $trashPlan) { plan in
+      TrashConfirmationView(
+        plan: plan, store: workspace.persistence, decisions: workspace.decisions
+      ) { result in
+        workspace.removeTrashedPhotos(result.moved)
+        trashNotice =
+          "Moved \(result.moved.filter { PhotoFormats.supports($0) }.count) photos to Trash."
+          + (result.error.map { " Stopped: " + $0 } ?? " Restore with Finder → Trash → Put Back.")
+      }
+    }
+    .alert("Cannot Move to Trash", isPresented: $showingTrashError) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text(trashNotice)
+    }
     .focusedSceneValue(
       \.workspaceActions,
       WorkspaceActions(
         workspace: workspace,
         canDecide: !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil
+          && trashPlan == nil && !preparingTrash
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
         workflow: { showWorkflow($0) }, help: { showingHelp = true },
         canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
-          && !showingHelp && croppingPhoto == nil,
+          && !showingHelp && croppingPhoto == nil && trashPlan == nil && !preparingTrash,
         comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
         canCompare: workspace.photos.count > 1,
         crop: { croppingPhoto = workspace.selectedPhoto }, copyCrop: copyCrop, pasteCrop: pasteCrop,
-        canPasteCrop: copiedCrop != nil
+        canPasteCrop: copiedCrop != nil,
+        inspect: toggleInspection, trash: prepareTrash,
+        canTrash: !workspace.isSourceReview && workspace.directory != nil
+          && workspace.decisionSelectionReady
+          && !workflowModel.busy
       )
     )
     .task(id: workspace.sessionID) {
@@ -189,6 +216,32 @@ public struct WorkspaceView: View {
       async let decisions: Void = workspace.loadDecisions(expectedSession: session)
       _ = await (metadata, decisions)
     }
+  }
+
+  private var browsingContent: some View {
+    VStack(spacing: 0) {
+      collectionHeader
+      if workspace.isSourceReview {
+        sourceReviewBanner
+      }
+      filterBar
+      Divider()
+      VStack(spacing: 0) {
+        if showPreview && !workspace.photos.isEmpty {
+          previewPane.frame(maxWidth: .infinity, maxHeight: .infinity)
+          Divider()
+        }
+        contactSheet
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .frame(
+            height: showPreview && !workspace.photos.isEmpty
+              ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 120 : 100)
+                + Double(thumbnailLabels.count * 20) : nil)
+      }
+      Divider()
+      statusBar
+    }
+    .background(Color(nsColor: .underPageBackgroundColor))
   }
 
   private var sidebar: some View {
@@ -224,7 +277,7 @@ public struct WorkspaceView: View {
       }
       Button("Quick Start & Shortcuts") { showingHelp = true }.font(.caption)
       VStack(alignment: .leading, spacing: 7) {
-        Label("Originals stay untouched", systemImage: "lock.shield")
+        Label("Edits preserve original bytes", systemImage: "lock.shield")
         Text("JPEG · PNG · Sony · Canon · Olympus RAW")
         Text("← → Navigate   Space Preview")
       }
@@ -238,9 +291,15 @@ public struct WorkspaceView: View {
     HStack(spacing: 16) {
       VStack(alignment: .leading, spacing: 3) {
         Text(workspace.title).font(.title3.weight(.semibold)).lineLimit(1)
-        if workspace.reviewingSelection {
-          Text("SELECTED-ONLY REVIEW").font(.caption2).foregroundStyle(Color.accentColor)
-        }
+        Text(
+          workspace.reviewingSelection
+            ? "Reviewing \(workspace.reviewIDs?.count ?? 0) chosen files · Show All Photos to finish"
+            : "Browsing this folder"
+        )
+        .font(.caption2).foregroundStyle(
+          workspace.reviewingSelection ? Color.accentColor : Color.secondary
+        )
+        .lineLimit(1).frame(height: 16)
         Text(
           "\(workspace.photos.count) of \(workspace.totalCount) photos"
         )
@@ -352,7 +411,7 @@ public struct WorkspaceView: View {
           } actions: {
             Button("Clear Filters") { workspace.setFilter(.all, minimumRating: 0) }
             if workspace.reviewingSelection {
-              Button("End Selected Review") { workspace.endReview() }
+              Button("Show All Photos") { workspace.endReview() }
             }
           }
         case .ready where workspace.photos.isEmpty:
@@ -938,7 +997,21 @@ public struct WorkspaceView: View {
       Button("Select All") { workspace.selectAllVisible() }.disabled(workspace.photos.isEmpty)
         .help("Select every visible photo (⌘A). Filters limit this selection.")
       Text("\(workspace.selectedIDs.count) selected").monospacedDigit()
-      Button(workspace.reviewingSelection ? "End Review" : "Review Selection") {
+      Menu {
+        Button("Select Rejects") { workspace.selectRejects() }
+        Button("Move Selected to Trash…", action: prepareTrash)
+          .disabled(
+            workspace.directory == nil || workspace.isSourceReview
+              || !workspace.decisionSelectionReady || workflowModel.busy)
+      } label: {
+        Label("Remove", systemImage: "trash")
+      }
+      .help(
+        workspace.isSourceReview
+          ? "This card/source is protected. Copy keepers; leave rejects on the card."
+          : "Select Rejects, then Move Selected to Trash (⌘Delete). A confirmation lists the exact files."
+      )
+      Button(workspace.reviewingSelection ? "Show All Photos" : "Review Only Selected") {
         if workspace.reviewingSelection {
           workspace.endReview()
         } else {
@@ -946,9 +1019,9 @@ public struct WorkspaceView: View {
           showPreview = true
         }
         gridFocused = true
-      }.disabled(!workspace.reviewingSelection && workspace.selectedIDs.isEmpty)
+      }.disabled(!workspace.reviewingSelection && workspace.selectedIDs.count < 2)
         .help(
-          "Freeze the selected photos as a review set. Navigation does not change membership; End Review returns to the folder."
+          "Select two or more photos first. Review Only Selected hides the others so you can judge each photo individually. Show All Photos returns to the folder."
         )
     }.fixedSize(horizontal: true, vertical: false)
   }
@@ -966,13 +1039,12 @@ public struct WorkspaceView: View {
   private func decisionControls(_ photo: PhotoItem) -> some View {
     let summary = workspace.selectionSummary
     return VStack(spacing: 8) {
-      if summary.fileCount > 1 {
-        Text(
-          "Editing \(summary.fileCount) files" + (summary.flag == nil ? " · Mixed flags" : "")
-            + (summary.rating == nil ? " · Mixed stars" : "")
-        )
-        .font(.caption).foregroundStyle(.secondary)
-      }
+      Text(
+        (summary.fileCount == 1 ? "Editing this photo" : "Editing \(summary.fileCount) files")
+          + (summary.flag == nil ? " · Mixed flags" : "")
+          + (summary.rating == nil ? " · Mixed stars" : "")
+      )
+      .font(.caption).foregroundStyle(.secondary).lineLimit(1).frame(height: 16)
       HStack(spacing: 4) {
         ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
           Button {
@@ -1006,8 +1078,12 @@ public struct WorkspaceView: View {
         }.frame(minWidth: 22, minHeight: 26).help(
           "Clear stars for all selected files (0). Flags are preserved.")
       }.buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
-      if let status = workspace.saveStatus[photo.id], status != "Saved", photo.fileURL != nil {
-        Text(status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+      let status = workspace.saveStatus[photo.id] ?? ""
+      Text(status == "Saved" ? "" : status).font(.caption).foregroundStyle(.secondary)
+        .textSelection(.enabled).lineLimit(1).frame(height: 16)
+      if !status.isEmpty && status != "Saved" && status != "Saving…" && status != "Saving review…"
+        && !status.hasPrefix("Review saved on this Mac") && photo.fileURL != nil
+      {
         HStack {
           if workspace.isSourceReview {
             if !status.hasPrefix("Review saved on this Mac") && status != "Saving review…" {
@@ -1039,6 +1115,7 @@ public struct WorkspaceView: View {
         Text(workspace.editStatus).lineLimit(1).help(
           "Photo-local rotation, mirror and crop saving status.")
       }
+      if !trashNotice.isEmpty { Text(trashNotice).lineLimit(1).help(trashNotice) }
       Spacer()
       Text(workspace.selectedPhoto?.filename ?? "No selection").lineLimit(1)
       Text("·  \(workspace.photos.count) photos")
@@ -1046,10 +1123,55 @@ public struct WorkspaceView: View {
     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.vertical, 9)
   }
 
+  private func toggleInspection() {
+    if !showPreview {
+      pendingInspection = true
+      showPreview = true
+    } else {
+      comparison.toggleInspection()
+    }
+  }
+
+  private func prepareTrash() {
+    guard !preparingTrash, !workspace.isSourceReview, !workflowModel.busy,
+      let folder = workspace.directory, workspace.decisionSelectionReady
+    else { return }
+    let session = workspace.sessionID
+    preparingTrash = true
+    Task {
+      defer { preparingTrash = false }
+      // Let a preceding native menu selection finish before freezing the list.
+      await Task.yield()
+      guard session == workspace.sessionID else { return }
+      let targets = workspace.operationPhotos
+      let identities = workspace.selectedFileIdentities
+      guard identities.count == targets.count else {
+        trashNotice =
+          "Some selected photos could not be identified. Reload this folder before moving files to Trash."
+        showingTrashError = true
+        return
+      }
+      await DecisionSaveQueue.shared.flush()
+      guard session == workspace.sessionID else { return }
+      do {
+        let plan = try await PhotoTrash(store: workspace.persistence).prepare(
+          images: identities, folder: folder)
+        guard session == workspace.sessionID else { return }
+        trashPlan = plan
+      } catch {
+        trashNotice = error.localizedDescription
+        showingTrashError = true
+      }
+    }
+  }
+
   private func openFolder() { chooseFolder(asHome: false) }
 
   private func chooseFolder(asHome: Bool) {
-    guard !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil else {
+    guard
+      !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil
+        && trashPlan == nil && !preparingTrash
+    else {
       return
     }
     choosingFolder = true
@@ -1112,6 +1234,7 @@ public struct WorkspaceView: View {
   }
 
   private func showWorkflow(_ tab: Int, reviewedCopy: Bool = false) {
+    gridFocused = false
     workflowModel.opensReviewedCopySetup = reviewedCopy
     workflowModel.requestedTab = tab
     showingWorkflow = true

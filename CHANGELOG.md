@@ -12,6 +12,13 @@ User-visible changes are collected here before a release. Development evidence a
 
 - Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.
 
+### Culling and cleanup
+
+- Add Z for Fit/100%, [/] for rotation and B/N for photo navigation while zoomed.
+- Clarify Review Only Selected / Show All Photos and stabilize normal decision-saving layout.
+- Add Select Rejects and confirmed Move Selected to Trash (⌘Delete), with protected-source checks, exclusive sidecars and Finder recovery.
+- Move workflow setup into the main window with explicit return-to-photos actions.
+
 ### Workflow
 
 - Replace the scrolling ingest form with explicit source, destination, confirmation and progress steps; explain how to start culling and copy picks.

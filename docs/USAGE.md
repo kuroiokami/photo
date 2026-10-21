@@ -47,6 +47,8 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 - **Review before copying:** Workflow → Ingest → choose the card/source → **Start Culling**. Stars, flags, Undo and Photo-local rotate/mirror/crop save on this Mac while the source stays protected. Choose **Copy Reviewed Photos…** in the source banner, prepare an explicit copy list and copy to both destinations with the review decisions. [Workflow and recovery](PRE_COPY_CULLING.md).
 
 
+Workflow setup now occupies the main window’s content area rather than a pop-up. **Back to Photos**, **Return to Culling** and **Cull While Copying** return to the retained browser. For protected reviews, the source banner takes you directly back to copy setup. Long file lists, help and confirmations can still open separate sheets.
+
 ## 2. Workspace and saved folders
 
 | Area | Purpose |
@@ -57,7 +59,7 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 | Large preview | Fast Fit view, detail controls, rotate/mirror/crop and optional shooting-information pane |
 | Contact sheet / bottom filmstrip | Selection, direct stars/flags and contextual actions |
 | Status bar | Decision or image-edit saving state and current photo/count |
-| Workflow | Ingest, Bulk Rename, IPTC & Keywords, and Deliver / Edit |
+| Workflow | In-window Ingest, Bulk Rename, IPTC & Keywords, and Deliver / Edit |
 
 ### Open and revisit folders
 
@@ -135,6 +137,19 @@ If a filter hides the decided photo, Photo selects the next surviving neighbor, 
 
 **⌘Z / ⇧⌘Z** undo/redo culling decisions and image edits in their actual session order. They reset when opening/reloading a folder. Saved decisions and edits remain. Metadata batches have separate persistent Undo buttons described below.
 
+### Move rejected photos to Trash
+
+**X marks a reject; it does not delete anything.** In a working folder:
+
+1. Choose **Show All Photos** if reviewing a shortlist, then **Clear Filters** if you want every reject in the current folder included.
+2. Press **⇧⌘X** or open **Remove → Select Rejects** (also available in the Decisions menu). Check the selected count. This selects visible rejected thumbnails; it does not search subfolders.
+3. Press **⌘Delete** or choose **Remove → Move Selected to Trash…**.
+4. Check the exact file list and any picked-photo warning, then click **Move to Trash** or press **Return**. Escape cancels.
+
+You can also select any working photos manually and use the same command. RAW+JPEG grouping expands a selection to both physical files, so check the list; mixed pairs may include a keeper. Only the listed images and exclusively owned XMP/ACR companions move. Shared sidecars stay with unselected photos. Copies in other folders and backups are unaffected. Bundled sample photos and protected pre-copy sources cannot be trashed. During pre-copy review, copy only keepers and leave the source card alone.
+
+Restore through **Finder → Trash → select the files → Put Back**; include matching sidecars, then Reload the folder in Photo. Photo’s Undo history does not restore files and clears after a successful move. Local decision/edit records remain so they can be recovered when the same files are restored. File replacements, changed sidecars, folder arrivals or protection changes stop a stale plan. A batch is not atomic: failures stop and report actual moves, leaving remaining files untouched. If macOS Trash is unavailable, Photo reports the error and never falls back to permanent deletion. A crash/interruption may leave sidecars beside the original folder; inspect the reported/remaining files and Finder Trash before retrying.
+
 ## 5. Filters, sorting and EXIF labels
 
 Combine a flag filter with a minimum-star filter. The header shows visible and total counts. **Clear Filters** removes both restrictions; a selected-review set is ended separately.
@@ -146,6 +161,19 @@ The **shooting-information** button displays capture time, camera/lens, shutter,
 The **Labels** menu adds up to two remembered rows beneath thumbnail filenames: exposure summary, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Values reuse already indexed metadata; they do not decode images. Missing values are explicit. **Hide Extra Labels** restores compact thumbnails.
 
 ## 6. Preview, trackpad zoom and focus inspection
+
+### A fast keyboard pass
+
+| Key | Action |
+| --- | --- |
+| **Z** | Toggle Fit / genuine 100% on the active photo, including from the contact sheet |
+| **B / N** | Previous / next photo, even when the zoom view or navigator has focus |
+| **[ / ]** | Rotate the selected photo(s) left / right |
+| **⇧⌘C** | Open Crop for the focused photo |
+| **P / X / U** | Pick / reject / clear flag; Shift also advances |
+| **0–5** | Set stars independently of flags |
+
+Use Z to check focus, Z to return to Fit, then P/X or Shift-P/Shift-X to decide and move on. Arrow keys can pan when the zoom navigator has focus; B/N always navigate photos. Each new photo starts at Fit. Rotation/mirror/crop remains Photo-local and is not applied to delivery copies or Lightroom. For speed, do a focus/flag pass first, then crop and caption the keepers.
 
 ### Fast Fit versus real detail
 
@@ -191,7 +219,7 @@ Choose **Compare** or press **C**. Photo pins a reference and selects another vi
 
 The reference stays fixed while the active candidate changes. Decisions follow thumbnail selection, not the reference pane. Changing either photo returns both panes to Fit. Linked coordinates refer to each photo’s displayed composition; different crops/aspect ratios clamp independently.
 
-For a burst shortlist, select its members and choose **Review Selection**. Membership freezes those physical files while selection returns to a single focused photo for individual decisions. Filters still apply; navigating/rating does not redefine membership. **End Selected Review** restores the folder. Opening/reloading ends review. Ingest arrivals do not enter a frozen shortlist automatically.
+For a burst shortlist, select two or more photos and choose **Review Only Selected**. Membership freezes those physical files while selection returns to a single focused photo for individual decisions. Filters still apply; navigating/rating does not redefine membership. **Show All Photos** restores the folder. Opening/reloading ends review. Ingest arrivals do not enter a frozen shortlist automatically.
 
 ## 8. Rotate, mirror and crop
 

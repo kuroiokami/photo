@@ -93,6 +93,51 @@ public final class WorkspaceState {
     selectionAnchorID = selectedID
   }
   public func invertSelection() { selectGroup(Set(photos.map(\.id)).subtracting(selectedIDs)) }
+  public func selectRejects() {
+    selectGroup(Set(photos.filter { decisions[$0.id]?.flag == .reject }.map(\.id)))
+  }
+
+  /// Remove only files actually moved; retain the browsing/cache session.
+  public func removeTrashedPhotos(_ urls: [URL]) {
+    // A URL's standardized spelling can change after the file disappears
+    // (notably /var versus /private/var). Match the existing immutable item IDs.
+    let paths = Set(urls.map { PhotoPath.canonical($0).path })
+    let removed = Set(
+      allPhotos.compactMap { photo -> String? in
+        guard let url = photo.fileURL, paths.contains(PhotoPath.canonical(url).path) else {
+          return nil
+        }
+        return photo.id
+      })
+    guard !removed.isEmpty else { return }
+    let order = photos.map(\.id)
+    let position = selectedIndex ?? 0
+    let fallback = Array(order.dropFirst(position)) + Array(order.prefix(position).reversed())
+    let preferred = selectedID.flatMap { removed.contains($0) ? nil : $0 }
+    allPhotos.removeAll { removed.contains($0.id) }
+    collectionRevision += 1
+    metadataAttempted.subtract(removed)
+    indexedCount = metadataAttempted.count
+    buildFamilies(allPhotos)
+    selectedIDs.subtract(removed)
+    reviewIDs = reviewIDs.map { $0.subtracting(removed) }
+    for id in removed {
+      decisions.removeValue(forKey: id)
+      decisionsReady.remove(id)
+      metadata.removeValue(forKey: id)
+      imageEdits.removeValue(forKey: id)
+      saveStatus.removeValue(forKey: id)
+      fileIdentities.removeValue(forKey: id)
+      sourceFields.removeValue(forKey: id)
+      sourceReviewedIDs.remove(id)
+    }
+    // File restoration belongs to Finder's Put Back; do not replay old writes
+    // against paths that may now be missing or reused.
+    undoStack = []
+    redoStack = []
+    rebuildVisible(preferred: preferred, fallback: fallback)
+  }
+
   public func selectPicks() {
     selectGroup(Set(photos.filter { decisions[$0.id]?.flag == .pick }.map(\.id)))
   }
@@ -378,11 +423,12 @@ public final class WorkspaceState {
   }
 
   public func readMetadata(_ photo: PhotoItem, using reader: any PhotoMetadataReading) async {
-    guard !metadataAttempted.contains(photo.id), let url = photo.fileURL else { return }
+    guard allByID[photo.id] != nil, !metadataAttempted.contains(photo.id), let url = photo.fileURL
+    else { return }
     metadataAttempted.insert(photo.id)
     let session = sessionID
     let value = try? await reader.metadata(for: url)
-    guard session == sessionID, !Task.isCancelled else { return }
+    guard session == sessionID, !Task.isCancelled, allByID[photo.id] != nil else { return }
     if let value { metadata[photo.id] = value }
   }
 
@@ -515,7 +561,7 @@ public final class WorkspaceState {
   }
 
   private func loadDecision(_ photo: PhotoItem, session: UUID) async {
-    guard !decisionsReady.contains(photo.id) else { return }
+    guard allByID[photo.id] != nil, !decisionsReady.contains(photo.id) else { return }
     let entry: DecisionEntry
     var edit = PhotoEdit()
     do {
@@ -527,7 +573,9 @@ public final class WorkspaceState {
     } catch {
       entry = DecisionEntry(decision: CullingDecision(), status: error.localizedDescription)
     }
-    guard session == sessionID, !Task.isCancelled, !decisionsReady.contains(photo.id) else {
+    guard session == sessionID, !Task.isCancelled, allByID[photo.id] != nil,
+      !decisionsReady.contains(photo.id)
+    else {
       return
     }
     if let review = entry.sourceReview { sourceReview = review }

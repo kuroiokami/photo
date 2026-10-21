@@ -6,6 +6,26 @@ import Testing
 
 @MainActor
 struct ComparisonTests {
+  @Test func keyboardInspectionTogglesWithoutComparisonAndRoutesLinkedPanes() {
+    let session = ComparisonSession()
+    session.toggleInspection()
+    #expect(!session.enabled)
+    #expect(session.request(for: .active)?.action == .zoom(CGPoint(x: 0.5, y: 0.5)))
+    session.zoom(true, center: CGPoint(x: 0.2, y: 0.8), from: .active)
+    session.toggleInspection()
+    #expect(session.request(for: .active)?.action == .fit)
+    session.toggleInspection()
+    #expect(session.request(for: .active)?.action == .zoom(CGPoint(x: 0.2, y: 0.8)))
+    session.pin(SampleLibrary.photos[0])
+    session.toggleInspection()
+    #expect(session.request(for: .reference)?.action == session.request(for: .active)?.action)
+    session.setLinked(false)
+    let reference = session.request(for: .reference)
+    session.toggleInspection()
+    #expect(session.request(for: .active)?.action == .fit)
+    #expect(session.request(for: .reference) == reference)
+  }
+
   @Test func linkedCommandsRouteOnceAndUnlinkedViewsRemainIndependent() {
     let session = ComparisonSession()
     session.pin(SampleLibrary.photos[0])
