@@ -91,6 +91,9 @@ public enum ThumbnailCachePolicy {
   public static func memoryByteLimit(
     physicalMemory: UInt64 = ProcessInfo.processInfo.physicalMemory
   ) -> Int {
-    Int(min(256 * 1024 * 1024, max(64 * 1024 * 1024, physicalMemory / 64)))
+    let minimum: UInt64 = 64 * 1024 * 1024
+    let maximum: UInt64 = 256 * 1024 * 1024
+    let proposed = physicalMemory / 64
+    return Int(min(maximum, max(minimum, proposed)))
   }
 }
