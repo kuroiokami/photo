@@ -13,7 +13,7 @@ private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
 private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
-private typealias TileFramesStorage = SwiftUI.State<[String: CGRect]>
+private typealias TileFramesStorage = SwiftUI.State<PhotoTileGeometry>
 private typealias MarqueeStorage = SwiftUI.State<SelectionMarquee?>
 private typealias FolderLibraryStorage = SwiftUI.State<FolderLibrary>
 private typealias CropPhotoStorage = SwiftUI.State<PhotoItem?>
@@ -54,7 +54,7 @@ public struct WorkspaceView: View {
   @BoolStorage private var showInspector = false
   @BoolStorage private var showingWorkflow = false
   @BoolStorage private var showingHelp = false
-  @TileFramesStorage private var tileFrames: [String: CGRect] = [:]
+  @TileFramesStorage private var tileGeometry = PhotoTileGeometry()
   @CropPhotoStorage private var croppingPhoto: PhotoItem?
   @CropClipboardStorage private var copiedCrop: PhotoCrop?
   @GestureSizeStorage private var pinchSize: Double?
@@ -455,7 +455,7 @@ public struct WorkspaceView: View {
               }.onEnded { _ in pinchSize = nil }
             )
             .coordinateSpace(name: "ContactSheetViewport")
-            .onPreferenceChange(PhotoTileFrames.self) { tileFrames = $0 }
+            .onPreferenceChange(PhotoTileFrames.self) { tileGeometry.replace(with: $0) }
             .simultaneousGesture(
               DragGesture(minimumDistance: 5)
                 .onChanged { value in
@@ -468,11 +468,7 @@ public struct WorkspaceView: View {
                   }
                   marquee?.end = value.location
                   guard let marquee else { return }
-                  let viewport = CGRect(origin: .zero, size: geometry.size)
-                  let hits = Set(
-                    tileFrames.filter {
-                      viewport.intersects($0.value) && marquee.rectangle.intersects($0.value)
-                    }.keys)
+                  let hits = tileGeometry.hits(in: marquee.rectangle, viewportSize: geometry.size)
                   workspace.selectGroup(marquee.base.union(hits))
                 }.onEnded { _ in
                   marquee = nil
@@ -511,7 +507,7 @@ public struct WorkspaceView: View {
           }
           .id(workspace.sessionID)
           .onChange(of: workspace.sessionID) {
-            tileFrames = [:]
+            tileGeometry.clear()
             marquee = nil
           }
         }
@@ -519,7 +515,7 @@ public struct WorkspaceView: View {
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .onChange(of: columns, initial: true) { gridColumns = columns }
       .onChange(of: showPreview) {
-        tileFrames = [:]
+        tileGeometry.clear()
         marquee = nil
         gridFocused = true
       }

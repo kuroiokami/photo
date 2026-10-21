@@ -12,6 +12,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 - Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.
 
+### Performance
+
+- Avoid rebuilding the workspace for every scrolling thumbnail-position change, and construct thumbnail quick actions only while visible.
+
 ### Image controls
 
 - Add thumbnail rotation, mirror, IPTC, crop and Preview quick actions on hover or selection, in Contact Sheet and the Preview filmstrip.

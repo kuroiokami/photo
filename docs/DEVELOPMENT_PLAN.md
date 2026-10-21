@@ -314,3 +314,9 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 
 - [x] Adapt Photo Mechanic-style corner rotation, IPTC and Preview controls, with Photo's crop/mirror additions, to contact-sheet and filmstrip images.
 - [x] Verify selection scope, readiness, Undo and native appearance with existing keyboard coverage; update the guide/tracker. Delivery requires passing final-head CI, recorded in the delivery PR.
+
+## Contact-sheet scrolling follow-up — 2026-10-21
+
+- [x] Remove scroll-position workspace invalidation and avoid constructing invisible quick actions, preserving marquee hit testing and existing cache/decoder limits.
+- [x] Verify viewport clipping, stale-frame replacement, reverse drag and selection-base retention; pass strict checks and optimized packaging.
+- [ ] Finish same-folder native cold/warm scrolling, thumbnail and marquee checks after the Mac is unlocked; record measured limits and required CI/delivery evidence.

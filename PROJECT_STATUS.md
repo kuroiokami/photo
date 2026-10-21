@@ -1,8 +1,16 @@
 # Project tracker
 
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
+
+## Contact-sheet scrolling follow-up — 2026-10-21
+
+Investigated a reported slow 115-JPEG Contact Sheet. The pre-change native app confirmed that collection size. A short CPU capture during scrolling showed SwiftUI lazy-grid/layout and thumbnail preference reduction; no ImageIO thumbnail-decode stack appeared in that capture. This is diagnostic sampling, not a frame-time benchmark or proof that decoding never contributes. Raw process traces stay outside Git.
+
+Removed the workspace-state feedback from continuously changing tile positions: a main-actor, non-observable geometry holder now replaces current viewport frames without invalidating the workspace, while marquee selection still clips overscan, preserves modifier selection, and clears geometry on session/view changes. Hidden thumbnail quick actions are now conditionally constructed instead of keeping six invisible controls in the layout. Hover/selected visibility, stars/flags, shortcuts and image-worker/cache budgets remain unchanged. See ADR 0024 and [performance evidence](docs/PERFORMANCE.md#contact-sheet-scrolling-follow-up--2026-10-21).
+
+Formatting/strict checks pass: 150 registered tests (44 UI/imaging + 106 core), 148 executed and two optional RAW skips. New regressions cover updated/stale frame replacement, offscreen clipping, reverse-direction marquee and selection-base retention. Release app packaging and strict ad-hoc signature verification pass. Final native scrolling/control/marquee acceptance is pending because the Mac locked before the updated app could be opened; an unlock request is pending. No measured scrolling speedup, FPS, RSS or 10k/40k acceptance claim. Full repository checks pass for 161 tracked files, including links/data policy, workflow lint and redacted secret scans. Exact final-head CI/delivery evidence belongs in the delivery PR. Preserve the unrelated development-plan wording edit.
 
 ## Thumbnail quick actions — 2026-10-20
 

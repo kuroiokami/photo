@@ -179,3 +179,11 @@ See the [complete suggestion audit and reproducible hot-path measurements](PERFO
 ## Culling interaction stability — 2026-10-20
 
 Review context, batch summary and ordinary save status now reserve height, avoiding preview resizing when a normal saving message appears/disappears or review mode begins. Workflow setup retains the underlying browser identity in the main window; Trash removes only confirmed moved images without resetting the preview session, and late indexing results for removed items are rejected. Existing cache/decode/detail bounds and deliberate RAW policy remain. These are interaction changes verified in tests/native checks recorded in the tracker, not new frame-time, RAW latency, RSS or large-shoot benchmarks. Trash ownership indexes build once per folder; bulk Trash throughput and physical/network-volume availability remain unmeasured.
+
+## Contact-sheet scrolling follow-up — 2026-10-21
+
+A user reported slow scrolling through 115 JPEGs. Native inspection confirmed the 115-item Contact Sheet. A short pre-change CPU sample overlapped scrolling and included SwiftUI lazy-grid sizing/layout and `PhotoTileFrames` preference reduction; no ImageIO thumbnail-decoding stack appeared in that sample. A second sampling attempt did not reliably overlap the gesture, so it is not a valid paired measurement. Raw profiles remain in temporary local storage and are not published.
+
+The implementation removes two avoidable UI costs: viewport position changes no longer write to workspace `@State`, and invisible quick actions no longer create/layout all six controls. A stable, main-actor non-observable frame holder supplies marquee hit testing without invalidating the grid. Current-frame replacement and offscreen clipping are tested. Decoder workers, cache limits, thumbnail resolution and original-image behavior are unchanged.
+
+Strict checks pass: 150 registered tests, 148 executed and two optional RAW skips; optimized packaging and signature verification pass. The Mac locked before final native acceptance. Repeat cold and warm scrolling in the same folder, test thumbnail buttons and marquee after scrolling, and restore the user's selection after unlock. No numeric scroll/frame-time improvement or large-library acceptance is claimed. See ADR 0024 and the tracker/delivery PR for final evidence.
