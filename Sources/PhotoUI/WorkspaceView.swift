@@ -387,7 +387,7 @@ public struct WorkspaceView: View {
         GeometryReader { tile in
           Color.clear.preference(
             key: PhotoTileFrames.self,
-            value: [photo.id: tile.frame(in: .named("ContactSheetViewport"))])
+            value: [photo.id: tile.frame(in: .named("ContactSheetContent"))])
         })
   }
 
@@ -436,20 +436,29 @@ public struct WorkspaceView: View {
         case .ready:
           ScrollViewReader { proxy in
             ScrollView(showPreview ? .horizontal : .vertical) {
-              if showPreview {
-                LazyHStack(alignment: .top, spacing: 12) {
-                  ForEach(workspace.photos) { photo in
-                    framedThumbnail(photo).frame(width: thumbnailEdge + 16)
-                  }
-                }.padding(12)
-              } else {
-                LazyVGrid(
-                  columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-                  spacing: 16
-                ) {
-                  ForEach(workspace.photos) { photo in framedThumbnail(photo) }
-                }.padding(16)
+              Group {
+                if showPreview {
+                  LazyHStack(alignment: .top, spacing: 12) {
+                    ForEach(workspace.photos) { photo in
+                      framedThumbnail(photo).frame(width: thumbnailEdge + 16)
+                    }
+                  }.padding(12)
+                } else {
+                  LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+                    spacing: 16
+                  ) {
+                    ForEach(workspace.photos) { photo in framedThumbnail(photo) }
+                  }.padding(16)
+                }
               }
+              .coordinateSpace(name: "ContactSheetContent")
+              .background(
+                GeometryReader { content in
+                  Color.clear.preference(
+                    key: PhotoContentOrigin.self,
+                    value: content.frame(in: .named("ContactSheetViewport")).origin)
+                })
             }
             .simultaneousGesture(
               MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
@@ -464,6 +473,7 @@ public struct WorkspaceView: View {
             )
             .coordinateSpace(name: "ContactSheetViewport")
             .onPreferenceChange(PhotoTileFrames.self) { tileGeometry.replace(with: $0) }
+            .onPreferenceChange(PhotoContentOrigin.self) { tileGeometry.moveContent(to: $0) }
             .simultaneousGesture(
               DragGesture(minimumDistance: 5)
                 .onChanged { value in
@@ -572,9 +582,12 @@ public struct WorkspaceView: View {
   private func thumbnail(_ photo: PhotoItem) -> some View {
     let selected = workspace.selectedIDs.contains(photo.id)
     let decision = workspace.decisions[photo.id] ?? CullingDecision()
-    let information = thumbnailLabels.map { $0.label(workspace.metadata[photo.id]) }
-    let spokenValue = (["\(decision.flag.title), \(decision.rating) stars"] + information).joined(
-      separator: ", ")
+    let information = thumbnailLabels.map {
+      (field: $0, value: $0.label(workspace.metadata[photo.id]))
+    }
+    let spokenValue =
+      (["\(decision.flag.title), \(decision.rating) stars"] + information.map(\.value)).joined(
+        separator: ", ")
     return VStack(alignment: .leading, spacing: 6) {
       ThumbnailQuickActions(
         filename: photo.filename, selected: selected, canEdit: thumbnailReady(photo),
@@ -604,7 +617,7 @@ public struct WorkspaceView: View {
             Text("RAW + JPEG").font(.caption2)
           }
           Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
-          thumbnailInformation(photo)
+          thumbnailInformation(information)
         }.foregroundStyle(selected ? Color.white : Color.secondary).frame(
           maxWidth: .infinity, alignment: .leading
         ).contentShape(Rectangle())
@@ -743,12 +756,13 @@ public struct WorkspaceView: View {
   }
   private func pasteCrop() { if let copiedCrop { workspace.pasteCrop(copiedCrop) } }
 
-  private func thumbnailInformation(_ photo: PhotoItem) -> some View {
-    ForEach(thumbnailLabels) { field in
-      let value = field.label(workspace.metadata[photo.id])
-      Text(value).font(.caption2.monospacedDigit())
+  private func thumbnailInformation(_ information: [(field: ThumbnailInfoField, value: String)])
+    -> some View
+  {
+    ForEach(information, id: \.field) { item in
+      Text(item.value).font(.caption2.monospacedDigit())
         .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-        .help(field.title + ": " + value)
+        .help(item.field.title + ": " + item.value)
     }
   }
 

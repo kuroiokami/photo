@@ -359,3 +359,11 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Add targeted synthetic release scenarios and recovery/equivalence regressions; see [ADR 0027](decisions/0027-culling-hot-paths.md).
 - [ ] Complete native interaction/frame-time, representative 10k/40k mixed-RAW and physical-media/RSS acceptance. The synthetic 40k sort benchmark alone does not satisfy this.
 - [ ] Measure/prototype user-decision save batching separately, preserving durable pending intent, per-file XMP conflicts, interrupted recovery and Undo.
+
+## Contact-sheet rendering and native diagnostics — 2026-10-21
+
+- [x] Capture native main-thread stalls/CPU work rather than infer scroll feel from decoder timings; add an anonymized trace analyzer and parser tests.
+- [x] Simplify unedited rendering, use typed image request IDs, and reuse formatted labels while preserving edited-image rendering and immediate cache display.
+- [x] Keep tile geometry stable in content coordinates with one scroll offset; test both axes, replacement/clearing and visible-only marquee intersections.
+- [ ] Finish native marquee, hover/edits, keyboard/selection and density/filmstrip checks after unlock, then restore the original browsing context.
+- [ ] Complete matched native captures and physical-trackpad/real-camera/large-shoot acceptance before claiming smoother scrolling or Photo Mechanic parity; see ADR 0028.

@@ -41,3 +41,17 @@ Generation refuses an existing folder. Synthetic JPEG/PNG gradients vary in orie
 Publication counters count model update groups, not SwiftUI body evaluations or per-dictionary notifications. The nominal 10 ms heartbeat includes OS/scheduler delay and is not frame time. Report stage timings/counts/errors/source-byte protection together. See [results](PERFORMANCE.md) and [remaining experiments](WORKFLOW_PERFORMANCE_RESEARCH.md).
 
 API reference: [Apple OSSignposter](https://developer.apple.com/documentation/os/ossignposter).
+
+## Contact-sheet native stall reports
+
+With full Xcode selected and the release app open, warm the same rows, finish indexing, use a fixed window/display and record a repeatable scroll sequence:
+
+```sh
+xcrun xctrace record --template 'Animation Hitches' --attach Photo --time-limit 30s --output /tmp/photo-scroll.trace
+python3 scripts/analyze-scroll-trace.py /tmp/photo-scroll.trace > /tmp/photo-scroll-summary.json
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+```
+
+Wait for xctrace to finish saving and exit successfully before exporting; an early export can report Document Missing Template Error. If Command Line Tools is selected, use the full Xcode developer directory or pass `--xctrace /path/to/xctrace` to the analyzer. Only attach to one Photo process. Keep raw traces/XML outside Git: they can include process environment, symbol and filesystem information. The analyzer emits fixed aggregate fields and discards temporary exports.
+
+Compare equal input counts and fully captured input windows, with warm/cold state and indexing recorded. Scripted accessibility input adds focus/inspection overhead; a native physical-trackpad run is separate acceptance. Reports contain potential main-thread stall counts, their union/maximum duration and sampled CPU weight. These are not displayed FPS, confirmed dropped frames or body-evaluation counts. Inclusive CPU categories overlap. Frame-lifetime/surface tables without reliable app attribution are deliberately excluded. Baseline findings and incomplete comparisons belong in [performance notes](PERFORMANCE.md), not fastest/smoothest claims.
