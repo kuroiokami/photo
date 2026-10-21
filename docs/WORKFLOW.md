@@ -86,7 +86,7 @@ Choose Compare (C) in Preview to pin the current photo as a reference and start 
 
 Each pane has its own demand-only detail worker and 256 MiB retained region/full-image budget: comparison permits up to 512 MiB in total. Decoder/GPU/transient memory is additional. Fit/navigation releases detail. No speculative RAW rendering or full-detail cache is added.
 
-Select a burst and choose Review Selection from the toolbar or Review menu. Membership freezes the selected physical files; culling then starts with a single focused photo. Selection changes, filters and ratings do not change membership. Filters can temporarily hide members; End Selected Review removes this restriction. Changing/reloading the folder ends review. Unique RAW+JPEG grouping still represents its physical members together.
+Select a burst and choose Review Only Selected from the toolbar or Review menu. Membership freezes the selected physical files; culling then starts with a single focused photo. Selection changes, filters and ratings do not change membership. Filters can temporarily hide members; Show All Photos removes this restriction. Changing/reloading the folder ends review. Unique RAW+JPEG grouping still represents its physical members together.
 
 Labels adds at most two optional rows: exposure, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Choices persist locally. Rows use indexed EXIF and show missing values explicitly; they do not trigger image decoding. Hide Extra Labels restores the compact strip.
 
@@ -120,3 +120,11 @@ For a large shoot, preserve the complete verified shoot and independent backup, 
 For an urgent first delivery, **Choose keepers before copying → Start Culling → Current Selection** avoids a whole-source inventory before copying the first chosen set. Check its companions and keep the source until both copies verify. Photo-local crops/rotation still require an editor for rendered delivery output; source protection remains after copying.
 
 This recommendation combines the app’s measured embedded-preview approach and current verified-arrival behavior with Camera Bits’ [ingest documentation](https://camerabits.freshdesk.com/support/solutions/articles/48000207409-ingesting-photos) and [workflow handout](https://home.camerabits.com/wp-content/uploads/2023/06/Photo_Mechanic_101_Notes.pdf), plus Adobe’s [independent flags and ratings](https://helpx.adobe.com/lightroom-classic/desktop/organize-photos-in-lightroom-classic/flag-label-rate-photos.html). It is a workflow recommendation, not a comparative speed benchmark or verified editor round trip.
+
+## Keyboard culling and reject cleanup
+
+Use Z for Fit/100%, B/N to change photos even while inspecting, [/] to rotate and ⇧⌘C for a focused crop. P/X/U and stars remain independent; Shift applies a decision and advances. A focus/flag pass followed by keeper-only crop/caption work minimizes repeated edits to rejected photos. Composition edits still remain local to Photo.
+
+In a working folder, Show All Photos → Clear Filters → ⇧⌘X (Select Rejects) → ⌘Delete opens the exact Trash list. Return confirms; Escape cancels. RAW+JPEG grouping includes both files. Only exclusive sidecars accompany images; shared sidecars and other folders/backups stay intact. Restore images and sidecars with Finder Trash’s Put Back, then Reload Photo. Rejecting alone never deletes; protected sources cannot be trashed. See the [usage guide](USAGE.md#move-rejected-photos-to-trash) for failure/recovery boundaries.
+
+Workflow now stays in the main window. Back to Photos/Return to Culling returns to the retained browser; the protected source banner reopens copy setup directly. Background copies use Cull While Copying. Detailed file lists, saved-copy recovery, crop/help and Trash confirmation remain separate scoped views. This changes presentation, not verified-copy scopes or source protection.

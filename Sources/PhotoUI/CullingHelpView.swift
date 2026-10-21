@@ -26,7 +26,10 @@ struct CullingHelpView: View {
             row("0–5", "Set stars independently of flags; Shift applies and advances")
             row("T · ⌘T", "Toggle picks · Select visible picks")
             row("⌘A · ⌘D · ⇧⌘O", "Select all · Deselect all · Invert selection")
-            row("Arrows · Space · Escape", "Navigate · Toggle preview · Hide preview")
+            row("Arrows · B / N", "Navigate; B / N always change photos, including while zoomed")
+            row("Z · [ / ]", "Fit / 100% · Rotate left / right")
+            row("Space · Escape", "Toggle preview · Hide preview")
+            row("⇧⌘X · ⌘Delete", "Select visible rejects · Review and move selection to Trash")
             row("C · G · L · O", "Compare · Pin current · Link zoom/pan · Single image")
             row("⌘G · M", "Ingest · Bulk Rename")
             row("I / ⌘I / ⌘K", "IPTC & Keywords")
@@ -40,10 +43,10 @@ struct CullingHelpView: View {
             "Pinch over the preview to magnify; two-finger scrolling pans. Click thumbnail stars or its flag menu to decide directly. Rotate/mirror/crop is saved in Photo only and does not transfer to Lightroom yet. At 100%, click the zoom navigator to center a new area or drag its white frame. With the navigator focused, arrows pan and Shift moves one view at a time. Click a thumbnail to resume photo navigation."
           )
           Text(
-            "Hover over controls for explanations. Reject never deletes photos. RAW+JPEG grouping targets both files of a unique pair. Auto-advance applies only to single-photo decisions. Choose Photo Home for your usual photo folder. Rename before delivery or editor import; use Deliver / Edit to prepare copies."
+            "Hover over controls for explanations. X only marks rejects. To remove them from a working folder, choose Show All Photos and Clear Filters, then Remove → Select Rejects and ⌘Delete. Check the list and choose Move to Trash; restore with Finder → Trash → Put Back. Pre-copy sources stay protected; copy only keepers instead. RAW+JPEG grouping targets both files of a unique pair. Auto-advance applies only to single-photo decisions. Choose Photo Home for your usual photo folder. Rename before delivery or editor import; use Deliver / Edit to prepare copies."
           ).foregroundStyle(.secondary)
           Text(
-            "Review Selection freezes a burst while you cull individual photos; End Review returns to the folder. Labels adds up to two remembered EXIF rows. Verified Photo ingest arrivals appear automatically. IPTC & Keywords has separate, persistent Undo/Redo for the latest 20 metadata batches."
+            "Select two or more photos and choose Review Only Selected to hide other photos while judging that group individually. Show All Photos restores the folder. Labels adds up to two remembered EXIF rows. Verified Photo ingest arrivals appear automatically. IPTC & Keywords has separate, persistent Undo/Redo for the latest 20 metadata batches."
           )
         }
       }

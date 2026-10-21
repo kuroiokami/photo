@@ -20,7 +20,7 @@ struct IngestWorkflowView: View {
 
   let model: WorkflowModel
   let showWalkthrough: () -> Void
-  @Environment(\.dismiss) private var dismiss
+  let returnToPhotos: () -> Void
   @AppStorage(WorkflowGuidance.dismissalKey) private var hideIntroduction = false
   @IngestStorage private var introductionDismissed = false
   @IngestStorage private var step: Step
@@ -42,7 +42,11 @@ struct IngestWorkflowView: View {
   @IngestStorage private var showingPending = false
   @IngestStorage private var resumePlan: ReviewedCopyPlan?
 
-  init(model: WorkflowModel, showWalkthrough: @escaping () -> Void) {
+  init(
+    model: WorkflowModel, showWalkthrough: @escaping () -> Void,
+    returnToPhotos: @escaping () -> Void
+  ) {
+    self.returnToPhotos = returnToPhotos
     self.model = model
     self.showWalkthrough = showWalkthrough
     _source = State(initialValue: model.workspace.sourceReview?.root.path ?? "")
@@ -219,7 +223,7 @@ struct IngestWorkflowView: View {
       HStack {
         Button("Back") { step = .source }
         if reviewedSource {
-          Button("Return to Culling") { dismiss() }
+          Button("Return to Culling") { returnToPhotos() }
         }
         Spacer()
         Button("Review Copy Setup →") {
@@ -328,7 +332,7 @@ struct IngestWorkflowView: View {
           }
         }
         Spacer()
-        if !model.busy { Button("Return to Photos") { dismiss() } }
+        if !model.busy { Button("Return to Photos") { returnToPhotos() } }
       }
     }
   }

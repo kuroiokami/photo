@@ -21,6 +21,9 @@ struct WorkspaceActions {
   let copyCrop: @MainActor () -> Void
   let pasteCrop: @MainActor () -> Void
   let canPasteCrop: Bool
+  let inspect: @MainActor () -> Void
+  let trash: @MainActor () -> Void
+  let canTrash: Bool
 }
 
 private struct WorkspaceActionsKey: FocusedValueKey {
@@ -139,6 +142,11 @@ public struct WorkspaceCommands: Commands {
           }
         }
         .keyboardShortcut(.end, modifiers: [])
+        Button("Previous Photo While Zoomed") { actions?.workspace.moveSelection(by: -1) }
+          .keyboardShortcut("b", modifiers: [])
+        Button("Next Photo While Zoomed") { actions?.workspace.moveSelection(by: 1) }
+          .keyboardShortcut("n", modifiers: [])
+        Button("Fit / 100%") { actions?.inspect() }.keyboardShortcut("z", modifiers: [])
         Button("Toggle Preview") { actions?.togglePreview() }
           .keyboardShortcut(.space, modifiers: [])
         Button("Hide Preview") { actions?.hidePreview() }
@@ -147,9 +155,11 @@ public struct WorkspaceCommands: Commands {
     }
     CommandMenu("Image") {
       Group {
-        ForEach([PhotoEditAction.counterclockwise, .clockwise, .horizontal, .vertical], id: \.self)
-        {
-          action in
+        Button("Rotate Left") { actions?.workspace.editSelection(.counterclockwise) }
+          .keyboardShortcut("[", modifiers: [])
+        Button("Rotate Right") { actions?.workspace.editSelection(.clockwise) }
+          .keyboardShortcut("]", modifiers: [])
+        ForEach([PhotoEditAction.horizontal, .vertical], id: \.self) { action in
           Button(action.rawValue) { actions?.workspace.editSelection(action) }
         }
         Divider()
@@ -184,7 +194,7 @@ public struct WorkspaceCommands: Commands {
         Divider()
         Button(
           actions?.workspace.reviewingSelection == true
-            ? "End Selected Review" : "Review Selected Photos"
+            ? "Show All Photos" : "Review Only Selected"
         ) {
           guard let workspace = actions?.workspace else { return }
           if workspace.reviewingSelection {
@@ -194,7 +204,7 @@ public struct WorkspaceCommands: Commands {
           }
         }.disabled(
           actions?.workspace.reviewingSelection != true
-            && actions?.workspace.selectedIDs.isEmpty != false)
+            && (actions?.workspace.selectedIDs.count ?? 0) < 2)
       }
     }
     CommandMenu("Decisions") {
@@ -205,6 +215,10 @@ public struct WorkspaceCommands: Commands {
           "o", modifiers: [.command, .shift])
         Button("Select Picks") { actions?.workspace.selectPicks() }.keyboardShortcut(
           "t", modifiers: .command)
+        Button("Select Rejects") { actions?.workspace.selectRejects() }
+          .keyboardShortcut("x", modifiers: [.command, .shift])
+        Button("Move Selected to Trash…") { actions?.trash() }
+          .keyboardShortcut(.delete, modifiers: .command).disabled(actions?.canTrash != true)
         Button("Toggle Picks") { actions?.workspace.togglePicks() }.keyboardShortcut(
           "t", modifiers: []
         )

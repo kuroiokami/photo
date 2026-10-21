@@ -175,3 +175,7 @@ Optimized packaging/signature checks pass. Native synthetic source directory/ima
 ## Performance suggestion review — 2026-10-20
 
 See the [complete suggestion audit and reproducible hot-path measurements](PERFORMANCE_REVIEW.md). Release microbenchmarks confirm and remove linear cache-hit scaling, and measure actor-owned EXIF parser/coder reuse plus duplicate identity-stat removal. The aggregate before/after report is linked there. These synthetic warm-read results do not change historical RAW startup/detail targets or establish 10k/40k native acceptance. Batch persistence, observation/selection costs, rating reorders and decoder concurrency remain targeted profiling work.
+
+## Culling interaction stability — 2026-10-20
+
+Review context, batch summary and ordinary save status now reserve height, avoiding preview resizing when a normal saving message appears/disappears or review mode begins. Workflow setup retains the underlying browser identity in the main window; Trash removes only confirmed moved images without resetting the preview session, and late indexing results for removed items are rejected. Existing cache/decode/detail bounds and deliberate RAW policy remain. These are interaction changes verified in tests/native checks recorded in the tracker, not new frame-time, RAW latency, RSS or large-shoot benchmarks. Trash ownership indexes build once per folder; bulk Trash throughput and physical/network-volume availability remain unmeasured.

@@ -62,6 +62,22 @@ private actor DelayedMetadata: PhotoMetadataReading {
 
 @MainActor
 struct MetadataSessionTests {
+  @Test func removedPhotoCannotPublishDelayedMetadataIntoTheSameSession() async {
+    let photo = PhotoItem(fileURL: URL(fileURLWithPath: "/benchmark/removed.ARW"))
+    let state = WorkspaceState(photos: [photo])
+    let session = state.sessionID
+    let reader = DelayedMetadata()
+    let indexing = Task { await state.indexMetadata(using: reader) }
+    await reader.waitForRead()
+    state.removeTrashedPhotos([photo.fileURL!])
+    await reader.finish()
+    await indexing.value
+    #expect(state.sessionID == session)
+    #expect(state.photos.isEmpty)
+    #expect(state.metadata.isEmpty)
+    #expect(state.indexedCount == 0)
+  }
+
   @Test func navigationAndSessionSwitchRejectLateMetadata() async {
     let photos = (0..<10_000).map {
       PhotoItem(fileURL: URL(fileURLWithPath: "/benchmark/Photo\($0).ARW"))

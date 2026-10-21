@@ -66,7 +66,7 @@ struct DetailPreviewView: View {
             state.zoom && abs(state.magnification - 1) < 0.005 ? "Selected" : "Not selected"
           )
           .help(
-            "One image pixel per physical display pixel. Pinch to adjust magnification; two-finger scrolling pans."
+            "Z toggles Fit / 100%. One image pixel per physical display pixel. Pinch to adjust magnification; two-finger scrolling pans."
           )
         Spacer()
         if state.zoom, state.image == nil, state.error == nil {
@@ -145,7 +145,7 @@ struct DetailPreviewView: View {
         }
       }
     }
-    .onChange(of: comparison?.request(for: pane)) { _, request in
+    .onChange(of: comparison?.request(for: pane), initial: true) { _, request in
       guard let request else { return }
       switch request.action {
       case .fit: fit()

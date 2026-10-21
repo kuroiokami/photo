@@ -18,7 +18,7 @@ Photo is open source and in active development. You can build it from source tod
 | Feature | What it does |
 | --- | --- |
 | **Browse without importing** | Open a folder or memory card. Keep favorite folders in the sidebar and explore their subfolders. |
-| **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. |
+| **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. Review selected rejects and move them to macOS Trash. |
 | **Check the details** | Zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; full RAW rendering happens when you request detail. |
 | **Review before copying** | Make culling decisions locally while Photo keeps the source protected. Choose which photos to copy, verify both destinations, and carry your decisions to the working copies. |
 | **Organize a shoot** | Rename batches, add shared IPTC fields without replacing unrelated metadata, and apply captions, copyright and hierarchical keywords. |
@@ -43,7 +43,7 @@ The [installation guide](docs/INSTALLATION.md) walks through installing Apple's 
 
 1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Choose keepers before copying → Start Culling**. Expand the card in the sidebar if your photos are in a subfolder.
 2. Move through photos with the arrow keys. Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** to rate. Rejecting never deletes a photo.
-3. Double-click the preview or choose **100%** to inspect focus. Compare similar frames, then filter down to your keepers.
+3. Press **Z** to switch between Fit and 100% for focus inspection; **[ / ]** rotate, and **B / N** always browse previous/next photos. Compare similar frames, then filter down to your keepers.
 4. Copy reviewed photos to your Photo and Backup folders, or continue organizing existing working copies. Add metadata, rename, and prepare delivery copies when ready.
 
 The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**. You can dismiss the introduction permanently and reopen the walkthrough whenever you need it.
@@ -59,7 +59,7 @@ The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**.
 
 ### Current limitations
 
-Photo keeps original image bytes unchanged. Rotate, mirror and crop edits currently stay within Photo; they are not applied to delivery copies or transferred to Lightroom. Ratings, flags and descriptive metadata use a separate XMP workflow.
+Photo keeps original image bytes unchanged. Explicit **Move to Trash** removes selected working files and exclusive sidecars from their folder; Finder can restore them. Protected pre-copy sources cannot be trashed. Rotate, mirror and crop edits currently stay within Photo; they are not applied to delivery copies or transferred to Lightroom. Ratings, flags and descriptive metadata use a separate XMP workflow.
 
 Lightroom application-level round trips, real Canon CRW files, broader camera/platform coverage and representative 10–40k-photo workflows still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
 

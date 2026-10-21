@@ -97,3 +97,7 @@ Photo-local crops/rotation/mirroring transfer to both copies in Photo’s databa
 Protected review, explicit subset planning and verified handover are implemented. Physical-card/native/scale acceptance remains separately tracked. Do not weaken decision transfer or claim unmeasured performance. Use synthetic or redistributable fixtures for automated tests; run destructive/interruption experiments only on disposable media/copies. Existing original-byte, cancellation, stale-result and full-detail budget checks remain required.
 
 This plan does not implement FTP/upload, a one-copy deadline mode, RAW-to-JPEG publication rendering, Lightroom crop exchange or continuous source watching.
+
+## Returning to photos and removing rejects
+
+Ingest setup now uses the main window. Start Culling returns to photos; Copy Reviewed Photos in the source banner returns to copy setup. Back to Photos/Return to Culling and Cull While Copying make the return explicit. Sources remain protected, including against the new Move to Trash command. Copy your keepers rather than deleting rejects from a card. To remove rejects from ordinary working copies later, use Remove → Select Rejects → ⌘Delete, review the list and confirm; copies in other folders/backups remain intact. Finder Trash provides restoration. See the [usage guide](USAGE.md#move-rejected-photos-to-trash).

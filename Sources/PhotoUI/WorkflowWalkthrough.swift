@@ -68,7 +68,7 @@ struct WorkflowWalkthrough: View {
             )
             section(
               "Example: a wedding burst",
-              "Select a burst and use Review Selection to keep that group together while choosing individual frames. End Review returns to the folder. Select multiple thumbnails to apply a shared flag or star rating."
+              "Select a burst and use Review Only Selected to keep that group together while choosing individual frames. Show All Photos returns to the folder. Select multiple thumbnails to apply a shared flag or star rating."
             )
           case 3:
             section(
