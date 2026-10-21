@@ -1,7 +1,7 @@
 # 0020 — Public repository and development standards
 
 - Date: 2026-10-20
-- Status: Accepted; exact GitHub settings/validation evidence are in PROJECT_STATUS.md
+- Status: Accepted; license choice superseded by [0021](0021-dual-licensing.md). Exact GitHub settings/validation evidence are in PROJECT_STATUS.md
 
 ## Decision
 

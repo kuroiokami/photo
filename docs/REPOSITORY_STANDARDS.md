@@ -1,6 +1,6 @@
 # Repository standards
 
-Photo is a development-preview macOS application, licensed under [Apache-2.0](../LICENSE) with [NOTICE](../NOTICE). This document is the shared human/AI maintenance contract alongside [AGENTS.md](../AGENTS.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
+Photo is a development-preview macOS application, dual-licensed under [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE), at the recipient’s option, with [NOTICE](../NOTICE). This document is the shared human/AI maintenance contract alongside [AGENTS.md](../AGENTS.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Contributions and evidence
 
@@ -21,9 +21,9 @@ Workflows run on PRs and pushes to `main`, use read-only token permissions, do n
 
 ## Releases and licensing
 
-There is no signed/notarized public download yet. Maintain Unreleased entries in CHANGELOG.md; use semantic `vMAJOR.MINOR.PATCH` tags only for an accepted release with notes, tested platforms/cameras, original-file/recovery evidence, checksums and LICENSE/NOTICE. Follow [distribution acceptance](DISTRIBUTION.md). Public source availability does not complete packaging or platform verification.
+There is no signed/notarized public download yet. Maintain Unreleased entries in CHANGELOG.md; use semantic `vMAJOR.MINOR.PATCH` tags only for an accepted release with notes, tested platforms/cameras, original-file/recovery evidence, checksums, LICENSE-MIT, LICENSE-APACHE and NOTICE. Follow [distribution acceptance](DISTRIBUTION.md). Public source availability does not complete packaging or platform verification.
 
-The maintainer selected Apache-2.0 on 2026-10-20. The license covers project code/documentation and original synthetic fixtures unless a file explicitly says otherwise. External RAW sample references keep their recorded independent licenses; no external photo bytes are distributed here. Preserve third-party notices if dependencies/assets are introduced.
+The maintainer selected MIT OR Apache-2.0 on 2026-10-20, matching ArtCraft’s recipient-choice model. Both licenses cover project code/documentation and original synthetic fixtures unless a file explicitly says otherwise. External RAW sample references keep their recorded independent licenses; no external photo bytes are distributed here. Preserve third-party notices if dependencies/assets are introduced.
 
 ## Publication audit
 

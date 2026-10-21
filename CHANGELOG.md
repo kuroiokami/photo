@@ -4,6 +4,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Licensing
+
+- Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.
+
 ### Documentation
 
 - Simplified the README and contribution/support guides, added a public roadmap, and kept detailed validation in the project tracker.
@@ -16,7 +20,7 @@ User-visible changes are collected here before a release. Development evidence a
 - Protected pre-copy culling, explicit copy scopes, dual-destination verification, decision/composition handover and resumable saved copy lists.
 - Field-specific IPTC/keywords, preserving XMP synchronization, metadata history, reviewed rename/recovery and delivery copies.
 - Photo-local rotate/mirror/crop and a dismissible workflow walkthrough.
-- Apache-2.0 licensing, contributor/support/security policies, issue/PR templates and repository hygiene/secret checks.
+- MIT OR Apache-2.0 licensing, contributor/support/security policies, issue/PR templates and repository hygiene/secret checks.
 
 ### Current limits
 

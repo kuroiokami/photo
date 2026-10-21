@@ -1,6 +1,7 @@
 Photo
 Copyright 2026 kuroiokami and Photo contributors
 
-Licensed under the Apache License, Version 2.0.
+Dual-licensed under MIT or Apache License, Version 2.0, at your option.
+See LICENSE-MIT and LICENSE-APACHE for the full terms.
 The synthetic gradient fixtures were created for this project; see
 Sources/PhotoUI/Resources/PROVENANCE.md.
