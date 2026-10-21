@@ -225,6 +225,7 @@ public struct WorkspaceView: View {
         sourceReviewBanner
       }
       filterBar
+      imageEditControls
       Divider()
       VStack(spacing: 0) {
         if showPreview && !workspace.photos.isEmpty {
@@ -720,6 +721,56 @@ public struct WorkspaceView: View {
     }
   }
 
+  private var imageEditControls: some View {
+    HStack(spacing: 8) {
+      Text("Image").foregroundStyle(.secondary)
+      Button {
+        workspace.editSelection(.counterclockwise)
+      } label: {
+        HStack(spacing: 6) {
+          Label("Rotate Left", systemImage: "rotate.left")
+          Text("[").font(.caption.monospaced()).foregroundStyle(.secondary)
+        }
+      }.accessibilityLabel("Rotate Left")
+        .help("Rotate selected photos left 90° ([). With a group selected, rotate the whole group.")
+      Button {
+        workspace.editSelection(.clockwise)
+      } label: {
+        HStack(spacing: 6) {
+          Label("Rotate Right", systemImage: "rotate.right")
+          Text("]").font(.caption.monospaced()).foregroundStyle(.secondary)
+        }
+      }.accessibilityLabel("Rotate Right")
+        .help(
+          "Rotate selected photos right 90° (]). With a group selected, rotate the whole group.")
+      Menu("Mirror") {
+        Button("Flip Left / Right") { workspace.editSelection(.horizontal) }
+        Button("Flip Top / Bottom") { workspace.editSelection(.vertical) }
+      }.fixedSize().help(
+        "Flip selected photos horizontally or vertically. Rotation changes orientation in 90° steps."
+      )
+      Button {
+        croppingPhoto = workspace.selectedPhoto
+      } label: {
+        HStack(spacing: 6) {
+          Label("Crop…", systemImage: "crop")
+          Text("⇧⌘C").font(.caption).foregroundStyle(.secondary)
+        }
+      }.accessibilityLabel("Crop")
+        .help(
+          "Crop the current photo (⇧⌘C). To reuse its crop, choose Image → Copy Crop, then Paste Crop to Selection."
+        )
+      Spacer(minLength: 0)
+      Text("Photo-only edits").font(.caption2).foregroundStyle(.secondary)
+        .help(
+          "Rotation, mirror and crop are saved in Photo. Originals stay unchanged; these edits are not yet applied to delivery copies or Lightroom."
+        )
+    }
+    .font(.caption).buttonStyle(.bordered).controlSize(.small)
+    .disabled(!workspace.decisionSelectionReady)
+    .padding(.horizontal, 20).padding(.bottom, 8)
+  }
+
   private var previewPane: some View {
     VStack(spacing: 6) {
       HStack(spacing: 12) {
@@ -766,26 +817,6 @@ public struct WorkspaceView: View {
         .help("Show the full contact sheet (Space or Escape).")
       }.buttonStyle(.borderless).padding(.horizontal, 12).padding(.top, 8)
       if let photo = workspace.selectedPhoto {
-        HStack {
-          Button {
-            workspace.editSelection(.counterclockwise)
-          } label: {
-            Label("Rotate Left", systemImage: "rotate.left")
-          }
-          Button {
-            workspace.editSelection(.clockwise)
-          } label: {
-            Label("Rotate Right", systemImage: "rotate.right")
-          }
-          Menu("Mirror") {
-            Button("Horizontally") { workspace.editSelection(.horizontal) }
-            Button("Vertically") { workspace.editSelection(.vertical) }
-          }
-          Button("Crop…") { croppingPhoto = workspace.selectedPhoto }
-          Spacer()
-          Text(workspace.editStatus).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-        }.buttonStyle(.borderless).font(.caption).padding(.horizontal, 12).disabled(
-          !workspace.decisionSelectionReady)
         if comparison.enabled { comparisonControls }
         HStack(alignment: .top, spacing: 12) {
           if let reference = comparison.reference {
