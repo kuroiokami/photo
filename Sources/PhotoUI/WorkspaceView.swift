@@ -1096,7 +1096,7 @@ public struct WorkspaceView: View {
       Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
         .font(.callout.bold())
       Text(
-        "Choose keepers here: click photos and press P to pick, X to reject, or 0–5 for stars. Then choose Copy Reviewed Photos below. Your source stays unchanged."
+        "Open a subfolder in the sidebar if needed. Click photos and press P to pick, X to reject, or 0–5 for stars. Then choose Copy Reviewed Photos below. Your source stays unchanged."
       )
       .font(.caption).foregroundStyle(.secondary)
       Text(
