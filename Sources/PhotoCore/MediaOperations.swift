@@ -442,7 +442,8 @@ public actor MediaOperations {
     return try FileManager.default.contentsOfDirectory(
       at: journalDirectory, includingPropertiesForKeys: nil
     )
-    .filter { $0.pathExtension == "json" }.filter {
+    .filter { $0.pathExtension == "json" && !$0.lastPathComponent.hasPrefix("review-copy-") }.filter
+    {
       let plan = try JSONDecoder().decode(RenamePlan.self, from: Data(contentsOf: $0))
       return ["executing", "rollingBack"].contains(plan.phase)
     }

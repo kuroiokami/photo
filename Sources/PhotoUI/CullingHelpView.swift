@@ -16,6 +16,9 @@ struct CullingHelpView: View {
             "Open a folder with ⌘O. It stays in the sidebar until you remove its shortcut. Expand the arrow to see subfolders; click a name to display that folder’s photos."
           )
           Text(
+            "To cull before copying: open Workflow → Ingest, choose your Card or folder, leave Choose keepers before copying selected, and click Start Culling. Mark keepers with P in the main window. Then use Copy Reviewed Photos in the source banner, choose destinations and a copy scope, review the setup, and copy both destinations."
+          )
+          Text(
             "Click a photo, ⌘-click to add or remove individual photos, or Shift-click to select a range. Shift-arrow extends the range. Drag a rectangle to select visible thumbnails; hold ⌘ or Shift to add to the selection."
           )
           Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 7) {

@@ -100,6 +100,20 @@ private struct ReviewedIngestFixture {
 }
 
 struct ReviewedIngestTests {
+  @Test func reviewedCopyJournalsDoNotBecomeRenameRecovery() async throws {
+    let f = try ReviewedIngestFixture()
+    defer { try? FileManager.default.removeItem(at: f.root) }
+    _ = try f.file("a.png")
+    let plan = try await f.plan()
+    try f.stageBytes(plan)
+    #expect(try await f.operations.savedReviewedCopies().count == 1)
+    #expect(try await f.operations.pendingRenames().isEmpty)
+    // A malformed rename journal still needs attention; do not hide arbitrary errors.
+    try Data("broken rename".utf8).write(
+      to: f.journals.appendingPathComponent("\(UUID().uuidString).json"))
+    await #expect(throws: (any Error).self) { _ = try await f.operations.pendingRenames() }
+  }
+
   @Test func sourceWideScopesCountUnreviewedAndSelectionIgnoresUnrelatedMetadata() async throws {
     let f = try ReviewedIngestFixture()
     defer { try? FileManager.default.removeItem(at: f.root) }

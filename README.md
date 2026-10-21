@@ -41,7 +41,7 @@ The [installation guide](docs/INSTALLATION.md) walks through installing Apple's 
 
 ## Your first culling session
 
-1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Review Before Copying**.
+1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Choose keepers before copying → Start Culling**.
 2. Move through photos with the arrow keys. Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** to rate. Rejecting never deletes a photo.
 3. Double-click the preview or choose **100%** to inspect focus. Compare similar frames, then filter down to your keepers.
 4. Copy reviewed photos to your Photo and Backup folders, or continue organizing existing working copies. Add metadata, rename, and prepare delivery copies when ready.

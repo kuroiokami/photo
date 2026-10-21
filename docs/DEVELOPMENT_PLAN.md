@@ -272,3 +272,13 @@ Documentation validation and delivery evidence are tracked in PROJECT_STATUS.md 
 - [x] Keep complete license texts, consistent contribution/distribution guidance and license-integrity checks; preserve third-party terms and existing Git history.
 
 See ADR 0021 and the tracker/delivery PR for validation and remote CI evidence.
+
+## Clear ingest setup — 2026-10-20
+
+- [x] Replace the scrolling main ingest form with bounded source, destination, confirmation and progress pages.
+- [x] Make Start Culling and the source-banner return explicit; default reviewed copying to Picks Only and retain other explicit scopes.
+- [x] Keep detailed file lists, saved-copy recovery and full status in separate views; retain source protection and frozen plans.
+- [x] Verify native layout and both cull-first and copy-first flows on disposable images, including original hashes, saved resume and final packaged fixes.
+- [x] Pass local Swift checks; record repository checks and exact final-head required CI/merge evidence in the delivery PR. Broader compact-display/VoiceOver/platform and physical-card acceptance remain open.
+
+See ADR 0022 and the tracker for observed evidence.

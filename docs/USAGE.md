@@ -30,7 +30,7 @@ Open **Workflow → Ingest** for a small introduction, then choose **Show Walkth
 Reopen it from **Help → Photo Quick Start & Shortcuts → Workflow Walkthrough**, or the **Workflow Walkthrough** button in the workflow panel. Uncheck the same checkbox to restore the ingest invitation. The guide never runs a file operation or changes photo decisions; it does not open automatically over browsing or while copying.
 
 
-1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Review Before Copying** to choose photos before copying them with their review decisions.
+1. **Open a working folder** with **⌘O**. For a card, use verified ingest for copied output, or **Workflow → Ingest → Choose keepers before copying → Start Culling** to choose photos before copying them with their review decisions.
 2. **Scan in Fit.** Use the large Preview and bottom filmstrip, or press **Space** for the Contact Sheet grid.
 3. **Make decisions.** Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** for stars. Flags and stars are independent. Reject does not delete anything.
 4. **Inspect focus deliberately.** Double-click the large image, choose **100%**, or pinch out over the preview. Pan with a two-finger scroll or drag; use the small navigator to jump to another area.
@@ -44,7 +44,7 @@ For a safe introduction, choose **Show Sample Collection**. Sample decisions and
 
 - **News or wire deadline:** copy and verify, begin culling as verified photos arrive, caption the keepers and prepare delivery copies in **Deliver / Edit**. Lightroom is optional. JPEG/PNG delivery copies can carry embedded captions/copyright. RAW files still require a RAW-capable editor; Photo does not yet render publication JPEGs, apply its local crop to exports or upload to an agency.
 - **Wedding or large shoot:** keep the shoot under Photo Home, verify both copies, cull in passes with flags/stars and compare similar frames. Add shared rights/event metadata, then individual captions/keywords. Rename survivors before importing into Lightroom or another editor. A 10–40k-photo shoot is a design target, not a newly verified performance claim.
-- **Review before copying:** Workflow → Ingest → choose the card/source → **Review Before Copying**. Stars, flags, Undo and Photo-local rotate/mirror/crop save on this Mac while the source stays protected. Choose **Copy Reviewed Photos…** in the source banner, prepare an explicit copy list and copy to both destinations with the review decisions. [Workflow and recovery](PRE_COPY_CULLING.md).
+- **Review before copying:** Workflow → Ingest → choose the card/source → **Start Culling**. Stars, flags, Undo and Photo-local rotate/mirror/crop save on this Mac while the source stays protected. Choose **Copy Reviewed Photos…** in the source banner, prepare an explicit copy list and copy to both destinations with the review decisions. [Workflow and recovery](PRE_COPY_CULLING.md).
 
 
 ## 2. Workspace and saved folders
@@ -231,10 +231,13 @@ Image-edit values survive restart; session Undo does not. Watch the status for *
 
 Open **Workflow → Ingest** (**⌘G**):
 
-1. Choose the card/source folder.
+The setup stays on one screen at a time: **Choose photos → Set up copies → Review & copy → Copying**. Back returns to the previous step. File inventories, saved-copy recovery and full status messages open separately; the main setup does not scroll.
+
+
+1. Choose the card/source folder, select **Copy the entire shoot first**, then **Set Up Copies →**.
 2. Choose your **Photo folder** and **Backup folder**. Prefer separate drives for independence; Photo warns when both are on the same volume.
 3. Enter a unique **Shoot name**, such as `2026-10-20_Wedding`.
-4. Choose **Copy & Verify Both Copies**.
+4. Choose **Review Copy Setup →**, check the destinations, then **Copy & Verify Both Copies**.
 5. Use **Continue Browsing** while it runs. Keep the card until the operation reports successful verification.
 
 Both destinations receive `Shoot name/Originals/<source folders>`. Photo recurses for ingest, copies supported images and matching XMP/ACR companions, verifies SHA-256, and records durable manifests. It does not erase/eject/format the card.
@@ -245,21 +248,21 @@ Re-running verifies matching copies; differing targets are not overwritten. Canc
 
 ### Review a source before copying
 
-1. In **Workflow → Ingest**, choose the card/source using **Copy from → Choose…**.
-2. Click **Review Before Copying**. Photo protects that source and opens it for browsing. If another file operation is running, finish it first.
+1. In **Workflow → Ingest**, choose the card/source using **Card or folder → Choose…**.
+2. Choose **Choose keepers before copying**, then click **Start Culling**. Photo protects that source and opens it for browsing. If another file operation is running, finish it first.
 3. Check the **Reviewing source · Source unchanged** banner. P/X/U, 0–5, multi-selection, filtering, comparison, Fit/detail and Photo-local composition work as usual. An explicit decision marks the file reviewed; merely navigating does not. Clearing an already-clear flag also counts, and Undo restores the previous reviewed state.
 4. Expand the source in the sidebar and click child folders. Protection and local decisions restore after Reload or relaunch. A second window cannot write normal XMP/metadata into this source.
 5. Watch for **Review saved on this Mac** or **Review edits saved on this Mac**. Actual save failures expose review retry; they are not XMP errors.
 
-6. Choose **Copy Reviewed Photos…** in the source banner (or return to Workflow → Ingest). Set Photo folder, Backup folder and Shoot name.
-7. Choose a scope, then **Prepare Copy List**. Review photo/file counts, unreviewed inclusions/omissions, source bytes and destinations. Expand **Files in this frozen list** to inspect paths. RAW+JPEG additions are listed; an added companion with an opposing flag needs explicit confirmation or a new plan with pair grouping off.
-8. Click **Copy Reviewed Photos**. Photo verifies both copies and saves their independent stars/flags and Photo-local image edits. Continue culling the source, or explicitly choose **Review Copied Photos** once a verified group is available. The source is not automatically replaced on screen.
+6. Choose **Copy Reviewed Photos…** in the source banner (or return to Workflow → Ingest). Set Photo folder, Backup folder and Shoot name. Picks Only is the default; change Photos to copy if you need another scope.
+7. Choose a scope, then **Review Copy Setup →**. Review photo/file counts, unreviewed inclusions/omissions, source bytes and destinations. Choose **View Files & Details…** to inspect paths. RAW+JPEG additions are listed; an added companion with an opposing flag needs explicit confirmation or a new plan with pair grouping off.
+8. Click **Copy & Verify Both Copies**. Photo verifies both copies and saves their independent stars/flags and Photo-local image edits. Continue culling the source, or explicitly choose **Review Copied Photos** once a verified group is available. The source is not automatically replaced on screen.
 9. Wait for both verification and metadata readiness before delivery. Add captions/keywords and rename on the working copy; backup is the initial snapshot, not a mirror of later changes.
 
 | Copy choice | Included photos |
 | --- | --- |
-| All Photos (default) | Every supported source photo across subfolders, including rejects and unreviewed photos |
-| Picks Only | Picks across the source, including flags imported from existing XMP |
+| All Photos | Every supported source photo across subfolders, including rejects and unreviewed photos |
+| Picks Only (default after culling) | Picks across the source, including flags imported from existing XMP |
 | Everything Except Rejects | Unflagged and unreviewed photos as well as picks |
 | Current Selection | The exact selected physical files, plus explicitly enabled pair companions; other source folders are not scanned or counted |
 

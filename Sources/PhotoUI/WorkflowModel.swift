@@ -16,6 +16,7 @@ final class WorkflowModel {
   let workspace: WorkspaceState
   let mediaOperations: MediaOperations
   var requestedTab = 0
+  var opensReviewedCopySetup = false
   var sourceReviewLaunch: UUID?
   var reviewedCopyPlan: ReviewedCopyPlan?
   var savedReviewCopies: [ReviewedCopyPlan] = []
@@ -136,6 +137,10 @@ final class WorkflowModel {
   }
   func ingest(source: String, primary: String, backup: String, job: String) {
     run(background: true) { [self] in
+      copiedReviewFolder = nil
+      reviewMetadataPending = 0
+      reviewMetadataPendingImages = []
+      handoffFolder = nil
       guard !job.isEmpty, job != ".", job != "..", !job.contains(where: { "/\\:".contains($0) })
       else {
         throw MediaOperationError.invalid(

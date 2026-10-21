@@ -8,6 +8,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 - Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.
 
+### Workflow
+
+- Replace the scrolling ingest form with explicit source, destination, confirmation and progress steps; explain how to start culling and copy picks.
+
 ### Documentation
 
 - Simplified the README and contribution/support guides, added a public roadmap, and kept detailed validation in the project tracker.
