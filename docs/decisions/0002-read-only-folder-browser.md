@@ -39,3 +39,5 @@ Camera Bits' documented contact-sheet screenshots and interaction guidance infor
 ## Implementation refinement
 
 Worker/cache lifetime and the preview protocol were refined after real-camera measurements in [decision 0003](0003-measured-browsing-performance.md). Workers now persist across sessions, and session changes invalidate caches without overlapping replacement workers. Refer to that decision for the current implementation.
+
+The thumbnail cache budget and reuse policy are superseded by [ADR 0025](0025-thumbnail-cache-tiers.md). The figures above describe the original browsing slice.

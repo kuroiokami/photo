@@ -81,6 +81,12 @@ A saved folder stays in the sidebar until removed. Expand its arrow to discover 
 
 Each view keeps its own thumbnail size during the session. Use its slider or pinch over the collection to adjust density. The filmstrip scrolls horizontally; the focused photo is revealed after keyboard navigation or sorting.
 
+### Thumbnail caching
+
+Photo remembers generated thumbnails in memory and on this Mac's disk so returning to photos does not repeatedly decode the originals. The memory allowance adapts to your Mac within a fixed limit; the disk cache is also limited. New or changed files still need an initial thumbnail.
+
+Choose **View → Clear Thumbnail Cache** if you need thumbnails recreated. This removes temporary thumbnails from the current window's memory and the shared disk cache; it does not delete photos or change flags, ratings, captions or crops. Other open windows may retain their loaded thumbnails. Reload the folder after external image changes. First-time browsing can take longer while Photo generates and saves thumbnails; repeat browsing benefits from reuse.
+
 ## 3. Select individual photos and groups
 
 | Action | Result |
