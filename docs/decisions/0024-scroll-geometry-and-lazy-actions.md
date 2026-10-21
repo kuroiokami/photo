@@ -1,7 +1,7 @@
 # 0024 — Keep scroll geometry out of workspace state
 
 - Date: 2026-10-21
-- Status: Implemented; final native acceptance pending unlock
+- Status: Implemented; native functional checks complete, broader performance/device acceptance open
 
 ## Context
 
@@ -15,4 +15,4 @@ Construct quick actions only when the tile is hovered or selected. Keep hover st
 
 ## Acceptance
 
-Strict checks and release packaging pass; see the tracker. Native scrolling and control/marquee checks remain pending because the Mac locked before the updated app could be opened. No frame-time, FPS or large-collection improvement is claimed until measured. Keep raw process traces and private collection details outside Git.
+Strict checks and release packaging pass; see the tracker. After unlock, native same-folder traversal/return scrolling, eventual thumbnail completion, marquee and selected-tile controls passed; the original browsing context was restored. Cold/evicted thumbnail loads and physical trackpad/hover-only and broad platform coverage remain distinct acceptance work. No frame-time, FPS or large-collection improvement is claimed until measured. Keep raw process traces and private collection details outside Git.

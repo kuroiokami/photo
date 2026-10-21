@@ -319,4 +319,5 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 
 - [x] Remove scroll-position workspace invalidation and avoid constructing invisible quick actions, preserving marquee hit testing and existing cache/decoder limits.
 - [x] Verify viewport clipping, stale-frame replacement, reverse drag and selection-base retention; pass strict checks and optimized packaging.
-- [ ] Finish same-folder native cold/warm scrolling, thumbnail and marquee checks after the Mac is unlocked; record measured limits and required CI/delivery evidence.
+- [x] Complete same-folder initial/return scrolling, thumbnail and marquee checks after unlock; restore browsing context and document cold/evicted-load limits. Required final-head CI/delivery evidence belongs in the PR.
+- [ ] Broaden physical trackpad/hover-only, frame-time and platform/accessibility acceptance.
