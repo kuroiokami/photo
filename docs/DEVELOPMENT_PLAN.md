@@ -334,8 +334,8 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 Research and proposed acceptance gates: [WORKFLOW_PERFORMANCE_RESEARCH.md](WORKFLOW_PERFORMANCE_RESEARCH.md). These do not mark implementation or performance acceptance complete.
 
 - [x] Review primary sources and current browse/decision/metadata/detail/ingest code; rank opportunities and distinguish existing behavior.
-- [ ] Add local, privacy-preserving interaction/queue/copy signposts and a repeatable mixed-format, concurrent-ingest release harness.
-- [ ] Profile and reduce broad UI publication; measure time to first decision, frame hitches and large-folder sort/batch work.
+- [x] Add local, privacy-preserving interaction/queue/copy signposts and a repeatable JPEG/PNG concurrent-ingest service harness; see ADR 0026. Real mixed-RAW/media expansion remains open.
+- [ ] Complete native frame/hitch and large-folder sort/batch profiling. ADR 0026 implements grouped publication and service readiness measurements; a valid native frame comparison remains open.
 - [ ] Evaluate bounded nearby Fit/thumbnail preparation, per-volume scheduling, deferred cache writes and memory-pressure response.
 - [ ] Reuse durable append-only progress for ordinary ingest; prototype fewer source reads without dropping independent destination verification or recovery guarantees.
 - [ ] Validate optional persistent focus position, faster truthful detail and job/caption/priority conveniences with actual photographer tasks.
