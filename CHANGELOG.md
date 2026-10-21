@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Reuse selection-readiness checks and native filename ranks, batch initial decision indexing, and move optional thumbnail-cache writes onto a bounded background queue. Preserve source-change checks, cache clearing and durable decisions.
+
 - Publish background EXIF/decision results in small groups while keeping selected-photo information immediate; add local performance markers and a concurrent-ingest service scenario.
 
 - Reuse thumbnails with a larger bounded RAM cache, persistent local disk caching and immediate RAM-hit display; add View → Clear Thumbnail Cache.

@@ -349,3 +349,13 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Record paired synthetic release publication counts and service timings, with original-byte checks and explicit frame-time limits.
 - [x] Complete native group decisions during indexing, filters/Undo/scrolling/relaunch and context restoration; required exact-head CI/delivery evidence belongs in the PR.
 - [ ] Obtain finalized native SwiftUI/hitch traces and broaden mixed-RAW, physical-media, memory/large-shoot evidence before claiming responsiveness targets.
+
+## Culling hot paths — 2026-10-21
+
+- [x] Reuse selection readiness across tile controls with observable invalidation; retain unknown-decision/group gating.
+- [x] Defer derived thumbnail writes with bounded admission, source-stamp checks and cache-clear generation protection; shorten read locking and reuse the binary encoder.
+- [x] Batch first-discovery decision/path cache writes in transactions of at most 16 files, retaining FULL durability, selected priority and rollback/restart recovery.
+- [x] Reuse native filename ranks for repeated sorts and rating repositioning without approximating locale/Unicode ordering.
+- [x] Add targeted synthetic release scenarios and recovery/equivalence regressions; see [ADR 0027](decisions/0027-culling-hot-paths.md).
+- [ ] Complete native interaction/frame-time, representative 10k/40k mixed-RAW and physical-media/RSS acceptance. The synthetic 40k sort benchmark alone does not satisfy this.
+- [ ] Measure/prototype user-decision save batching separately, preserving durable pending intent, per-file XMP conflicts, interrupted recovery and Undo.

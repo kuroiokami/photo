@@ -10,11 +10,18 @@ public enum FolderLoadState: Hashable, Sendable {
 @MainActor
 @Observable
 public final class WorkspaceState {
-  public private(set) var photos: [PhotoItem]
-  public private(set) var selectedIDs: Set<String> = [] {
-    didSet { publishSelectedPending() }
+  public private(set) var photos: [PhotoItem] {
+    didSet { selectionReadinessRevision &+= 1 }
   }
-  public private(set) var groupPairs = false
+  public private(set) var selectedIDs: Set<String> = [] {
+    didSet {
+      selectionReadinessRevision &+= 1
+      publishSelectedPending()
+    }
+  }
+  public private(set) var groupPairs = false {
+    didSet { selectionReadinessRevision &+= 1 }
+  }
   public private(set) var sourceReview: SourceReviewSession?
   public var isSourceReview: Bool { sourceReview != nil }
   public var selectedFileIdentities: [URL: String] {
@@ -43,8 +50,12 @@ public final class WorkspaceState {
     rebuildVisible(preferred: focus)
   }
   private var selectionAnchorID: String?
-  @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:]
-  @ObservationIgnored private var allByID: [String: PhotoItem] = [:]
+  @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:] {
+    didSet { selectionReadinessRevision &+= 1 }
+  }
+  @ObservationIgnored private var allByID: [String: PhotoItem] = [:] {
+    didSet { selectionReadinessRevision &+= 1 }
+  }
   public var filePhotos: [PhotoItem] { allPhotos }
   public var persistence: DecisionStore { decisionStore }
   public var operationPhotos: [PhotoItem] {
@@ -72,9 +83,18 @@ public final class WorkspaceState {
   public var selectionSummary: DecisionSelectionSummary {
     DecisionSelectionSummary(operationPhotos.map { decisions[$0.id] ?? CullingDecision() })
   }
+  // Observable revision keeps SwiftUI subscribed even on the constant-time cache path.
+  private var selectionReadinessRevision = 0
+  @ObservationIgnored private var readinessCache: (revision: Int, ready: Bool)?
+  @ObservationIgnored public private(set) var selectionReadinessEvaluations = 0
   public var decisionSelectionReady: Bool {
+    let revision = selectionReadinessRevision
+    if let cached = readinessCache, cached.revision == revision { return cached.ready }
     let targets = operationPhotos
-    return !targets.isEmpty && targets.allSatisfy { decisionsReady.contains($0.id) }
+    let ready = !targets.isEmpty && targets.allSatisfy { decisionsReady.contains($0.id) }
+    readinessCache = (revision, ready)
+    selectionReadinessEvaluations += 1
+    return ready
   }
   public func selectAllVisible() {
     selectedIDs = Set(photos.map(\.id))
@@ -167,7 +187,9 @@ public final class WorkspaceState {
   public private(set) var saveStatus: [String: String] = [:]
   public private(set) var decisionsLoading = false
   @ObservationIgnored private var reloadSelection: String?
-  public private(set) var decisionsReady: Set<String> = []
+  public private(set) var decisionsReady: Set<String> = [] {
+    didSet { selectionReadinessRevision &+= 1 }
+  }
   public var autoAdvance = UserDefaults.standard.bool(forKey: "Photo.autoAdvance") {
     didSet { UserDefaults.standard.set(autoAdvance, forKey: "Photo.autoAdvance") }
   }
@@ -206,7 +228,10 @@ public final class WorkspaceState {
   public private(set) var sort: PhotoSort = .filename
   @ObservationIgnored private var allPhotos: [PhotoItem] = []
   public private(set) var selectedIndex: Int? {
-    didSet { publishSelectedPending() }
+    didSet {
+      selectionReadinessRevision &+= 1
+      publishSelectedPending()
+    }
   }
 
   private func publishSelectedPending() {
@@ -247,6 +272,7 @@ public final class WorkspaceState {
     indicesByID = Self.makeIndex(photos)
     selectedIndex = photos.isEmpty ? nil : 0
     selectedIDs = Set([selectedID].compactMap { $0 })
+    refreshFilenameRanks()
     buildFamilies(photos)
   }
 
@@ -292,7 +318,8 @@ public final class WorkspaceState {
       let indices = Self.makeIndex(photos)
       try Task.checkCancellation()
       return LoadedPhotos(
-        photos: photos, indices: indices, families: Self.makeFamilies(photos),
+        photos: photos, indices: indices, filenameRanks: PhotoSort.filenameRanks(for: photos),
+        families: Self.makeFamilies(photos),
         byID: Dictionary(photos.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }))
     }
     folderTask = task
@@ -305,6 +332,8 @@ public final class WorkspaceState {
       guard sessionID == session else { return }
       try Task.checkCancellation()
       allPhotos = loaded.photos
+      filenameRanks = loaded.filenameRanks
+      filenameRankLocale = Locale.current.identifier
       familyMembers = loaded.families
       allByID = loaded.byID
       photos = flagFilter == .all && minimumRating == 0 ? loaded.photos : []
@@ -341,6 +370,7 @@ public final class WorkspaceState {
     publicationMetrics = WorkspacePublicationMetrics()
     selectedIndex = nil
     allPhotos = SampleLibrary.photos
+    refreshFilenameRanks()
     buildFamilies(allPhotos)
     photos = flagFilter == .all && minimumRating == 0 ? allPhotos : []
     metadata = [:]
@@ -444,10 +474,12 @@ public final class WorkspaceState {
     guard !added.isEmpty else { return nil }
     let focused = selectedID
     allPhotos += added
+    refreshFilenameRanks()
     collectionRevision += 1
     if sort == .filename || sort == .rating {
       allPhotos = sort.ordered(
-        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
+        filenameRanks: filenameRanks)
     }
     buildFamilies(allPhotos)
     rebuildVisible(preferred: focused)
@@ -519,11 +551,13 @@ public final class WorkspaceState {
     let session = sessionID
     let snapshot = allPhotos
     let collection = collectionRevision
+    if filenameRankLocale != Locale.current.identifier { refreshFilenameRanks() }
+    let filenameRanks = filenameRanks
     let metadata = metadata
     let ratings = decisions.mapValues(\.rating)
     let revision = decisionRevision
     let ordered = await Task.detached(priority: .userInitiated) {
-      sort.ordered(snapshot, metadata: metadata, ratings: ratings)
+      sort.ordered(snapshot, metadata: metadata, ratings: ratings, filenameRanks: filenameRanks)
     }.value
     guard session == sessionID, self.sort == sort, !Task.isCancelled else { return }
     if collection != collectionRevision {
@@ -568,6 +602,12 @@ public final class WorkspaceState {
   private struct DecisionChange {
     let items: [DecisionItemChange]
     let focus: String
+  }
+  @ObservationIgnored private var filenameRanks: [String: Int] = [:]
+  @ObservationIgnored private var filenameRankLocale = Locale.current.identifier
+  private func refreshFilenameRanks() {
+    filenameRanks = PhotoSort.filenameRanks(for: allPhotos)
+    filenameRankLocale = Locale.current.identifier
   }
   private func buildFamilies(_ photos: [PhotoItem]) {
     familyMembers = Self.makeFamilies(photos)
@@ -623,7 +663,7 @@ public final class WorkspaceState {
     let session = sessionID
     let snapshot = allPhotos
     await DecisionSaveQueue.shared.flush()
-    for photo in snapshot {
+    for start in stride(from: 0, to: snapshot.count, by: 16) {
       guard session == sessionID, !Task.isCancelled else { return }
       if let selectedPhoto {
         let priority =
@@ -634,7 +674,8 @@ public final class WorkspaceState {
         }
       }
       guard session == sessionID, !Task.isCancelled else { return }
-      await loadDecision(photo, session: session, immediate: false)
+      await loadDecisionBatch(
+        Array(snapshot[start..<min(start + 16, snapshot.count)]), session: session)
       if session == sessionID,
         pendingDecisions.count >= 64 || decisionsPublishedAt.duration(to: .now) >= .milliseconds(50)
       {
@@ -645,11 +686,40 @@ public final class WorkspaceState {
     publishDecisions()
     if sort == .rating {
       allPhotos = sort.ordered(
-        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
+        filenameRanks: filenameRanks)
     }
     decisionsLoading = false
     rebuildVisible(preferred: selectedID ?? reloadSelection)
     reloadSelection = nil
+  }
+
+  private func loadDecisionBatch(_ batch: [PhotoItem], session: UUID) async {
+    let targets = batch.filter {
+      allByID[$0.id] != nil && !decisionsReady.contains($0.id) && pendingDecisions[$0.id] == nil
+    }
+    // Samples have no filesystem identity and need no database transaction.
+    for photo in targets where photo.fileURL == nil {
+      await loadDecision(photo, session: session, immediate: false)
+    }
+    let files = targets.filter { $0.fileURL != nil }
+    guard !files.isEmpty else { return }
+    let results: [Result<(DecisionEntry, PhotoEdit), any Error>]
+    do { results = try await decisionStore.loadImageStates(for: files.compactMap(\.fileURL)) } catch
+    { results = files.map { _ in .failure(error) } }
+    guard session == sessionID, !Task.isCancelled else { return }
+    for (photo, result) in zip(files, results) {
+      guard allByID[photo.id] != nil, !decisionsReady.contains(photo.id) else { continue }
+      switch result {
+      case .success(let (entry, edit)):
+        pendingDecisions[photo.id] = LoadedDecision(entry: entry, edit: edit)
+      case .failure(let error):
+        pendingDecisions[photo.id] = LoadedDecision(
+          entry: DecisionEntry(decision: CullingDecision(), status: error.localizedDescription),
+          edit: PhotoEdit())
+      }
+    }
+    if let selectedID, pendingDecisions[selectedID] != nil { publishDecisions(ids: [selectedID]) }
   }
 
   private func loadDecision(_ photo: PhotoItem, session: UUID, immediate: Bool = true) async {
@@ -790,7 +860,8 @@ public final class WorkspaceState {
           repositionRating(photo)
         } else {
           allPhotos = sort.ordered(
-            allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+            allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
+            filenameRanks: filenameRanks)
         }
       }
     }
@@ -891,7 +962,7 @@ public final class WorkspaceState {
       let otherRating = decisions[other.id]?.rating ?? 0
       let before =
         rating == otherRating
-        ? photo.filename.localizedStandardCompare(other.filename) == .orderedAscending
+        ? (filenameRanks[photo.id, default: Int.max] < filenameRanks[other.id, default: Int.max])
         : rating > otherRating
       if before { high = middle } else { low = middle + 1 }
     }
@@ -933,7 +1004,8 @@ public final class WorkspaceState {
     }
     if sort == .rating {
       allPhotos = sort.ordered(
-        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
+        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
+        filenameRanks: filenameRanks)
     }
     rebuildVisible(preferred: change.focus)
   }
@@ -1001,6 +1073,7 @@ public final class WorkspaceState {
   private struct LoadedPhotos: Sendable {
     let photos: [PhotoItem]
     let indices: [PhotoItem.ID: Int]
+    let filenameRanks: [String: Int]
     let families: [String: [PhotoItem]]
     let byID: [String: PhotoItem]
   }

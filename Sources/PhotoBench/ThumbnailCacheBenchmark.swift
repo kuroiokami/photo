@@ -11,6 +11,7 @@ struct ThumbnailCacheBenchmark {
     let label: String
     let budgetMiB: Int
     let firstMilliseconds: Double
+    let cacheDrainMilliseconds: Double
     let returnMilliseconds: Double
     let returnSourceDecodes: Int
     let diskHits: Int
@@ -64,6 +65,9 @@ struct ThumbnailCacheBenchmark {
       let start = ContinuousClock.now
       for file in files { _ = try await pipeline.preview(for: file, maximumPixelSize: 480) }
       let first = elapsed(start)
+      let drain = ContinuousClock.now
+      await disk?.waitForPendingWrites()
+      let drainTime = elapsed(drain)
       let before = await pipeline.cacheStatistics()
       let again = ContinuousClock.now
       for file in files { _ = try await pipeline.preview(for: file, maximumPixelSize: 480) }
@@ -71,6 +75,7 @@ struct ThumbnailCacheBenchmark {
       passes.append(
         Pass(
           label: label, budgetMiB: budget / 1024 / 1024, firstMilliseconds: first,
+          cacheDrainMilliseconds: drainTime,
           returnMilliseconds: elapsed(again),
           returnSourceDecodes: after.sourceDecodes - before.sourceDecodes,
           diskHits: after.diskHits, memoryMiB: Double(after.memoryBytes) / 1024 / 1024))
@@ -84,6 +89,7 @@ struct ThumbnailCacheBenchmark {
     passes.append(
       Pass(
         label: "new-worker-disk-reuse", budgetMiB: 0, firstMilliseconds: elapsed(start),
+        cacheDrainMilliseconds: 0,
         returnMilliseconds: 0, returnSourceDecodes: stats.sourceDecodes, diskHits: stats.diskHits,
         memoryMiB: Double(stats.memoryBytes) / 1024 / 1024))
     let unchanged = try files.allSatisfy { SHA256.hash(data: try Data(contentsOf: $0)) == hash }

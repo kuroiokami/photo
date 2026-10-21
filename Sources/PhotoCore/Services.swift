@@ -51,7 +51,7 @@ public enum PhotoSort: String, CaseIterable, Sendable {
 
   public func ordered(
     _ photos: [PhotoItem], metadata: [String: PhotoMetadata],
-    ratings: [String: Int] = [:]
+    ratings: [String: Int] = [:], filenameRanks: [String: Int] = [:]
   ) -> [PhotoItem] {
     photos.sorted { a, b in
       let av = value(metadata[a.id])
@@ -64,9 +64,23 @@ public enum PhotoSort: String, CaseIterable, Sendable {
         guard let bv else { return true }
         return av < bv
       }
+      if let ar = filenameRanks[a.id], let br = filenameRanks[b.id] { return ar < br }
       let order = a.filename.localizedStandardCompare(b.filename)
       return order == .orderedSame ? a.id < b.id : order == .orderedAscending
     }
+  }
+
+  /// Preserve Foundation's locale/Unicode/digit ordering once per inventory, then compare integers.
+  public static func filenameRanks(for photos: [PhotoItem]) -> [String: Int] {
+    func before(_ a: PhotoItem, _ b: PhotoItem) -> Bool {
+      let order = a.filename.localizedStandardCompare(b.filename)
+      return order == .orderedSame ? a.id < b.id : order == .orderedAscending
+    }
+    let alreadyOrdered = zip(photos, photos.dropFirst()).allSatisfy { !before($0.1, $0.0) }
+    let ordered = alreadyOrdered ? photos : photos.sorted(by: before)
+    return Dictionary(
+      ordered.enumerated().map { ($0.element.id, $0.offset) },
+      uniquingKeysWith: { first, _ in first })
   }
 
   private func value(_ metadata: PhotoMetadata?) -> Double? {

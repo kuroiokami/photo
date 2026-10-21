@@ -20,9 +20,10 @@ struct ThumbnailCacheTests {
     try FileManager.default.copyItem(at: source, to: file)
     let original = try Data(contentsOf: file)
     let directory = root.appendingPathComponent("cache")
-    let first = ImagePipeline(
-      byteLimit: 1, thumbnailDiskCache: ThumbnailDiskCache(directory: directory))
+    let disk = ThumbnailDiskCache(directory: directory)
+    let first = ImagePipeline(byteLimit: 1, thumbnailDiskCache: disk)
     let expected = try await first.preview(for: file, maximumPixelSize: 480)
+    await disk.waitForPendingWrites()
     let second = ImagePipeline(
       byteLimit: 1, thumbnailDiskCache: ThumbnailDiskCache(directory: directory))
     let actual = try await second.preview(for: file, maximumPixelSize: 480)
@@ -50,6 +51,7 @@ struct ThumbnailCacheTests {
     #expect(try raster(original.image) != raster(updated.image))
     _ = try await pipeline.preview(for: file, maximumPixelSize: 120)
     #expect(await pipeline.decodedImageCount == 3)
+    await disk.waitForPendingWrites()
     let key = try #require(disk.key(for: file, size: 160))
     try Data("corrupt cache".utf8).write(to: root.appendingPathComponent("cache/\(key).thumb"))
     _ = try await pipeline.preview(for: file, maximumPixelSize: 160)
@@ -69,6 +71,7 @@ struct ThumbnailCacheTests {
     for size in stride(from: 80, through: 240, by: 20) {
       _ = try await pipeline.preview(for: source, maximumPixelSize: size)
     }
+    await disk.waitForPendingWrites()
     let files = try FileManager.default.contentsOfDirectory(
       at: directory, includingPropertiesForKeys: [.fileSizeKey])
     let bytes = try files.reduce(0) {
@@ -84,10 +87,11 @@ struct ThumbnailCacheTests {
     #expect(try Data(contentsOf: unrelated) == Data("unrelated".utf8))
     let blocked = root.appendingPathComponent("not-a-folder")
     try Data().write(to: blocked)
-    let fallback = ImagePipeline(
-      byteLimit: 1, thumbnailDiskCache: ThumbnailDiskCache(directory: blocked))
+    let blockedDisk = ThumbnailDiskCache(directory: blocked)
+    let fallback = ImagePipeline(byteLimit: 1, thumbnailDiskCache: blockedDisk)
     _ = try await fallback.preview(for: source, maximumPixelSize: 160)
     #expect(await fallback.decodedImageCount == 1)
+    await blockedDisk.waitForPendingWrites()
   }
   @Test func immediateMemoryHitsRespectRecencySessionAndBudgetWithoutDiskAccess() async throws {
     let urls = try SampleLibrary.photos.map { try #require(SampleResources.url(for: $0)) }
@@ -151,6 +155,49 @@ struct ThumbnailCacheTests {
       try await group.waitForAll()
     }
     #expect(await pipeline.cachedByteCount <= cost * 2)
+  }
+
+  @Test func pendingWritesAreBoundedAndDoNotDelayPreviewOrSurviveClear() async throws {
+    let root = try scratch()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appendingPathComponent("photo.png")
+    try FileManager.default.copyItem(
+      at: #require(SampleResources.url(for: SampleLibrary.photos[0])), to: file)
+    let probe = ImagePipeline(byteLimit: 1)
+    let image = try await probe.preview(for: file, maximumPixelSize: 160)
+    let disk = ThumbnailDiskCache(
+      directory: root.appendingPathComponent("cache"), pendingByteLimit: image.byteCost)
+    let stamp = try #require(disk.stamp(for: file, size: 160))
+    disk.writeQueue.suspend()
+    let pipeline = ImagePipeline(byteLimit: 1, thumbnailDiskCache: disk)
+    // Completes with the writer suspended. Another image cannot exceed the byte budget.
+    _ = try await pipeline.preview(for: file, maximumPixelSize: 160)
+    let otherStamp = try #require(disk.stamp(for: file, size: 120))
+    #expect(!disk.enqueue(image, file: file, size: 120, stamp: otherStamp))
+    disk.clear()
+    disk.writeQueue.resume()
+    await disk.waitForPendingWrites()
+    #expect(disk.read(stamp.key) == nil)
+    #expect(disk.enqueue(image, file: file, size: 160, stamp: stamp))
+    await disk.waitForPendingWrites()
+    #expect(disk.read(stamp.key) != nil)
+  }
+
+  @Test func deferredWriteRejectsAReplacedSource() async throws {
+    let root = try scratch()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let file = root.appendingPathComponent("photo.png")
+    let source = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    try FileManager.default.copyItem(at: source, to: file)
+    let disk = ThumbnailDiskCache(directory: root.appendingPathComponent("cache"))
+    let stamp = try #require(disk.stamp(for: file, size: 160))
+    disk.writeQueue.suspend()
+    let pipeline = ImagePipeline(byteLimit: 1, thumbnailDiskCache: disk)
+    _ = try await pipeline.preview(for: file, maximumPixelSize: 160)
+    try Data(contentsOf: source).write(to: file, options: .atomic)
+    disk.writeQueue.resume()
+    await disk.waitForPendingWrites()
+    #expect(disk.read(stamp.key) == nil)
   }
 
   private func raster(_ image: CGImage) throws -> Data {

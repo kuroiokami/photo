@@ -12,6 +12,47 @@ public struct ImageEditWrite: Sendable {
   }
 }
 extension DecisionStore {
+  /// Small bounded transactions amortize first-discovery cache seeds and path mappings.
+  /// This path reads sidecars; it never publishes XMP or changes user decisions.
+  public func loadImageStates(for images: [URL]) throws -> [Result<
+    (DecisionEntry, PhotoEdit), any Error
+  >] {
+    var results: [Result<(DecisionEntry, PhotoEdit), any Error>] = []
+    for start in stride(from: 0, to: images.count, by: 16) {
+      try Task.checkCancellation()
+      let batch = images[start..<min(start + 16, images.count)]
+      let values = try withDB { db in
+        guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
+          throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+        }
+        do {
+          var values: [Result<(DecisionEntry, PhotoEdit), any Error>] = []
+          for image in batch {
+            try Task.checkCancellation()
+            values.append(Result { try loadImageState(for: image) })
+            // A SQLite error/trigger may roll back the transaction automatically.
+            // Stop before any later photo could accidentally run in autocommit mode.
+            guard sqlite3_get_autocommit(db) == 0 else {
+              throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+            }
+          }
+          try Task.checkCancellation()
+          guard sqlite3_get_autocommit(db) == 0,
+            sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK
+          else {
+            throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+          }
+          return values
+        } catch {
+          _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+          throw error
+        }
+      }
+      results += values
+    }
+    return results
+  }
+
   public func loadImageState(for image: URL) throws -> (DecisionEntry, PhotoEdit) {
     if let session = try sourceReview(for: image) {
       return try loadSourceReview(session, image: image)

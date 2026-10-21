@@ -15,7 +15,7 @@ Record folder reload/scrolling, rapid forward/reverse navigation, stars/flags du
 | DecisionIndex / PublishDecisions / SelectedDecisionReady | Loading / grouped publication / focused-photo readiness |
 | ThumbnailRequest / FitRequest | View task, including waits and cold Fit debounce |
 | ThumbnailLoad / FitLoad / SourceDecode | Actor work / decoding; compare with request to inspect queue delay |
-| ThumbnailCacheWrite / DiskThumbnailHit | Disk cache work/reuse |
+| ThumbnailCacheWrite / DiskThumbnailHit | Background disk-cache writing / synchronous cache reuse; writer intervals have their own IDs |
 | RAMResultPublished / ImageResultPublished / ImageRequestCancelled | Accepted view state or cancellation, not compositor presentation |
 | ApplyDecision | Immediate decision/filter/selection work |
 | DecisionSaveQueueWait / DecisionPersistence | Waiting for previous saves / persistence work |

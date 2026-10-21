@@ -3,10 +3,11 @@ import CryptoKit
 import Darwin
 import Foundation
 import ImageIO
+import PhotoCore
 import UniformTypeIdentifiers
 
-/// Best-effort derived data. This lock protects index/accounting and atomic file
-/// operations across thumbnail workers/windows. Called only off the main actor.
+/// Best-effort derived data. Separate locks protect admission, encoder reuse and
+/// index/publication across windows. Disk work runs only off the main actor.
 public final class ThumbnailDiskCache: @unchecked Sendable {
   public static let standard = ThumbnailDiskCache(
     directory:
@@ -27,55 +28,126 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   private let directory: URL
   private let limit: Int
   private let lock = NSLock()
+  // Separate admission lock: enqueue never waits for disk I/O or PNG encoding.
+  private let admission = NSLock()
+  let writeQueue = DispatchQueue(label: "Photo.ThumbnailCacheWriter", qos: .utility)
+  private let encoder: PropertyListEncoder = {
+    let value = PropertyListEncoder()
+    value.outputFormat = .binary
+    return value
+  }()
+  private var generation = 0
+  private var pending: Set<String> = []
+  private var pendingBytes = 0
+  private let pendingLimit: Int
+  private let encoding = NSLock()
   private var indexed = false
   private var entries: [String: Entry] = [:]
   private var bytes = 0
-  public init(directory: URL, byteLimit: Int = 512 * 1024 * 1024) {
+  public init(
+    directory: URL, byteLimit: Int = 512 * 1024 * 1024,
+    pendingByteLimit: Int = 32 * 1024 * 1024
+  ) {
     self.directory = directory
     limit = max(0, byteLimit)
+    pendingLimit = max(0, pendingByteLimit)
   }
 
-  func key(for url: URL, size: Int) -> String? {
-    guard size <= 480 else { return nil }  // Never persist Fit or full-detail images.
+  struct SourceStamp: Sendable {
+    let values: [String]
+    let key: String
+  }
+  private func stampValues(for url: URL, size: Int) -> [String]? {
+    guard size <= 480 else { return nil }
     var info = stat()
     guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { return nil }
-    let stamp = [
+    return [
       "v1", url.standardizedFileURL.path, String(size), String(info.st_dev),
       String(info.st_ino), String(info.st_size), String(info.st_mtimespec.tv_sec),
       String(info.st_mtimespec.tv_nsec), String(info.st_ctimespec.tv_sec),
       String(info.st_ctimespec.tv_nsec),
     ]
-    .joined(separator: "\u{0}")
-    return SHA256.hash(data: Data(stamp.utf8)).map { String(format: "%02x", $0) }.joined()
+  }
+  func stamp(for url: URL, size: Int) -> SourceStamp? {
+    guard let values = stampValues(for: url, size: size) else { return nil }
+    let digest = SHA256.hash(data: Data(values.joined(separator: "\u{0}").utf8))
+    let hex = Array("0123456789abcdef".utf8)
+    let key = String(
+      decoding: digest.flatMap { [hex[Int($0 >> 4)], hex[Int($0 & 15)]] }, as: UTF8.self)
+    return SourceStamp(values: values, key: key)
+  }
+  func matches(_ stamp: SourceStamp, file: URL, size: Int) -> Bool {
+    stampValues(for: file, size: size) == stamp.values
+  }
+  func key(for url: URL, size: Int) -> String? { stamp(for: url, size: size)?.key }
+
+  /// Best effort, bounded admission including the active image. No task per rejected write.
+  @discardableResult
+  func enqueue(_ preview: PhotoPreview, file: URL, size: Int, stamp: SourceStamp) -> Bool {
+    let cost = preview.byteCost
+    return admission.withLock {
+      guard cost <= pendingLimit - pendingBytes, pending.count < 64,
+        pending.insert(stamp.key).inserted
+      else { return false }
+      pendingBytes += cost
+      let epoch = generation
+      writeQueue.async { [self] in
+        defer {
+          admission.withLock {
+            pending.remove(stamp.key)
+            pendingBytes -= cost
+          }
+        }
+        guard admission.withLock({ generation == epoch }), matches(stamp, file: file, size: size)
+        else { return }
+        store(preview, key: stamp.key, generation: epoch) {
+          self.matches(stamp, file: file, size: size)
+        }
+      }
+      return true
+    }
+  }
+  /// Diagnostic/test barrier; browsing and normal termination never wait for derived data.
+  public func waitForPendingWrites() async {
+    await withCheckedContinuation { continuation in
+      writeQueue.async { continuation.resume() }
+    }
   }
   func read(_ key: String) -> PhotoPreview? {
-    lock.withLock {
-      let url = directory.appendingPathComponent(key + ".thumb")
-      guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
-        let count = attributes[.size] as? Int, count <= 4 * 1024 * 1024,
-        let data = try? Data(contentsOf: url),
-        let record = try? PropertyListDecoder().decode(Record.self, from: data),
-        record.version == 1, record.width > 0, record.height > 0,
-        let kind = PreviewSource(rawValue: record.source), kind != .raw,
-        let source = CGImageSourceCreateWithData(record.pixels as CFData, nil),
-        CGImageSourceGetType(source) as String? == UTType.png.identifier,
-        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-        let width = properties[kCGImagePropertyPixelWidth] as? Int,
-        let height = properties[kCGImagePropertyPixelHeight] as? Int,
-        width > 0, height > 0, width <= 480, height <= 480,
-        let image = CGImageSourceCreateImageAtIndex(
-          source, 0,
-          [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
-      else { return nil }
+    let epoch = admission.withLock { generation }
+    let url = directory.appendingPathComponent(key + ".thumb")
+    guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+      let count = attributes[.size] as? Int, count <= 4 * 1024 * 1024,
+      let data = try? Data(contentsOf: url),
+      let record = try? PropertyListDecoder().decode(Record.self, from: data),
+      record.version == 1, record.width > 0, record.height > 0,
+      let kind = PreviewSource(rawValue: record.source), kind != .raw,
+      let source = CGImageSourceCreateWithData(record.pixels as CFData, nil),
+      CGImageSourceGetType(source) as String? == UTType.png.identifier,
+      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+      let width = properties[kCGImagePropertyPixelWidth] as? Int,
+      let height = properties[kCGImagePropertyPixelHeight] as? Int,
+      width > 0, height > 0, width <= 480, height <= 480,
+      let image = CGImageSourceCreateImageAtIndex(
+        source, 0,
+        [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
+    else { return nil }
+    return lock.withLock {
+      guard admission.withLock({ generation == epoch }) else { return nil }
       entries[key]?.accessed = .now
       return PhotoPreview(
         image: image, sourceKind: kind,
         originalWidth: record.width, originalHeight: record.height)
     }
   }
-  func store(_ preview: PhotoPreview, key: String) {
+  func store(
+    _ preview: PhotoPreview, key: String, generation epoch: Int? = nil,
+    valid: () -> Bool = { true }
+  ) {
     guard preview.sourceKind != .raw, preview.decodedWidth <= 480, preview.decodedHeight <= 480
     else { return }
+    let trace = PhotoTrace.begin("ThumbnailCacheWrite")
+    defer { PhotoTrace.end(trace) }
     // Lossless pixels retain alpha and color profiles; no edits or source EXIF
     // are baked into the cache. This is deliberately thumbnail-sized only.
     let pixels = NSMutableData()
@@ -85,14 +157,19 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
     else { return }
     CGImageDestinationAddImage(writer, preview.image, nil)
     guard CGImageDestinationFinalize(writer),
-      let data = try? PropertyListEncoder.binary.encode(
-        Record(
-          version: 1,
-          source: preview.sourceKind.rawValue, width: preview.originalWidth,
-          height: preview.originalHeight, pixels: pixels as Data)), data.count <= limit,
+      let data = try? encoding.withLock({
+        try encoder.encode(
+          Record(
+            version: 1,
+            source: preview.sourceKind.rawValue, width: preview.originalWidth,
+            height: preview.originalHeight, pixels: pixels as Data))
+      }), data.count <= limit,
       data.count <= 4 * 1024 * 1024
     else { return }
     lock.withLock {
+      guard epoch.map({ expected in admission.withLock { generation == expected } }) ?? true,
+        valid()
+      else { return }
       let files = FileManager.default
       do {
         try files.createDirectory(
@@ -115,6 +192,7 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
           indexed = true
         }
         let url = directory.appendingPathComponent(key + ".thumb")
+        guard valid() else { return }
         try data.write(to: url, options: .atomic)
         if let old = entries[key] { bytes -= old.size }
         entries[key] = Entry(url: url, size: data.count, accessed: .now)
@@ -137,6 +215,7 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   }
   public func clear() {
     lock.withLock {
+      admission.withLock { generation &+= 1 }
       let files = FileManager.default
       for url in (try? files.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil))
         ?? [] where owns(url)
@@ -151,13 +230,5 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   private func owns(_ url: URL) -> Bool {
     let name = url.deletingPathExtension().lastPathComponent
     return url.pathExtension == "thumb" && name.count == 64 && name.allSatisfy { $0.isHexDigit }
-  }
-}
-
-extension PropertyListEncoder {
-  fileprivate static var binary: PropertyListEncoder {
-    let encoder = PropertyListEncoder()
-    encoder.outputFormat = .binary
-    return encoder
   }
 }
