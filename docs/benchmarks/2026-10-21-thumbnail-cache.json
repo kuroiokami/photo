@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "runs": [
+    {
+      "fileCount": 115,
+      "logicalCPUCount": 18,
+      "notes": [
+        "Synthetic 24MP gradient JPEG copies, 115 unique paths, 480-pixel thumbnails; not real-camera/RAW/UI timing.",
+        "Previous policy uses the current implementation with its former 24MiB budget; not a historic binary comparison.",
+        "Application caches cold initially; OS caches uncontrolled. Sequential one-process passes. RAM figures are cache bytes, not RSS.",
+        "New worker uses a 1-byte RAM budget to force disk reuse. It is not a full application restart. No speculative prefetch."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "passes": [
+        {
+          "budgetMiB": 24,
+          "diskHits": 0,
+          "firstMilliseconds": 1417.423708,
+          "label": "previous-24MiB-policy",
+          "memoryMiB": 23.4375,
+          "returnMilliseconds": 1380.578333,
+          "returnSourceDecodes": 115
+        },
+        {
+          "budgetMiB": 256,
+          "diskHits": 0,
+          "firstMilliseconds": 1367.222167,
+          "label": "adaptive-RAM",
+          "memoryMiB": 67.3828125,
+          "returnMilliseconds": 0.4405,
+          "returnSourceDecodes": 0
+        },
+        {
+          "budgetMiB": 256,
+          "diskHits": 0,
+          "firstMilliseconds": 1747.5605420000002,
+          "label": "RAM-and-disk-population",
+          "memoryMiB": 67.3828125,
+          "returnMilliseconds": 0.41675,
+          "returnSourceDecodes": 0
+        },
+        {
+          "budgetMiB": 0,
+          "diskHits": 115,
+          "firstMilliseconds": 31.170083,
+          "label": "new-worker-disk-reuse",
+          "memoryMiB": 0,
+          "returnMilliseconds": 0,
+          "returnSourceDecodes": 0
+        }
+      ],
+      "physicalMemoryGiB": 128,
+      "schemaVersion": 1,
+      "thumbnailLongEdge": 480
+    },
+    {
+      "fileCount": 115,
+      "logicalCPUCount": 18,
+      "notes": [
+        "Synthetic 24MP gradient JPEG copies, 115 unique paths, 480-pixel thumbnails; not real-camera/RAW/UI timing.",
+        "Previous policy uses the current implementation with its former 24MiB budget; not a historic binary comparison.",
+        "Application caches cold initially; OS caches uncontrolled. Sequential one-process passes. RAM figures are cache bytes, not RSS.",
+        "New worker uses a 1-byte RAM budget to force disk reuse. It is not a full application restart. No speculative prefetch."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "passes": [
+        {
+          "budgetMiB": 24,
+          "diskHits": 0,
+          "firstMilliseconds": 1545.0259999999998,
+          "label": "previous-24MiB-policy",
+          "memoryMiB": 23.4375,
+          "returnMilliseconds": 1342.765125,
+          "returnSourceDecodes": 115
+        },
+        {
+          "budgetMiB": 256,
+          "diskHits": 0,
+          "firstMilliseconds": 1347.117584,
+          "label": "adaptive-RAM",
+          "memoryMiB": 67.3828125,
+          "returnMilliseconds": 0.462708,
+          "returnSourceDecodes": 0
+        },
+        {
+          "budgetMiB": 256,
+          "diskHits": 0,
+          "firstMilliseconds": 1770.985458,
+          "label": "RAM-and-disk-population",
+          "memoryMiB": 67.3828125,
+          "returnMilliseconds": 0.562875,
+          "returnSourceDecodes": 0
+        },
+        {
+          "budgetMiB": 0,
+          "diskHits": 115,
+          "firstMilliseconds": 36.81925,
+          "label": "new-worker-disk-reuse",
+          "memoryMiB": 0,
+          "returnMilliseconds": 0,
+          "returnSourceDecodes": 0
+        }
+      ],
+      "physicalMemoryGiB": 128,
+      "schemaVersion": 1,
+      "thumbnailLongEdge": 480
+    }
+  ]
+}

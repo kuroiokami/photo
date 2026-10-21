@@ -14,6 +14,7 @@ struct PhotoImageView: View {
   var edit = PhotoEdit()
   var detailed = false
   var sessionID: UUID?
+  var cacheGeneration = 0
   var onLoaded: ((PhotoPreview) -> Void)?
   @ImageStorage private var preview: PhotoPreview?
   @ErrorStorage private var error: String?
@@ -22,7 +23,7 @@ struct PhotoImageView: View {
   var body: some View {
     ZStack {
       Color.black.opacity(0.12)
-      if let preview {
+      if let preview = preview ?? immediatePreview {
         EditedBitmap(image: preview.image, edit: edit)
           .accessibilityLabel(photo.filename)
       } else if let error {
@@ -50,15 +51,21 @@ struct PhotoImageView: View {
       }
     }
     .task(
-      id: "\(photo.id)-\(ObjectIdentifier(pipeline))-\(String(describing: sessionID))-\(retry)",
+      id:
+        "\(photo.id)-\(ObjectIdentifier(pipeline))-\(String(describing: sessionID))-\(maximumPixelSize)-\(cacheGeneration)-\(retry)",
       priority: detailed ? .userInitiated : .utility
     ) { await load() }
     .onDisappear { preview = nil }
   }
 
+  private var immediatePreview: PhotoPreview? {
+    guard let url = photo.fileURL ?? SampleResources.url(for: photo) else { return nil }
+    return pipeline.immediateCachedPreview(
+      for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
+  }
+
   @MainActor
   private func load() async {
-    preview = nil
     error = nil
     do {
       let url: URL
@@ -69,16 +76,15 @@ struct PhotoImageView: View {
       } else {
         throw PreviewError.unreadable
       }
-      if detailed,
-        let cached = await pipeline.cachedPreview(
-          for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID
-        )
-      {
+      if let cached = pipeline.immediateCachedPreview(
+        for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID
+      ) {
         try Task.checkCancellation()
         preview = cached
         onLoaded?(cached)
         return
       }
+      preview = nil
       // Only cold previews need the arrow-repeat debounce. Cached images are immediate.
       if detailed { try await Task.sleep(for: .milliseconds(35)) }
       let result = try await pipeline.preview(
@@ -90,6 +96,7 @@ struct PhotoImageView: View {
       // A disappearing cell or superseded preview must not publish stale state.
     } catch {
       guard !Task.isCancelled else { return }
+      preview = nil
       self.error = error.localizedDescription
     }
   }

@@ -45,9 +45,11 @@ public struct WorkspaceView: View {
   @BoolStorage private var showPreview = true
   @BoolStorage private var choosingFolder = false
   @ColumnStorage private var gridColumns = 1
+  @ColumnStorage private var thumbnailCacheGeneration = 0
   @SizeStorage private var thumbnailSize = 160
   @SizeStorage private var filmstripSize = 120
-  @PipelineStorage private var thumbnails = ImagePipeline(byteLimit: 24 * 1024 * 1024)
+  @PipelineStorage private var thumbnails = ImagePipeline(
+    byteLimit: ThumbnailCachePolicy.memoryByteLimit(), thumbnailDiskCache: .standard)
   @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
@@ -189,6 +191,12 @@ public struct WorkspaceView: View {
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
         togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
         openFolder: openFolder, reload: reload,
+        clearThumbnails: {
+          Task {
+            await thumbnails.clearThumbnailCache()
+            thumbnailCacheGeneration += 1
+          }
+        },
         workflow: { showWorkflow($0) }, help: { showingHelp = true },
         canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
           && !showingHelp && croppingPhoto == nil && trashPlan == nil && !preparingTrash,
@@ -577,7 +585,8 @@ public struct WorkspaceView: View {
         } label: {
           PhotoImageView(
             photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
-            edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID
+            edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID,
+            cacheGeneration: thumbnailCacheGeneration
           )
           .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
         }

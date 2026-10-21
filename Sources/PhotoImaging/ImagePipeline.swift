@@ -75,101 +75,68 @@ private enum ImageDecoder {
 }
 
 public actor ImagePipeline: PhotoPreviewLoading {
-  private struct Key: Hashable {
-    let url: URL
-    let size: Int
-  }
-  private var sessionID: UUID?
-  private let byteLimit: Int
-  private struct Entry {
-    let preview: PhotoPreview
-    var previous: Key?
-    var next: Key?
-  }
-  private var cache: [Key: Entry] = [:]
-  private var oldest: Key?
-  private var newest: Key?
-  public private(set) var cachedByteCount = 0
+  private nonisolated let memory: PreviewMemoryCache
+  private let disk: ThumbnailDiskCache?
   private(set) var decodedImageCount = 0
+  private(set) var diskHitCount = 0
+  public var cachedByteCount: Int { memory.byteCount }
 
-  public init(byteLimit: Int) { self.byteLimit = max(0, byteLimit) }
+  public init(byteLimit: Int, thumbnailDiskCache: ThumbnailDiskCache? = nil) {
+    memory = PreviewMemoryCache(byteLimit: byteLimit)
+    disk = thumbnailDiskCache
+  }
+
+  /// RAM only: safe for a view to use without waiting behind an image decode.
+  public nonisolated func immediateCachedPreview(
+    for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
+  ) -> PhotoPreview? {
+    guard !Task.isCancelled else { return nil }
+    return memory.lookup(file, size: maximumPixelSize, session: sessionID)
+  }
 
   public func preview(
     for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
   ) async throws -> PhotoPreview {
     try Task.checkCancellation()
-    startSession(sessionID)
+    memory.startSession(sessionID)
     let size = min(max(maximumPixelSize, 1), 2560)
-    let key = Key(url: file, size: size)
-    if let cached = cache[key] {
-      touch(key)
-      return cached.preview
+    if let cached = memory.lookup(file, size: size, session: sessionID) { return cached }
+    let stamp = disk?.key(for: file, size: size)
+    if let stamp, let cached = disk?.read(stamp), disk?.key(for: file, size: size) == stamp {
+      try Task.checkCancellation()
+      diskHitCount += 1
+      memory.insert(cached, file: file, size: size)
+      return cached
     }
-    // Do not suspend between the cache check and decoding: queued requests
-    // then reuse the completed entry instead of redundantly decoding it.
+    // No suspension between cache checks and decoding: queued callers reuse
+    // the result. The selected-preview worker remains a separate actor.
     decodedImageCount += 1
     let result = try ImageDecoder.decode(file, maximumPixelSize: size)
     try Task.checkCancellation()
-    if result.byteCost <= byteLimit {
-      while cachedByteCount + result.byteCost > byteLimit, let key = oldest {
-        remove(key)
-      }
-      cache[key] = Entry(preview: result, previous: newest)
-      if let newest { cache[newest]?.next = key } else { oldest = key }
-      newest = key
-      cachedByteCount += result.byteCost
+    memory.insert(result, file: file, size: size)
+    if let stamp, disk?.key(for: file, size: size) == stamp {
+      disk?.store(result, key: stamp)
     }
     return result
   }
 
-  /// A non-decoding lookup lets the UI bypass its cold-preview debounce on hits.
   public func cachedPreview(
     for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
   ) -> PhotoPreview? {
-    guard !Task.isCancelled, self.sessionID == sessionID else { return nil }
-    let key = Key(url: file, size: min(max(maximumPixelSize, 1), 2560))
-    guard let result = cache[key] else { return nil }
-    touch(key)
-    return result.preview
+    immediateCachedPreview(for: file, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
   }
 
-  /// Keep the actor/worker stable across folders; changing a session only drops
-  /// cached images. In-flight work cannot overlap a replacement worker.
   public func startSession(_ sessionID: UUID?) {
-    guard !Task.isCancelled, self.sessionID != sessionID else { return }
-    self.sessionID = sessionID
-    cache.removeAll(keepingCapacity: true)
-    oldest = nil
-    newest = nil
-    cachedByteCount = 0
+    guard !Task.isCancelled else { return }
+    memory.startSession(sessionID)
   }
 
-  private func touch(_ key: Key) {
-    guard newest != key, let entry = cache[key] else { return }
-    if let previous = entry.previous {
-      cache[previous]?.next = entry.next
-    } else {
-      oldest = entry.next
-    }
-    if let next = entry.next { cache[next]?.previous = entry.previous }
-    cache[key]?.previous = newest
-    cache[key]?.next = nil
-    if let newest { cache[newest]?.next = key }
-    newest = key
+  public func cacheStatistics() -> (sourceDecodes: Int, diskHits: Int, memoryBytes: Int) {
+    (decodedImageCount, diskHitCount, memory.byteCount)
   }
 
-  private func remove(_ key: Key) {
-    guard let entry = cache.removeValue(forKey: key) else { return }
-    if let previous = entry.previous {
-      cache[previous]?.next = entry.next
-    } else {
-      oldest = entry.next
-    }
-    if let next = entry.next {
-      cache[next]?.previous = entry.previous
-    } else {
-      newest = entry.previous
-    }
-    cachedByteCount -= entry.preview.byteCost
+  public func clearThumbnailCache() {
+    memory.clear()
+    disk?.clear()
   }
 }

@@ -187,3 +187,20 @@ A user reported slow scrolling through 115 JPEGs. Native inspection confirmed th
 The implementation removes two avoidable UI costs: viewport position changes no longer write to workspace `@State`, and invisible quick actions no longer create/layout all six controls. A stable, main-actor non-observable frame holder supplies marquee hit testing without invalidating the grid. Current-frame replacement and offscreen clipping are tested. Decoder workers, cache limits, thumbnail resolution and original-image behavior are unchanged.
 
 Strict checks pass: 150 registered tests, 148 executed and two optional RAW skips; optimized packaging and signature verification pass. After unlock, native checks traversed the same 115-JPEG collection, scrolled back across several pages, and confirmed visible thumbnails eventually finished loading. Returning to evicted entries can still show transient loading indicators; this is not an all-115-images warm-cache measurement. Marquee selection after scrolling, exact two-sample marquee, selected-tile rotation/Undo, Mirror menu opening, Crop/cancel, Preview/filmstrip and Space return passed. The original folder, selection, flag and Contact Sheet were restored without personal-photo edits. Physical trackpad/hover-only and broad platform/accessibility coverage remain open. No numeric scroll/frame-time improvement or large-library acceptance is claimed. See ADR 0024 and the tracker/delivery PR for final evidence.
+
+## Thumbnail cache tiers — 2026-10-21
+
+[FastRawViewer research and decisions](FAST_RAW_VIEWER_PERFORMANCE.md) informed bounded RAM/disk thumbnail reuse and immediate RAM-hit display. [Two aggregate release runs](benchmarks/2026-10-21-thumbnail-cache.json) use 115 distinct paths containing copies of one synthetic 24 MP gradient JPEG, decoded to 480-pixel thumbnails. Reference Mac: 18 logical CPUs, 128 GiB RAM, macOS 27.0.1. Application caches start empty; OS caches are uncontrolled. Passes are sequential within one process. The previous policy uses current code with the former 24 MiB budget, not a historic binary.
+
+| Cache policy / pass | Source decodes on return | Total service time across 115 images |
+| --- | ---: | ---: |
+| Former 24 MiB RAM policy, second pass | 115 | 1,343–1,381 ms |
+| Adaptive RAM (256 MiB budget here), second pass | 0 | 0.44–0.46 ms |
+| RAM + disk, second pass | 0 | 0.42–0.56 ms |
+| New worker forced to use disk, first pass | 0 (115 disk hits) | 31–37 ms |
+
+Adaptive RAM retained 67.38 MiB of decoded thumbnails versus 23.44 MiB under the old budget. These are cache bytes, not process RSS. Initial RAM-and-disk population took 1,748–1,771 ms versus 1,347–1,367 ms with RAM only: about 380–424 ms (28–31%) of extra first-use encoding/writing work. Photo currently saves all eligible thumbnails as lossless PNG rather than applying a generation-time threshold. All original JPEG hashes matched afterward. Reproduce with `swift run -c release PhotoBench --thumbnail-cache`.
+
+Native checks passed scrolling several pages through an existing 115-JPEG folder and returning with visible thumbnails populated, normal quit/relaunch, final-build Contact Sheet and restored original focus. View → Clear Thumbnail Cache is present; disposable automated tests exercise clearing, not the personal-photo cache. Six new regressions cover pixel/dimension/source-kind round trips, source replacement/removal, size keys, corruption, write failure, budgets, owned-file clearing, session isolation and concurrent RAM lookups. Strict checks pass with 156 registered tests, 154 executed and two optional RAW skips; release packaging/signature verification pass.
+
+These timings measure the thumbnail service, not scrolling FPS, full-app restart latency, RAW rendering or FastRawViewer performance. No comparative fastest-viewer, peak RSS, physical-trackpad or 10k/40k-shoot claim. Directional idle prefetch, media-aware parallelism and memory-pressure response remain follow-ups. Cache invalidation uses file identity/timestamps rather than source hashes; cross-process writers and unusual filesystem timestamp behavior remain unverified.

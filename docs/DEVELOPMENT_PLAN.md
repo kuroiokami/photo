@@ -321,3 +321,10 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 - [x] Verify viewport clipping, stale-frame replacement, reverse drag and selection-base retention; pass strict checks and optimized packaging.
 - [x] Complete same-folder initial/return scrolling, thumbnail and marquee checks after unlock; restore browsing context and document cold/evicted-load limits. Required final-head CI/delivery evidence belongs in the PR.
 - [ ] Broaden physical trackpad/hover-only, frame-time and platform/accessibility acceptance.
+
+## FastRawViewer-informed thumbnail reuse — 2026-10-21
+
+- [x] Research published caching/scheduling patterns and adopt bounded decoded RAM and persistent thumbnail tiers while preserving selected-preview/detail workers.
+- [x] Verify source-change/corruption/failure recovery, pixel/source labels, clear/eviction limits and concurrent RAM lookup; keep originals untouched.
+- [x] Measure two release synthetic 115-JPEG cache-policy runs, verify repeat native browsing/relaunch and update the user guide/research/performance evidence.
+- [ ] Follow up with measured viewport-aware prefetch, media-specific concurrency, physical trackpad and representative mixed-camera/large-shoot/RSS acceptance.

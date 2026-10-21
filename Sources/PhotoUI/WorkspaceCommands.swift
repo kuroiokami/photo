@@ -10,6 +10,7 @@ struct WorkspaceActions {
   let hidePreview: @MainActor () -> Void
   let openFolder: @MainActor () -> Void
   let reload: @MainActor () -> Void
+  let clearThumbnails: @MainActor () -> Void
   let workflow: @MainActor (Int) -> Void
   let help: @MainActor () -> Void
   let canReload: Bool
@@ -261,6 +262,10 @@ public struct WorkspaceCommands: Commands {
     CommandGroup(after: .help) {
       Button("Photo Quick Start & Shortcuts") { actions?.help() }.disabled(
         actions?.canDecide != true)
+    }
+    CommandGroup(after: .toolbar) {
+      Button("Clear Thumbnail Cache") { actions?.clearThumbnails() }
+        .disabled(actions?.canDecide != true)
     }
     CommandGroup(after: .newItem) {
       Button("Open Folder…") { actions?.openFolder() }

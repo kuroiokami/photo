@@ -28,7 +28,7 @@ Photo is a native, folder-first culling app. This guide covers getting the sourc
 | Dependencies | No third-party Swift packages, API keys or environment files |
 | Images | JPEG (`.jpg` / `.jpeg`), PNG, Sony ARW, Canon CR2/CR3/CRW, Olympus/OM System ORF; extension matching is case-insensitive |
 
-Recognition does not guarantee a preview or RAW decoder for every camera/mode. Real-camera coverage and minimum-platform/Intel acceptance are recorded in the [tracker](../PROJECT_STATUS.md). Fit previews, decoded detail and Apple’s transient RAW/GPU allocations use memory separately. One detail pane retains up to 256 MiB; comparison allows two such panes. Cropping does not reduce the full RAW decoding budget.
+Recognition does not guarantee a preview or RAW decoder for every camera/mode. Real-camera coverage and minimum-platform/Intel acceptance are recorded in the [tracker](../PROJECT_STATUS.md). Thumbnail RAM caching uses 64–256 MiB per window based on physical RAM; generated disk thumbnails use a 512 MiB cache target. View → Clear Thumbnail Cache discards derived thumbnails without touching photos or decisions. Fit previews, decoded detail and Apple’s transient RAW/GPU allocations use memory separately. One detail pane retains up to 256 MiB; comparison allows two such panes. Cropping does not reduce the full RAW decoding budget.
 
 ## 2. Install Apple’s developer tools
 
