@@ -3,6 +3,15 @@ import ImageIO
 import PhotoCore
 
 public actor ImageMetadataReader: PhotoMetadataReading {
+  private let wallClock = ImageMetadataReader.formatter("yyyy:MM:dd HH:mm:ss")
+  private let offsetClock = ImageMetadataReader.formatter("yyyy:MM:dd HH:mm:ssXXXXX")
+  private static func formatter(_ format: String) -> DateFormatter {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = format
+    return formatter
+  }
   public init() {}
   public func embeddedXMP(for file: URL) throws -> Data? {
     try Task.checkCancellation()
@@ -41,18 +50,12 @@ public actor ImageMetadataReader: PhotoMetadataReading {
       result.focalLength = (exif[kCGImagePropertyExifFocalLength] as? NSNumber)?.doubleValue
       result.captureTimeText = exif[kCGImagePropertyExifDateTimeOriginal] as? String
       if let text = result.captureTimeText {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        // EXIF without an offset remains a wall-clock time; use UTC consistently
-        // rather than making order depend on the Mac's current time zone.
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        // Reuse actor-owned formatters; EXIF without an offset stays in UTC.
         if let offset = exif[kCGImagePropertyExifOffsetTimeOriginal] as? String {
-          formatter.dateFormat = "yyyy:MM:dd HH:mm:ssXXXXX"
-          result.captureTime = formatter.date(from: text + offset)
+          result.captureTime = offsetClock.date(from: text + offset)
           result.captureTimeText = text + " " + offset
         } else {
-          formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
-          result.captureTime = formatter.date(from: text)
+          result.captureTime = wallClock.date(from: text)
         }
       }
       if let fraction = exif[kCGImagePropertyExifSubsecTimeOriginal] as? String,

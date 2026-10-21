@@ -50,6 +50,9 @@ public actor DecisionStore {
   let databaseURL: URL
   public nonisolated let sourceProtection: SourceProtection
   private var connection: DatabaseConnection?
+  // Actor-owned, default configuration shared by decision and metadata records.
+  let recordEncoder = JSONEncoder()
+  let recordDecoder = JSONDecoder()
   public init(databaseURL: URL, sourceProtection: SourceProtection = .shared) {
     self.databaseURL = databaseURL
     self.sourceProtection = sourceProtection
@@ -126,14 +129,14 @@ public actor DecisionStore {
       guard result == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 0) else {
         throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
       }
-      return try JSONDecoder().decode(
+      return try recordDecoder.decode(
         StoredDecision.self,
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
 
   func write(_ value: StoredDecision, key: String) throws {
-    let data = try JSONEncoder().encode(value)
+    let data = try recordEncoder.encode(value)
     try withDB { db in
       var statement: OpaquePointer?
       guard
@@ -216,13 +219,14 @@ public actor DecisionStore {
     }
     let identity = try key(for: image)
     let previous = try pathIdentity(image)
-    let entry = try loadValue(for: image, previousIdentity: previous)
+    let entry = try loadValue(for: image, identity: identity, previousIdentity: previous)
     if previous != identity { _ = try pathIdentity(image, update: identity) }
     return DecisionEntry(decision: entry.decision, status: entry.status, identity: identity)
   }
 
-  private func loadValue(for image: URL, previousIdentity: String?) throws -> DecisionEntry {
-    let identity = try key(for: image)
+  private func loadValue(for image: URL, identity: String, previousIdentity: String?) throws
+    -> DecisionEntry
+  {
     let local = try read(identity)
     do {
       let data = try sidecarData(image)
@@ -335,7 +339,7 @@ public actor DecisionStore {
       try write(
         StoredDecision(
           decision: decision, pending: false, baseline: XMPSidecar.digest(data), userModified: true),
-        key: key(for: image))
+        key: currentIdentity)
       return DecisionEntry(decision: decision, status: "Saved")
 
     }

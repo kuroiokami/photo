@@ -4,6 +4,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Performance
+
+- Remove cache-order scans from preview hits and eviction; reuse EXIF date parsers/JSON coders and avoid duplicate file identity reads. Add measured evidence and a review of the remaining performance suggestions.
+
 ### Licensing
 
 - Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.

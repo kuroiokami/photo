@@ -282,3 +282,12 @@ See ADR 0021 and the tracker/delivery PR for validation and remote CI evidence.
 - [x] Pass local Swift checks; record repository checks and exact final-head required CI/merge evidence in the delivery PR. Broader compact-display/VoiceOver/platform and physical-card acceptance remain open.
 
 See ADR 0022 and the tracker for observed evidence.
+
+## Measured performance review — 2026-10-20
+
+- [x] Audit supplied optimization suggestions and retain natural ordering, durability, source protection and independent copy verification.
+- [x] Measure and remove linear cache recency scans; reuse actor-owned EXIF/JSON parsers and existing decision identity lookups.
+- [x] Add isolated release microbenchmarks and cache/timestamp regressions; distinguish warm synthetic service gains from RAW/native/large-shoot acceptance.
+- [ ] Profile batch persistence/XMP, selection summaries/observation, main-actor rating reorders and cold camera metadata before further architectural changes.
+
+See [the audit](PERFORMANCE_REVIEW.md), [evidence](PERFORMANCE.md) and tracker for measurements and exact validation limits.

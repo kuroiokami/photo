@@ -81,8 +81,14 @@ public actor ImagePipeline: PhotoPreviewLoading {
   }
   private var sessionID: UUID?
   private let byteLimit: Int
-  private var cache: [Key: PhotoPreview] = [:]
-  private var order: [Key] = []
+  private struct Entry {
+    let preview: PhotoPreview
+    var previous: Key?
+    var next: Key?
+  }
+  private var cache: [Key: Entry] = [:]
+  private var oldest: Key?
+  private var newest: Key?
   public private(set) var cachedByteCount = 0
   private(set) var decodedImageCount = 0
 
@@ -97,7 +103,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
     let key = Key(url: file, size: size)
     if let cached = cache[key] {
       touch(key)
-      return cached
+      return cached.preview
     }
     // Do not suspend between the cache check and decoding: queued requests
     // then reuse the completed entry instead of redundantly decoding it.
@@ -105,12 +111,12 @@ public actor ImagePipeline: PhotoPreviewLoading {
     let result = try ImageDecoder.decode(file, maximumPixelSize: size)
     try Task.checkCancellation()
     if result.byteCost <= byteLimit {
-      while cachedByteCount + result.byteCost > byteLimit, let oldest = order.first {
-        order.removeFirst()
-        if let removed = cache.removeValue(forKey: oldest) { cachedByteCount -= removed.byteCost }
+      while cachedByteCount + result.byteCost > byteLimit, let key = oldest {
+        remove(key)
       }
-      cache[key] = result
-      order.append(key)
+      cache[key] = Entry(preview: result, previous: newest)
+      if let newest { cache[newest]?.next = key } else { oldest = key }
+      newest = key
       cachedByteCount += result.byteCost
     }
     return result
@@ -124,7 +130,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
     let key = Key(url: file, size: min(max(maximumPixelSize, 1), 2560))
     guard let result = cache[key] else { return nil }
     touch(key)
-    return result
+    return result.preview
   }
 
   /// Keep the actor/worker stable across folders; changing a session only drops
@@ -133,12 +139,37 @@ public actor ImagePipeline: PhotoPreviewLoading {
     guard !Task.isCancelled, self.sessionID != sessionID else { return }
     self.sessionID = sessionID
     cache.removeAll(keepingCapacity: true)
-    order.removeAll(keepingCapacity: true)
+    oldest = nil
+    newest = nil
     cachedByteCount = 0
   }
 
   private func touch(_ key: Key) {
-    order.removeAll { $0 == key }
-    order.append(key)
+    guard newest != key, let entry = cache[key] else { return }
+    if let previous = entry.previous {
+      cache[previous]?.next = entry.next
+    } else {
+      oldest = entry.next
+    }
+    if let next = entry.next { cache[next]?.previous = entry.previous }
+    cache[key]?.previous = newest
+    cache[key]?.next = nil
+    if let newest { cache[newest]?.next = key }
+    newest = key
+  }
+
+  private func remove(_ key: Key) {
+    guard let entry = cache.removeValue(forKey: key) else { return }
+    if let previous = entry.previous {
+      cache[previous]?.next = entry.next
+    } else {
+      oldest = entry.next
+    }
+    if let next = entry.next {
+      cache[next]?.previous = entry.previous
+    } else {
+      newest = entry.previous
+    }
+    cachedByteCount -= entry.preview.byteCost
   }
 }

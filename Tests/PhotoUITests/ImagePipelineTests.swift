@@ -149,6 +149,83 @@ struct ImagePipelineTests {
     #expect(await pipeline.decodedImageCount == 3)
   }
 
+  @Test func cacheRecencySurvivesRepeatedHitsEvictionAndSessionReset() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let original = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let urls = try (0..<4).map { index in
+      let url = directory.appendingPathComponent("Frame\(index).png")
+      try FileManager.default.copyItem(at: original, to: url)
+      return url
+    }
+    let sample = try await ImagePipeline(byteLimit: 0).preview(for: urls[0], maximumPixelSize: 160)
+    let pipeline = ImagePipeline(byteLimit: sample.byteCost * 2)
+    for index in [0, 1] {
+      _ = try await pipeline.preview(for: urls[index], maximumPixelSize: 160)
+    }
+    for _ in 0..<10 {
+      #expect(await pipeline.cachedPreview(for: urls[0], maximumPixelSize: 160) != nil)
+    }
+    _ = try await pipeline.preview(for: urls[2], maximumPixelSize: 160)
+    #expect(await pipeline.cachedPreview(for: urls[1], maximumPixelSize: 160) == nil)
+    #expect(await pipeline.cachedPreview(for: urls[2], maximumPixelSize: 160) != nil)
+    // Both the decode entry point and non-decoding lookup must update recency.
+    _ = try await pipeline.preview(for: urls[0], maximumPixelSize: 160)
+    _ = try await pipeline.preview(for: urls[1], maximumPixelSize: 160)
+    #expect(await pipeline.cachedPreview(for: urls[2], maximumPixelSize: 160) == nil)
+    #expect(await pipeline.cachedByteCount == sample.byteCost * 2)
+    #expect(await pipeline.decodedImageCount == 4)
+    let session = UUID()
+    _ = try await pipeline.preview(for: urls[3], maximumPixelSize: 160, sessionID: session)
+    #expect(await pipeline.cachedByteCount == sample.byteCost)
+    #expect(
+      await pipeline.cachedPreview(for: urls[0], maximumPixelSize: 160, sessionID: session) == nil)
+    #expect(
+      await pipeline.cachedPreview(for: urls[3], maximumPixelSize: 160, sessionID: session) != nil)
+  }
+
+  @Test func reusedEXIFDateParsersKeepOffsetsFractionsAndMissingValuesIndependent() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let original = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    let source = try #require(CGImageSourceCreateWithURL(original as CFURL, nil))
+    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+    let reader = ImageMetadataReader()
+    let text = "2026:10:20 12:34:56"
+    let utc = Date(timeIntervalSince1970: 1_792_499_696)
+    let cases: [([CFString: String], Date?)] = [
+      (
+        [
+          kCGImagePropertyExifDateTimeOriginal: text,
+          kCGImagePropertyExifOffsetTimeOriginal: "+02:00",
+        ], utc.addingTimeInterval(-7200)
+      ),
+      ([kCGImagePropertyExifDateTimeOriginal: text], utc),
+      (
+        [
+          kCGImagePropertyExifDateTimeOriginal: text,
+          kCGImagePropertyExifOffsetTimeOriginal: "-04:30",
+          kCGImagePropertyExifSubsecTimeOriginal: "125",
+        ], utc.addingTimeInterval(16200.125)
+      ),
+      ([:], nil),
+      ([kCGImagePropertyExifDateTimeOriginal: "invalid"], nil),
+      ([kCGImagePropertyExifDateTimeOriginal: text], utc),
+    ]
+    for (index, item) in cases.enumerated() {
+      let file = directory.appendingPathComponent("Date\(index).jpg")
+      let destination = try #require(
+        CGImageDestinationCreateWithURL(file as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+      CGImageDestinationAddImage(
+        destination, image, [kCGImagePropertyExifDictionary: item.0] as CFDictionary)
+      #expect(CGImageDestinationFinalize(destination))
+      let result = try await reader.metadata(for: file)
+      #expect(result.captureTime == item.1)
+    }
+  }
+
   @Test func cacheStaysWithinBudgetAndOversizedImagesAreNotCached() async throws {
     let url = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
     let budget = 100_000
