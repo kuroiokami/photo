@@ -283,6 +283,8 @@ public actor DecisionStore {
   )
     throws -> DecisionEntry
   {
+    let trace = PhotoTrace.begin("SaveDecision")
+    defer { PhotoTrace.end(trace) }
     return try sourceProtection.withWritable([image, XMPSidecar.url(for: image)]) {
       let identity = try key(for: image)
       guard expectedIdentity == nil || expectedIdentity == identity else {
@@ -294,6 +296,9 @@ public actor DecisionStore {
       var record = StoredDecision(
         decision: decision, pending: true, baseline: baseline, userModified: true)
       try write(record, key: identity)
+      PhotoTrace.event("LocalDecisionCommitted", in: trace)
+      let sidecar = PhotoTrace.begin("DecisionXMP")
+      defer { PhotoTrace.end(sidecar) }
       do {
         var coordinationError: NSError?
         var operationError: (any Error)?

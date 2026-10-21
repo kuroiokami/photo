@@ -334,10 +334,18 @@ Actual validation/delivery evidence is recorded in the tracker and delivery PR.
 Research and proposed acceptance gates: [WORKFLOW_PERFORMANCE_RESEARCH.md](WORKFLOW_PERFORMANCE_RESEARCH.md). These do not mark implementation or performance acceptance complete.
 
 - [x] Review primary sources and current browse/decision/metadata/detail/ingest code; rank opportunities and distinguish existing behavior.
-- [ ] Add local, privacy-preserving interaction/queue/copy signposts and a repeatable mixed-format, concurrent-ingest release harness.
-- [ ] Profile and reduce broad UI publication; measure time to first decision, frame hitches and large-folder sort/batch work.
+- [x] Add local, privacy-preserving interaction/queue/copy signposts and a repeatable JPEG/PNG concurrent-ingest service harness; see ADR 0026. Real mixed-RAW/media expansion remains open.
+- [ ] Complete native frame/hitch and large-folder sort/batch profiling. ADR 0026 implements grouped publication and service readiness measurements; a valid native frame comparison remains open.
 - [ ] Evaluate bounded nearby Fit/thumbnail preparation, per-volume scheduling, deferred cache writes and memory-pressure response.
 - [ ] Reuse durable append-only progress for ordinary ingest; prototype fewer source reads without dropping independent destination verification or recovery guarantees.
 - [ ] Validate optional persistent focus position, faster truthful detail and job/caption/priority conveniences with actual photographer tasks.
 
 Ship separately measured chunks. Preserve stable selection, explicit preview sources, original bytes, field-specific metadata/conflicts, durable decisions and verified publication.
+
+## Interaction tracing and background publication — 2026-10-21
+
+- [x] Add filename-free local request/index/save/detail/ingest signposts and a repeatable service scenario with navigation during disposable verified ingest.
+- [x] Coalesce background metadata/decision publications, promote buffered focused-photo results immediately, and protect session/removal/cancellation/filter/Undo behavior.
+- [x] Record paired synthetic release publication counts and service timings, with original-byte checks and explicit frame-time limits.
+- [x] Complete native group decisions during indexing, filters/Undo/scrolling/relaunch and context restoration; required exact-head CI/delivery evidence belongs in the PR.
+- [ ] Obtain finalized native SwiftUI/hitch traces and broaden mixed-RAW, physical-media, memory/large-shoot evidence before claiming responsiveness targets.

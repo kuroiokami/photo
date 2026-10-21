@@ -16,8 +16,14 @@ struct WorkspaceBenchmark {
     let firstPreviewDuringIndexingMilliseconds: Double
     let firstPreviewSucceeded: Bool
     let metadataIndexMilliseconds: Double
+    let metadataPublications: Int
+    let decisionPublications: Int
     let metadataFailures: Int
     let initialDecisionLoadMilliseconds: Double
+    let concurrentIngestFiles: Int
+    let concurrentIngestMilliseconds: Double
+    let verifiedArrivals: Int
+    let selectedReadyMilliseconds: [Double]
     let repeatDecisionLoadMilliseconds: Double
     let decisionErrors: Int
     let isoSortMilliseconds: Double
@@ -29,7 +35,7 @@ struct WorkspaceBenchmark {
     let notes: [String]
   }
 
-  static func run(folder: URL) async throws -> Report {
+  static func run(folder: URL, concurrentIngest: Bool = false) async throws -> Report {
     let scratch = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: scratch) }
@@ -39,6 +45,15 @@ struct WorkspaceBenchmark {
     let urls = try await access.photos(in: folder)
     let enumeration = elapsed(start)
     let before = try await Task.detached { try hashes(urls) }.value
+    let card = scratch.appendingPathComponent("Card")
+    let ingestFiles = concurrentIngest ? Array(urls.prefix(24)) : []
+    if concurrentIngest {
+      try FileManager.default.createDirectory(at: card, withIntermediateDirectories: true)
+      for url in ingestFiles {
+        try FileManager.default.copyItem(
+          at: url, to: card.appendingPathComponent(url.lastPathComponent))
+      }
+    }
     let state = WorkspaceState(fileAccess: access, decisionStore: store)
     await state.openFolder(folder)
     let heartbeat = Heartbeat()
@@ -65,6 +80,35 @@ struct WorkspaceBenchmark {
       await state.loadDecisions()
       return elapsed(start)
     }
+    let audit = ArrivalCount()
+    let copying = Task {
+      guard concurrentIngest else { return 0.0 }
+      let start = ContinuousClock.now
+      _ = try await MediaOperations().ingest(
+        source: card, primary: scratch.appendingPathComponent("Working"),
+        backup: scratch.appendingPathComponent("Backup")
+      ) { progress in
+        await audit.add(progress.verifiedImages.count)
+      }
+      return elapsed(start)
+    }
+    defer { copying.cancel() }
+    let navigation = Task {
+      guard concurrentIngest, !state.photos.isEmpty else { return [Double]() }
+      let candidates = [state.photos[0], state.photos[state.photos.count / 2], state.photos.last!]
+      var results: [Double] = []
+      for photo in candidates {
+        state.select(photo.id)
+        let start = ContinuousClock.now
+        while !state.decisionsReady.contains(photo.id) {
+          guard elapsed(start) < 10_000 else { throw BenchmarkError.decisionTimeout }
+          try await Task.sleep(for: .milliseconds(1))
+        }
+        results.append(elapsed(start))
+      }
+      return results
+    }
+    defer { navigation.cancel() }
     let previewStart = ContinuousClock.now
     var previewSucceeded = false
     if let first = urls.first {
@@ -75,6 +119,8 @@ struct WorkspaceBenchmark {
     let firstPreview = elapsed(previewStart)
     let metadataTime = await indexing.value
     let loadTime = await loading.value
+    let copyTime = try await copying.value
+    let readyTimes = try await navigation.value
     // A fresh workspace forces reads again, using the existing database.
     let reloaded = WorkspaceState(fileAccess: access, decisionStore: store)
     await reloaded.openFolder(folder)
@@ -94,8 +140,14 @@ struct WorkspaceBenchmark {
       fileCount: urls.count, originalsUnchanged: before == after,
       enumerationMilliseconds: enumeration, selectedDecisionMilliseconds: selectedDecision,
       firstPreviewDuringIndexingMilliseconds: firstPreview, firstPreviewSucceeded: previewSucceeded,
-      metadataIndexMilliseconds: metadataTime, metadataFailures: urls.count - state.metadata.count,
-      initialDecisionLoadMilliseconds: loadTime, repeatDecisionLoadMilliseconds: repeatTime,
+      metadataIndexMilliseconds: metadataTime,
+      metadataPublications: state.publicationMetrics.metadata,
+      decisionPublications: state.publicationMetrics.decisions,
+      metadataFailures: urls.count - state.metadata.count,
+      initialDecisionLoadMilliseconds: loadTime,
+      concurrentIngestFiles: ingestFiles.count, concurrentIngestMilliseconds: copyTime,
+      verifiedArrivals: await audit.count, selectedReadyMilliseconds: readyTimes,
+      repeatDecisionLoadMilliseconds: repeatTime,
       decisionErrors: state.saveStatus.values.filter { $0 != "Saved" }.count,
       isoSortMilliseconds: isoTime, ratingSortMilliseconds: ratingTime,
       maximumMainActorGapMilliseconds: heartbeat.maximumGap, mainActorSamples: heartbeat.samples,
@@ -108,9 +160,17 @@ struct WorkspaceBenchmark {
         "Maximum main-actor gap samples a nominal 10 ms timer, including scheduler/OS delays; it is not frame time.",
         "All source bytes are hashed before/after. Reports omit names, paths, EXIF values and hashes.",
         "Single process run; uncontrolled filesystem caches; CLI service timings, not native input latency.",
+        "Publication counts are model update groups, not SwiftUI body evaluations or frame counts.",
+        "Optional concurrent ingest copies up to 24 disposable image copies to two temporary destinations, with real read-back verification.",
+        "Optional navigation selects first/middle/last during indexing; readiness includes a 1ms polling interval, not keyboard-to-display time.",
       ])
   }
 
+  private enum BenchmarkError: Error { case decisionTimeout }
+  private actor ArrivalCount {
+    var count = 0
+    func add(_ value: Int) { count += value }
+  }
   private final class Heartbeat {
     var maximumGap = 0.0
     var samples = 0

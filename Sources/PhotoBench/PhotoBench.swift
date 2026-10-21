@@ -105,8 +105,10 @@ private struct PhotoBench {
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
-    if arguments.first == "--workspace", arguments.count == 2 {
-      let report = try await WorkspaceBenchmark.run(folder: URL(fileURLWithPath: arguments[1]))
+    if ["--workspace", "--workspace-ingest"].contains(arguments.first ?? ""), arguments.count == 2 {
+      let report = try await WorkspaceBenchmark.run(
+        folder: URL(fileURLWithPath: arguments[1]),
+        concurrentIngest: arguments.first == "--workspace-ingest")
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
@@ -117,6 +119,7 @@ private struct PhotoBench {
       print("       PhotoBench --detail /path/to/folder [--baseline] > detail-report.json")
       print("       PhotoBench --generate /new/temp/folder [count]")
       print("       PhotoBench --workspace /path/to/folder > workspace-report.json")
+      print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
       if arguments != ["--help"] { exit(2) }

@@ -11,7 +11,9 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem]
-  public private(set) var selectedIDs: Set<String> = []
+  public private(set) var selectedIDs: Set<String> = [] {
+    didSet { publishSelectedPending() }
+  }
   public private(set) var groupPairs = false
   public private(set) var sourceReview: SourceReviewSession?
   public var isSourceReview: Bool { sourceReview != nil }
@@ -184,16 +186,41 @@ public final class WorkspaceState {
   public var redoTitle: String { redoStack.last?.title ?? "Change" }
   public var canUndo: Bool { !undoStack.isEmpty }
   public var canRedo: Bool { !redoStack.isEmpty }
+  @ObservationIgnored public private(set) var publicationMetrics = WorkspacePublicationMetrics()
   public private(set) var metadata: [String: PhotoMetadata] = [:]
   @ObservationIgnored private var decisionRevision = 0
   @ObservationIgnored private var metadataAttempted: Set<String> = []
+  @ObservationIgnored private var pendingMetadata: [String: PhotoMetadata] = [:]
+  @ObservationIgnored private var pendingMetadataReads = 0
+  @ObservationIgnored private var metadataPublishedAt = ContinuousClock.now
+  private struct LoadedDecision {
+    let entry: DecisionEntry
+    let edit: PhotoEdit
+  }
+  @ObservationIgnored private var pendingDecisions: [String: LoadedDecision] = [:]
+  @ObservationIgnored private var decisionsPublishedAt = ContinuousClock.now
   public private(set) var indexedCount = 0
   public private(set) var indexing = false
   @ObservationIgnored private var metadataJobs: Set<UUID> = []
   public private(set) var collectionRevision = 0
   public private(set) var sort: PhotoSort = .filename
   @ObservationIgnored private var allPhotos: [PhotoItem] = []
-  public private(set) var selectedIndex: Int?
+  public private(set) var selectedIndex: Int? {
+    didSet { publishSelectedPending() }
+  }
+
+  private func publishSelectedPending() {
+    guard let selectedID else { return }
+    if pendingMetadata[selectedID] != nil { publishMetadata(ids: [selectedID]) }
+    let ids = pendingDecisions.keys.filter { id in
+      id == selectedID || selectedIDs.contains(id)
+        || (groupPairs
+          && (familyMembers[id]?.contains {
+            $0.id == selectedID || selectedIDs.contains($0.id)
+          } ?? false))
+    }
+    if !ids.isEmpty { publishDecisions(ids: ids) }
+  }
   @ObservationIgnored private var indicesByID: [PhotoItem.ID: Int]
   public private(set) var directory: URL?
   public private(set) var loadState: FolderLoadState = .ready
@@ -224,6 +251,8 @@ public final class WorkspaceState {
   }
 
   public func openFolder(_ directory: URL, verifiedImages: [URL]? = nil) async {
+    let trace = PhotoTrace.begin("OpenFolder")
+    defer { PhotoTrace.end(trace) }
     let previousID = self.directory == directory ? selectedID : nil
     folderTask?.cancel()
     resetDecisions()
@@ -232,11 +261,14 @@ public final class WorkspaceState {
     sessionID = UUID()
     let session = sessionID
     self.directory = directory
+    publicationMetrics = WorkspacePublicationMetrics()
     selectedIndex = nil
     photos = []
     allPhotos = []
     metadata = [:]
     metadataAttempted = []
+    pendingMetadata = [:]
+    pendingMetadataReads = 0
     indexedCount = 0
     indexing = false
     indicesByID = [:]
@@ -247,6 +279,8 @@ public final class WorkspaceState {
     }
     // Build models and the lookup table away from the main actor as well as IO.
     let task = Task.detached(priority: .userInitiated) {
+      let trace = PhotoTrace.begin("FolderInventory")
+      defer { PhotoTrace.end(trace) }
       var urls = try await fileAccess.photos(in: directory)
       if let verified {
         urls = urls.map(PhotoPath.canonical).filter {
@@ -304,12 +338,15 @@ public final class WorkspaceState {
     decisionsLoading = true
     sessionID = UUID()
     directory = nil
+    publicationMetrics = WorkspacePublicationMetrics()
     selectedIndex = nil
     allPhotos = SampleLibrary.photos
     buildFamilies(allPhotos)
     photos = flagFilter == .all && minimumRating == 0 ? allPhotos : []
     metadata = [:]
     metadataAttempted = []
+    pendingMetadata = [:]
+    pendingMetadataReads = 0
     indexedCount = 0
     indexing = false
     indicesByID = Self.makeIndex(photos)
@@ -355,10 +392,13 @@ public final class WorkspaceState {
   private func indexPhotos(
     _ snapshot: [PhotoItem], using reader: any PhotoMetadataReading, session: UUID
   ) async {
+    let trace = PhotoTrace.begin("MetadataIndex")
+    defer { PhotoTrace.end(trace) }
     let job = UUID()
     metadataJobs.insert(job)
     indexing = true
     defer {
+      if sessionID == session { publishMetadata() }
       metadataJobs.remove(job)
       indexing = !metadataJobs.isEmpty
     }
@@ -366,14 +406,17 @@ public final class WorkspaceState {
       guard !Task.isCancelled, sessionID == session else { return }
       if let selectedPhoto { await readMetadata(selectedPhoto, using: reader) }
       guard !Task.isCancelled, sessionID == session else { return }
-      await readMetadata(photo, using: reader)
+      await readMetadata(photo, using: reader, immediate: false)
       guard !Task.isCancelled, sessionID == session else { return }
-      indexedCount = metadataAttempted.count
+      if pendingMetadataReads >= 64 || metadataPublishedAt.duration(to: .now) >= .milliseconds(50) {
+        publishMetadata()
+      }
       await Task.yield()
     }
     metadataJobs.remove(job)
     indexing = !metadataJobs.isEmpty
     guard sessionID == session else { return }
+    publishMetadata()
     await setSort(sort)
   }
 
@@ -423,13 +466,50 @@ public final class WorkspaceState {
   }
 
   public func readMetadata(_ photo: PhotoItem, using reader: any PhotoMetadataReading) async {
-    guard allByID[photo.id] != nil, !metadataAttempted.contains(photo.id), let url = photo.fileURL
-    else { return }
+    await readMetadata(photo, using: reader, immediate: true)
+  }
+
+  private func readMetadata(
+    _ photo: PhotoItem, using reader: any PhotoMetadataReading, immediate: Bool
+  ) async {
+    guard allByID[photo.id] != nil, let url = photo.fileURL else { return }
+    if pendingMetadata[photo.id] != nil, immediate {
+      publishMetadata(ids: [photo.id])
+      return
+    }
+    guard !metadataAttempted.contains(photo.id) else { return }
     metadataAttempted.insert(photo.id)
     let session = sessionID
     let value = try? await reader.metadata(for: url)
-    guard session == sessionID, !Task.isCancelled, allByID[photo.id] != nil else { return }
-    if let value { metadata[photo.id] = value }
+    guard session == sessionID else { return }
+    guard !Task.isCancelled, allByID[photo.id] != nil else {
+      metadataAttempted.remove(photo.id)
+      return
+    }
+    pendingMetadataReads += 1
+    if let value { pendingMetadata[photo.id] = value }
+    if immediate || selectedID == photo.id { publishMetadata(ids: [photo.id]) }
+  }
+
+  private func publishMetadata(ids: [String]? = nil) {
+    var updates: [String: PhotoMetadata] = [:]
+    for id in ids ?? Array(pendingMetadata.keys) {
+      if let value = pendingMetadata.removeValue(forKey: id), allByID[id] != nil {
+        updates[id] = value
+      }
+    }
+    let progress = metadataAttempted.count
+    guard !updates.isEmpty || indexedCount != progress else { return }
+    let trace = PhotoTrace.begin("PublishMetadata")
+    defer { PhotoTrace.end(trace) }
+    if !updates.isEmpty { metadata.merge(updates) { _, new in new } }
+    indexedCount = progress
+    publicationMetrics.metadata += 1
+    PhotoTrace.event("MetadataPublished", in: trace)
+    if ids == nil {
+      pendingMetadataReads = 0
+      metadataPublishedAt = .now
+    }
   }
 
   public func setSort(_ sort: PhotoSort) async {
@@ -507,6 +587,9 @@ public final class WorkspaceState {
   }
 
   private func resetDecisions() {
+    pendingDecisions = [:]
+    pendingMetadata = [:]
+    pendingMetadataReads = 0
     sourceReview = nil
     sourceReviewedIDs = []
     sourceFields = [:]
@@ -520,6 +603,7 @@ public final class WorkspaceState {
     familyMembers = [:]
     saveStatus = [:]
     decisionsReady = []
+    pendingDecisions = [:]
     decisionsLoading = false
     reloadSelection = nil
     decisionVersions = [:]
@@ -533,6 +617,8 @@ public final class WorkspaceState {
   public func loadDecisions(expectedSession: UUID? = nil) async {
     guard expectedSession == nil || expectedSession == sessionID else { return }
     guard loadState == .ready else { return }
+    let trace = PhotoTrace.begin("DecisionIndex")
+    defer { PhotoTrace.end(trace) }
     decisionsLoading = true
     let session = sessionID
     let snapshot = allPhotos
@@ -548,9 +634,15 @@ public final class WorkspaceState {
         }
       }
       guard session == sessionID, !Task.isCancelled else { return }
-      await loadDecision(photo, session: session)
+      await loadDecision(photo, session: session, immediate: false)
+      if session == sessionID,
+        pendingDecisions.count >= 64 || decisionsPublishedAt.duration(to: .now) >= .milliseconds(50)
+      {
+        publishDecisions()
+      }
     }
     guard session == sessionID, !Task.isCancelled else { return }
+    publishDecisions()
     if sort == .rating {
       allPhotos = sort.ordered(
         allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating))
@@ -560,8 +652,12 @@ public final class WorkspaceState {
     reloadSelection = nil
   }
 
-  private func loadDecision(_ photo: PhotoItem, session: UUID) async {
+  private func loadDecision(_ photo: PhotoItem, session: UUID, immediate: Bool = true) async {
     guard allByID[photo.id] != nil, !decisionsReady.contains(photo.id) else { return }
+    if pendingDecisions[photo.id] != nil {
+      if immediate { publishDecisions(ids: [photo.id]) }
+      return
+    }
     let entry: DecisionEntry
     var edit = PhotoEdit()
     do {
@@ -578,15 +674,39 @@ public final class WorkspaceState {
     else {
       return
     }
-    if let review = entry.sourceReview { sourceReview = review }
-    imageEdits[photo.id] = edit
-    fileIdentities[photo.id] = entry.identity
+    pendingDecisions[photo.id] = LoadedDecision(entry: entry, edit: edit)
+    if immediate || selectedID == photo.id { publishDecisions(ids: [photo.id]) }
+  }
+
+  private func publishDecisions(ids: [String]? = nil) {
+    var loaded: [String: LoadedDecision] = [:]
+    for id in ids ?? Array(pendingDecisions.keys) {
+      if let value = pendingDecisions.removeValue(forKey: id), allByID[id] != nil,
+        !decisionsReady.contains(id)
+      {
+        loaded[id] = value
+      }
+    }
+    guard !loaded.isEmpty else { return }
+    let trace = PhotoTrace.begin("PublishDecisions")
+    defer { PhotoTrace.end(trace) }
+    for (id, value) in loaded { fileIdentities[id] = value.entry.identity }
+    if let review = loaded.values.compactMap({ $0.entry.sourceReview }).first {
+      sourceReview = review
+    }
+    imageEdits.merge(loaded.mapValues(\.edit)) { _, new in new }
     decisionRevision += 1
-    decisions[photo.id] = entry.decision
-    sourceFields[photo.id] = entry.reviewFields
-    if entry.reviewed { sourceReviewedIDs.insert(photo.id) }
-    saveStatus[photo.id] = entry.status
-    decisionsReady.insert(photo.id)
+    decisions.merge(loaded.mapValues { $0.entry.decision }) { _, new in new }
+    sourceFields.merge(loaded.mapValues { $0.entry.reviewFields }) { _, new in new }
+    sourceReviewedIDs.formUnion(loaded.filter { $0.value.entry.reviewed }.keys)
+    saveStatus.merge(loaded.mapValues { $0.entry.status }) { _, new in new }
+    decisionsReady.formUnion(loaded.keys)
+    publicationMetrics.decisions += 1
+    PhotoTrace.event("DecisionsPublished", in: trace)
+    if let selectedID, loaded[selectedID] != nil {
+      PhotoTrace.event("SelectedDecisionReady", in: trace)
+    }
+    if ids == nil { decisionsPublishedAt = .now }
   }
 
   private func matches(_ photo: PhotoItem) -> Bool {
@@ -630,6 +750,8 @@ public final class WorkspaceState {
   public func applyDecision(
     rating: Int? = nil, flag: PhotoFlag? = nil, advance: Bool = false, allowAutoAdvance: Bool = true
   ) {
+    let trace = PhotoTrace.begin("ApplyDecision")
+    defer { PhotoTrace.end(trace) }
     guard let photo = selectedPhoto else { return }
     let targets = operationPhotos.isEmpty ? [photo] : operationPhotos
     guard targets.allSatisfy({ decisionsReady.contains($0.id) }) else { return }

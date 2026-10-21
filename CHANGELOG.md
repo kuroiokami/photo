@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Publish background EXIF/decision results in small groups while keeping selected-photo information immediate; add local performance markers and a concurrent-ingest service scenario.
+
 - Reuse thumbnails with a larger bounded RAM cache, persistent local disk caching and immediate RAM-hit display; add View → Clear Thumbnail Cache.
 
 - Remove cache-order scans from preview hits and eviction; reuse EXIF date parsers/JSON coders and avoid duplicate file identity reads. Add measured evidence and a review of the remaining performance suggestions.

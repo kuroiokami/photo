@@ -101,9 +101,12 @@ public actor ImagePipeline: PhotoPreviewLoading {
     memory.startSession(sessionID)
     let size = min(max(maximumPixelSize, 1), 2560)
     if let cached = memory.lookup(file, size: size, session: sessionID) { return cached }
+    let trace = PhotoTrace.begin(size <= 480 ? "ThumbnailLoad" : "FitLoad")
+    defer { PhotoTrace.end(trace) }
     let stamp = disk?.key(for: file, size: size)
     if let stamp, let cached = disk?.read(stamp), disk?.key(for: file, size: size) == stamp {
       try Task.checkCancellation()
+      PhotoTrace.event("DiskThumbnailHit", in: trace)
       diskHitCount += 1
       memory.insert(cached, file: file, size: size)
       return cached
@@ -111,10 +114,17 @@ public actor ImagePipeline: PhotoPreviewLoading {
     // No suspension between cache checks and decoding: queued callers reuse
     // the result. The selected-preview worker remains a separate actor.
     decodedImageCount += 1
-    let result = try ImageDecoder.decode(file, maximumPixelSize: size)
+    let decode = PhotoTrace.begin("SourceDecode", parent: trace)
+    let result: PhotoPreview
+    do {
+      defer { PhotoTrace.end(decode) }
+      result = try ImageDecoder.decode(file, maximumPixelSize: size)
+    }
     try Task.checkCancellation()
     memory.insert(result, file: file, size: size)
     if let stamp, disk?.key(for: file, size: size) == stamp {
+      let writing = PhotoTrace.begin("ThumbnailCacheWrite", parent: trace)
+      defer { PhotoTrace.end(writing) }
       disk?.store(result, key: stamp)
     }
     return result

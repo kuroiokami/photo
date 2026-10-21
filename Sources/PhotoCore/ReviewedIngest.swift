@@ -114,6 +114,8 @@ extension MediaOperations {
     _ plan: ReviewedCopyPlan, store: DecisionStore, includeOpposingPairs: Bool = false,
     progress: @Sendable (IngestProgress) async -> Void = { _ in }
   ) async throws -> ReviewedCopyReport {
+    let trace = PhotoTrace.begin("ReviewedIngest")
+    defer { PhotoTrace.end(trace) }
     try beginOperation()
     defer { operationInProgress = false }
     guard plan.opposingPairImages.isEmpty || includeOpposingPairs else {
@@ -257,6 +259,7 @@ extension MediaOperations {
           image.source.pathComponents.dropFirst(plan.session.root.pathComponents.count).joined(
             separator: "/"))
       }
+      PhotoTrace.event("VerifiedFamilyArrival", in: trace)
       await progress(
         IngestProgress(
           completed: complete, total: allFiles.count,

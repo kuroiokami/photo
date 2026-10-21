@@ -112,6 +112,8 @@ public actor MediaOperations {
     source: URL, primary: URL, backup: URL,
     progress: @Sendable (IngestProgress) async -> Void = { _ in }
   ) async throws -> IngestReport {
+    let trace = PhotoTrace.begin("VerifiedIngest")
+    defer { PhotoTrace.end(trace) }
     try beginOperation()
     defer { operationInProgress = false }
     let source = try directory(source)
@@ -194,6 +196,7 @@ public actor MediaOperations {
           arrivals += families[family].images.compactMap { publishedTargets[$0] }
         }
       }
+      if !arrivals.isEmpty { PhotoTrace.event("VerifiedFamilyArrival", in: trace) }
       await progress(
         IngestProgress(
           completed: index + 1, total: files.count, filename: file.lastPathComponent,

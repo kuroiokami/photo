@@ -1,6 +1,7 @@
 import CoreImage
 import Foundation
 import ImageIO
+import PhotoCore
 
 /// Coordinates are normalized from the oriented image's top-left corner.
 public struct DetailFocus: Sendable {
@@ -56,6 +57,8 @@ public actor DetailPipeline {
   private func render(
     for url: URL, focus: DetailFocus?, regionReady: (DetailRegion) -> Void
   ) throws -> PhotoPreview {
+    let trace = PhotoTrace.begin("FullDetail")
+    defer { PhotoTrace.end(trace) }
     try Task.checkCancellation()
     return try autoreleasepool {
       guard
@@ -98,6 +101,7 @@ public actor DetailPipeline {
             width: topLeft.width, height: topLeft.height)
           if let patch = try? Self.renderBitmap(output, extent: crop, context: context) {
             try Task.checkCancellation()
+            PhotoTrace.event("FocusRegionReady", in: trace)
             regionReady(
               DetailRegion(
                 preview: PhotoPreview(

@@ -1,0 +1,43 @@
+# Measuring interaction and background work
+
+Photo emits local Apple signposts under subsystem **org.photo.performance**, category **PointsOfInterest**. Names/generated request IDs contain no photo names, paths, EXIF, captions or hashes. There is no network telemetry. Disabled tracing skips interval-state allocation. Raw system/process traces may contain private information; keep them outside Git and publish anonymous aggregates only.
+
+## Native Instruments workflow
+
+Build an optimized app with `sh scripts/build-app.sh --release`. Full Xcode/Instruments is optional for profiling; ordinary builds can use Command Line Tools. In Instruments' SwiftUI or Time Profiler template, include the `os_signpost` instrument and filter to Photo and the subsystem above. Add Hitches/Allocations/File Activity as appropriate.
+
+Record folder reload/scrolling, rapid forward/reverse navigation, stars/flags during loading, EXIF/rating sorting, focus inspection and culling during ingest. Use disposable images for writes. Repeat with identical corpus, window, display and storage. Separate cold from warm visits. Service timers/accessibility-tool wall times are not frame latency.
+
+| Marker | Meaning |
+| --- | --- |
+| OpenFolder / FolderInventory | Workspace folder operation / off-main inventory |
+| MetadataIndex / ReadEXIF / PublishMetadata | Indexing / property reads / grouped publication |
+| DecisionIndex / PublishDecisions / SelectedDecisionReady | Loading / grouped publication / focused-photo readiness |
+| ThumbnailRequest / FitRequest | View task, including waits and cold Fit debounce |
+| ThumbnailLoad / FitLoad / SourceDecode | Actor work / decoding; compare with request to inspect queue delay |
+| ThumbnailCacheWrite / DiskThumbnailHit | Disk cache work/reuse |
+| RAMResultPublished / ImageResultPublished / ImageRequestCancelled | Accepted view state or cancellation, not compositor presentation |
+| ApplyDecision | Immediate decision/filter/selection work |
+| DecisionSaveQueueWait / DecisionPersistence | Waiting for previous saves / persistence work |
+| SaveDecision / LocalDecisionCommitted / DecisionXMP | Regular decision commit / sidecar sync; local commit does not mean XMP completed |
+| SaveSourceDecision / LocalReviewCommitted | Protected-source local saving without a card sidecar write |
+| FullDetail / FocusRegionReady | Explicit detail work / early full-quality RAW patch |
+| VerifiedIngest / ReviewedIngest / VerifiedFamilyArrival | Copy job / arrivals after existing verification/receipt rules |
+
+Preview request and worker/decode/cache intervals share generated IDs across actor calls. Independent jobs have their own IDs. Attaching mid-request can yield incomplete intervals. A long request can include actor wait, storage or publication; inspect stages separately.
+
+## Repeatable service scenarios
+
+```sh
+swift run -c release PhotoBench --generate /tmp/photo-tracing-corpus 1000
+swift run -c release PhotoBench --workspace /tmp/photo-tracing-corpus > /tmp/photo-workspace.json
+swift run -c release PhotoBench --workspace-ingest /tmp/photo-tracing-corpus > /tmp/photo-workspace-ingest.json
+```
+
+Generation refuses an existing folder. Synthetic JPEG/PNG gradients vary in orientation, dimensions and extensions; this is not a real-camera RAW/focus corpus. The workspace harness uses a fresh temporary SQLite database; metadata/decisions overlap the first Fit preview. All original image bytes are hashed before/after. Reports omit source names, paths, hashes, metadata values and pixels.
+
+`--workspace-ingest` makes a disposable card folder from up to 24 input images, then verifies copies to two temporary destinations while selecting first/middle/last during indexing. Readiness waits poll at 1 ms, not keyboard-to-screen timing. It measures same-machine contention, not physical card/network throughput. Temporary copies/databases are removed; generated inputs remain for repeats.
+
+Publication counters count model update groups, not SwiftUI body evaluations or per-dictionary notifications. The nominal 10 ms heartbeat includes OS/scheduler delay and is not frame time. Report stage timings/counts/errors/source-byte protection together. See [results](PERFORMANCE.md) and [remaining experiments](WORKFLOW_PERFORMANCE_RESEARCH.md).
+
+API reference: [Apple OSSignposter](https://developer.apple.com/documentation/os/ossignposter).
