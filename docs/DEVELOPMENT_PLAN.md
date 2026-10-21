@@ -309,3 +309,8 @@ See ADR 0023, the usage guide and tracker for actual checks and delivery.
 - [x] Retain existing Image menu commands and Photo-only edit boundaries; verify the shared controls natively and run required checks.
 
 Actual validation/delivery evidence is recorded in the tracker and delivery PR.
+
+## Thumbnail quick actions — 2026-10-20
+
+- [x] Adapt Photo Mechanic-style corner rotation, IPTC and Preview controls, with Photo's crop/mirror additions, to contact-sheet and filmstrip images.
+- [x] Verify selection scope, readiness, Undo and native appearance with existing keyboard coverage; update the guide/tracker. Delivery requires passing final-head CI, recorded in the delivery PR.

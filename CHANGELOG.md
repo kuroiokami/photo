@@ -14,6 +14,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Image controls
 
+- Add thumbnail rotation, mirror, IPTC, crop and Preview quick actions on hover or selection, in Contact Sheet and the Preview filmstrip.
+
 - Show labelled Rotate Left/Right, Mirror and Crop controls in both Contact Sheet and Preview, with visible keyboard hints.
 
 ### Culling and cleanup
