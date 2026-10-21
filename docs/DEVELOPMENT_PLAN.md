@@ -302,3 +302,10 @@ See [the audit](PERFORMANCE_REVIEW.md), [evidence](PERFORMANCE.md) and tracker f
 - [ ] Broaden native compact-window/accessibility/platform, removable/network-volume and large-batch performance acceptance.
 
 See ADR 0023, the usage guide and tracker for actual checks and delivery.
+
+## Visible image editing — 2026-10-20
+
+- [x] Keep labelled rotation/mirror/crop controls visible in Contact Sheet and Preview, with shortcut hints and correct selection scope.
+- [x] Retain existing Image menu commands and Photo-only edit boundaries; verify the shared controls natively and run required checks.
+
+Actual validation/delivery evidence is recorded in the tracker and delivery PR.

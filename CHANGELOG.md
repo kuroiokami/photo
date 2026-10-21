@@ -12,6 +12,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 - Offer Photo under MIT or Apache-2.0, at the recipient’s option, with both license texts and updated contribution/distribution guidance.
 
+### Image controls
+
+- Show labelled Rotate Left/Right, Mirror and Crop controls in both Contact Sheet and Preview, with visible keyboard hints.
+
 ### Culling and cleanup
 
 - Add Z for Fit/100%, [/] for rotation and B/N for photo navigation while zoomed.

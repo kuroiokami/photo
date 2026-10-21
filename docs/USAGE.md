@@ -236,7 +236,7 @@ Select one or more photos. Use the **Image** menu or the thumbnail context menu:
 - **Mirror Vertically:** flip top/bottom.
 - **Reset Image Edits:** remove Photo’s rotation, mirror and crop for the targets.
 
-Preview also has Rotate Left/Right buttons and a Mirror menu. Grouped RAW+JPEG actions apply to both physical files. Existing crops follow orientation changes rather than jumping to another subject area. A Photo-edit/crop label identifies adjusted thumbnails.
+Both Preview and Contact Sheet have a visible **Image** row with **Rotate Left [**, **Rotate Right ]**, **Mirror** and **Crop ⇧⌘C** controls. The Image menu retains the same commands, including Copy/Paste Crop and Reset. Grouped RAW+JPEG actions apply to both physical files. Existing crops follow orientation changes rather than jumping to another subject area. A Photo-edit/crop label identifies adjusted thumbnails.
 
 ### Crop a photo
 
