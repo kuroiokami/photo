@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "baselineProductionCommit": "c41d566b0bc30afed24410931fc361de311916c3",
+  "method": "Same release harness added before production edits; one baseline run, two updated runs, sequential on the same Mac. OS caches uncontrolled.",
+  "before": {
+    "cacheHits": [
+      {
+        "entries": 64,
+        "hits": 10000,
+        "milliseconds": 167.001292
+      },
+      {
+        "entries": 1024,
+        "hits": 10000,
+        "milliseconds": 2636.028084
+      },
+      {
+        "entries": 4096,
+        "hits": 10000,
+        "milliseconds": 10635.281334
+      }
+    ],
+    "decisionMilliseconds": 526.638834,
+    "decisionReads": 1000,
+    "logicalCPUCount": 18,
+    "metadataMilliseconds": 247.84425,
+    "metadataReads": 1000,
+    "notes": [
+      "Disposable synthetic 8x8 JPEGs; cache warmed before timing; no user photos or shared database.",
+      "Cache loop includes actor calls and URL hashing. Cache population is excluded.",
+      "Metadata loop reads one warm JPEG with an offset-bearing EXIF date; not RAW decoder startup.",
+      "Decision loop reads one warm JPEG without XMP after its initial durable cache seed.",
+      "Single-process microbenchmarks, uncontrolled OS caches; not UI latency or large-shoot acceptance."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "schemaVersion": 1
+  },
+  "after": [
+    {
+      "cacheHits": [
+        {
+          "entries": 64,
+          "hits": 10000,
+          "milliseconds": 39.28275
+        },
+        {
+          "entries": 1024,
+          "hits": 10000,
+          "milliseconds": 39.015958
+        },
+        {
+          "entries": 4096,
+          "hits": 10000,
+          "milliseconds": 38.374291
+        }
+      ],
+      "decisionMilliseconds": 471.380333,
+      "decisionReads": 1000,
+      "logicalCPUCount": 18,
+      "metadataMilliseconds": 166.885083,
+      "metadataReads": 1000,
+      "notes": [
+        "Disposable synthetic 8x8 JPEGs; cache warmed before timing; no user photos or shared database.",
+        "Cache loop includes actor calls and URL hashing. Cache population is excluded.",
+        "Metadata loop reads one warm JPEG with an offset-bearing EXIF date; not RAW decoder startup.",
+        "Decision loop reads one warm JPEG without XMP after its initial durable cache seed.",
+        "Single-process microbenchmarks, uncontrolled OS caches; not UI latency or large-shoot acceptance."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "schemaVersion": 1
+    },
+    {
+      "cacheHits": [
+        {
+          "entries": 64,
+          "hits": 10000,
+          "milliseconds": 38.924417
+        },
+        {
+          "entries": 1024,
+          "hits": 10000,
+          "milliseconds": 37.532958
+        },
+        {
+          "entries": 4096,
+          "hits": 10000,
+          "milliseconds": 37.798625
+        }
+      ],
+      "decisionMilliseconds": 483.84525,
+      "decisionReads": 1000,
+      "logicalCPUCount": 18,
+      "metadataMilliseconds": 165.069292,
+      "metadataReads": 1000,
+      "notes": [
+        "Disposable synthetic 8x8 JPEGs; cache warmed before timing; no user photos or shared database.",
+        "Cache loop includes actor calls and URL hashing. Cache population is excluded.",
+        "Metadata loop reads one warm JPEG with an offset-bearing EXIF date; not RAW decoder startup.",
+        "Decision loop reads one warm JPEG without XMP after its initial durable cache seed.",
+        "Single-process microbenchmarks, uncontrolled OS caches; not UI latency or large-shoot acceptance."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "schemaVersion": 1
+    }
+  ]
+}

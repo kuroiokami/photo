@@ -75,6 +75,13 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments == ["--hot-paths"] {
+      let report = try await HotPathBenchmark.run()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     if arguments.first == "--generate", arguments.count >= 2 {
       let count = arguments.count >= 3 ? Int(arguments[2]) ?? 2000 : 2000
       try generate(at: URL(fileURLWithPath: arguments[1]), count: max(1, min(count, 10_000)))
@@ -103,6 +110,7 @@ private struct PhotoBench {
       print("       PhotoBench --detail /path/to/folder [--baseline] > detail-report.json")
       print("       PhotoBench --generate /new/temp/folder [count]")
       print("       PhotoBench --workspace /path/to/folder > workspace-report.json")
+      print("       PhotoBench --hot-paths > hot-path-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }

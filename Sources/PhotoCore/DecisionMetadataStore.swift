@@ -201,13 +201,13 @@ extension DecisionStore {
       guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 0) else {
         throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
       }
-      return try JSONDecoder().decode(
+      return try recordDecoder.decode(
         StoredMetadata.self,
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
   func putMetadata(_ value: StoredMetadata, identity: String) throws {
-    let data = try JSONEncoder().encode(value)
+    let data = try recordEncoder.encode(value)
     try withDB { db in
       var statement: OpaquePointer?
       guard
