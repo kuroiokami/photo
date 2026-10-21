@@ -711,8 +711,8 @@ public final class WorkspaceState {
     for (photo, result) in zip(files, results) {
       guard allByID[photo.id] != nil, !decisionsReady.contains(photo.id) else { continue }
       switch result {
-      case .success(let (entry, edit)):
-        pendingDecisions[photo.id] = LoadedDecision(entry: entry, edit: edit)
+      case .success(let loaded):
+        pendingDecisions[photo.id] = LoadedDecision(entry: loaded.0, edit: loaded.1)
       case .failure(let error):
         pendingDecisions[photo.id] = LoadedDecision(
           entry: DecisionEntry(decision: CullingDecision(), status: error.localizedDescription),
