@@ -4,6 +4,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Documentation
+
+- Add a sourced, code-informed performance research plan covering responsive culling, focus checks, metadata, verified ingest and deadline/large-shoot workflows; distinguish proposals from implemented behavior.
+
 ### Performance
 
 - Reuse thumbnails with a larger bounded RAM cache, persistent local disk caching and immediate RAM-hit display; add View → Clear Thumbnail Cache.
