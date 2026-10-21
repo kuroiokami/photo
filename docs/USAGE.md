@@ -236,6 +236,10 @@ Select one or more photos. Use the **Image** menu or the thumbnail context menu:
 - **Mirror Vertically:** flip top/bottom.
 - **Reset Image Edits:** remove Photo’s rotation, mirror and crop for the targets.
 
+Hover over a thumbnail to reveal quick actions on the image itself; selected thumbnails keep these controls visible. The top corners rotate left/right, the top center opens Mirror, the bottom-left **i** opens IPTC/keywords, the bottom center opens Crop, and the bottom-right magnifying glass opens Preview. Hover help names each action. These controls also appear in the Preview filmstrip.
+
+Rotate, mirror and IPTC on a selected thumbnail retain the selected group. On an unselected thumbnail, they select that photo first. Crop edits only the clicked photo; Preview opens the clicked photo as a single selection. Direct editing does not auto-advance. Stars and flags remain below each thumbnail, and keyboard shortcuts and the visible Image row remain available.
+
 Both Preview and Contact Sheet have a visible **Image** row with **Rotate Left [**, **Rotate Right ]**, **Mirror** and **Crop ⇧⌘C** controls. The Image menu retains the same commands, including Copy/Paste Crop and Reset. Grouped RAW+JPEG actions apply to both physical files. Existing crops follow orientation changes rather than jumping to another subject area. A Photo-edit/crop label identifies adjusted thumbnails.
 
 ### Crop a photo

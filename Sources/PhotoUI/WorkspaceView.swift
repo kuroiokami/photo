@@ -572,19 +572,24 @@ public struct WorkspaceView: View {
     let spokenValue = (["\(decision.flag.title), \(decision.rating) stars"] + information).joined(
       separator: ", ")
     return VStack(alignment: .leading, spacing: 6) {
-      Button {
-        selectThumbnail(photo)
-      } label: {
-        PhotoImageView(
-          photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
-          edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID
-        )
-        .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
+      ThumbnailQuickActions(
+        filename: photo.filename, selected: selected, canEdit: thumbnailReady(photo),
+        action: { thumbnailAction($0, photo: photo) }
+      ) {
+        Button {
+          selectThumbnail(photo)
+        } label: {
+          PhotoImageView(
+            photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
+            edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID
+          )
+          .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Select \(photo.filename)").accessibilityValue(spokenValue)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
       }
-      .buttonStyle(.plain)
-      .accessibilityLabel("Select \(photo.filename)").accessibilityValue(spokenValue)
-      .accessibilityAddTraits(selected ? .isSelected : [])
-      .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
       thumbnailDecisions(photo, selected: selected)
       Button {
         selectThumbnail(photo)
@@ -658,6 +663,27 @@ public struct WorkspaceView: View {
         showWorkflow(2)
       }
     }
+  }
+  private func thumbnailAction(_ action: ThumbnailAction, photo: PhotoItem) {
+    if action == .preview {
+      workspace.selectGroup([photo.id], focus: photo.id)
+      showPreview = true
+    } else {
+      guard thumbnailReady(photo) else { return }
+      prepareThumbnail(photo)
+      switch action {
+      case .rotateLeft: workspace.editSelection(.counterclockwise)
+      case .rotateRight: workspace.editSelection(.clockwise)
+      case .mirrorHorizontal: workspace.editSelection(.horizontal)
+      case .mirrorVertical: workspace.editSelection(.vertical)
+      case .crop: croppingPhoto = photo
+      case .metadata:
+        showWorkflow(2)
+        return
+      case .preview: break
+      }
+    }
+    gridFocused = true
   }
   private func selectThumbnail(_ photo: PhotoItem) {
     let modifiers = NSApp.currentEvent?.modifierFlags ?? []
