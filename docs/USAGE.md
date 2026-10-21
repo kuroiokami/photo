@@ -81,6 +81,8 @@ A saved folder stays in the sidebar until removed. Expand its arrow to discover 
 
 Each view keeps its own thumbnail size during the session. Use its slider or pinch over the collection to adjust density. The filmstrip scrolls horizontally; the focused photo is revealed after keyboard navigation or sorting.
 
+Background shooting information and saved decisions appear in small updates while a folder loads. Photo prioritizes the focused photo; choosing an EXIF sort waits for indexing to finish before reordering the collection.
+
 ### Thumbnail caching
 
 Photo remembers generated thumbnails in memory and on this Mac's disk so returning to photos does not repeatedly decode the originals. The memory allowance adapts to your Mac within a fixed limit; the disk cache is also limited. New or changed files still need an initial thumbnail.

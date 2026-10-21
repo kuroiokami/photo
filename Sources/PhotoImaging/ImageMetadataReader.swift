@@ -26,6 +26,8 @@ public actor ImageMetadataReader: PhotoMetadataReading {
     }
   }
   public func metadata(for file: URL) async throws -> PhotoMetadata {
+    let trace = PhotoTrace.begin("ReadEXIF")
+    defer { PhotoTrace.end(trace) }
     try Task.checkCancellation()
     return try autoreleasepool {
       guard

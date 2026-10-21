@@ -77,10 +77,14 @@ public final class DecisionSaveQueue {
   private var count = 0
   public var hasPending: Bool { count > 0 }
   public func enqueue(_ work: @escaping @MainActor () async -> Void) {
+    let queued = PhotoTrace.begin("DecisionSaveQueueWait")
     let previous = tail
     count += 1
     tail = Task {
       await previous?.value
+      PhotoTrace.end(queued)
+      let trace = PhotoTrace.begin("DecisionPersistence")
+      defer { PhotoTrace.end(trace) }
       await work()
       count -= 1
     }

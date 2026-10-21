@@ -66,6 +66,13 @@ struct PhotoImageView: View {
 
   @MainActor
   private func load() async {
+    let trace = PhotoTrace.begin(detailed ? "FitRequest" : "ThumbnailRequest")
+    defer { PhotoTrace.end(trace) }
+    await PhotoTrace.$request.withValue(trace) { await loadResult(trace) }
+  }
+
+  @MainActor
+  private func loadResult(_ trace: PhotoTrace.Interval) async {
     error = nil
     do {
       let url: URL
@@ -81,6 +88,7 @@ struct PhotoImageView: View {
       ) {
         try Task.checkCancellation()
         preview = cached
+        PhotoTrace.event("RAMResultPublished", in: trace)
         onLoaded?(cached)
         return
       }
@@ -91,8 +99,10 @@ struct PhotoImageView: View {
         for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
       try Task.checkCancellation()
       preview = result
+      PhotoTrace.event("ImageResultPublished", in: trace)
       onLoaded?(result)
     } catch is CancellationError {
+      PhotoTrace.event("ImageRequestCancelled", in: trace)
       // A disappearing cell or superseded preview must not publish stale state.
     } catch {
       guard !Task.isCancelled else { return }

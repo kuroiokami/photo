@@ -341,3 +341,11 @@ Research and proposed acceptance gates: [WORKFLOW_PERFORMANCE_RESEARCH.md](WORKF
 - [ ] Validate optional persistent focus position, faster truthful detail and job/caption/priority conveniences with actual photographer tasks.
 
 Ship separately measured chunks. Preserve stable selection, explicit preview sources, original bytes, field-specific metadata/conflicts, durable decisions and verified publication.
+
+## Interaction tracing and background publication — 2026-10-21
+
+- [x] Add filename-free local request/index/save/detail/ingest signposts and a repeatable service scenario with navigation during disposable verified ingest.
+- [x] Coalesce background metadata/decision publications, promote buffered focused-photo results immediately, and protect session/removal/cancellation/filter/Undo behavior.
+- [x] Record paired synthetic release publication counts and service timings, with original-byte checks and explicit frame-time limits.
+- [x] Complete native group decisions during indexing, filters/Undo/scrolling/relaunch and context restoration; required exact-head CI/delivery evidence belongs in the PR.
+- [ ] Obtain finalized native SwiftUI/hitch traces and broaden mixed-RAW, physical-media, memory/large-shoot evidence before claiming responsiveness targets.
