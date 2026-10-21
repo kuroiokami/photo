@@ -42,7 +42,7 @@ struct WorkflowWalkthrough: View {
             )
             section(
               "Want to review a source without changing it?",
-              "Start Culling opens the card’s photos in the main window. Press P on keepers; stars, flags and crops stay on this Mac while the source stays unchanged. Use Copy Reviewed Photos… in the source banner to prepare and copy your choices, carrying decisions and Photo-local edits to both copies. The source stays protected afterward."
+              "Start Culling opens the card in the main window. Expand sidebar folders to find DCIM or other photo folders, then press P on keepers; stars, flags and crops stay on this Mac while the source stays unchanged. Use Copy Reviewed Photos… in the source banner to prepare and copy your choices, carrying decisions and Photo-local edits to both copies. The source stays protected afterward."
             )
           case 1:
             section(

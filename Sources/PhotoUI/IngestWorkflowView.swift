@@ -121,7 +121,7 @@ struct IngestWorkflowView: View {
       Text("Where are the photos?").font(.title3.bold())
       folderRow("Card or folder", path: $source, accessibility: "Source folder")
       Text(
-        "Choose your memory card or a folder containing photos. You’ll see the photos in the main window when you start culling."
+        "Choose your card or photo folder. Start Culling opens it in the main window; expand the sidebar folders to reach DCIM or other subfolders."
       )
       .font(.callout).foregroundStyle(.secondary)
       Picker("How would you like to start?", selection: $cullFirst) {
