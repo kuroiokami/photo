@@ -569,107 +569,35 @@ public struct WorkspaceView: View {
     }
   }
 
-  private func thumbnail(_ photo: PhotoItem) -> some View {
-    let selected = workspace.selectedIDs.contains(photo.id)
-    let decision = workspace.decisions[photo.id] ?? CullingDecision()
-    let information = thumbnailLabels.map {
-      (field: $0, value: $0.label(workspace.metadata[photo.id]))
-    }
-    let spokenValue =
-      (["\(decision.flag.title), \(decision.rating) stars"] + information.map(\.value)).joined(
-        separator: ", ")
-    return VStack(alignment: .leading, spacing: 6) {
-      ThumbnailQuickActions(
-        filename: photo.filename, selected: selected, canEdit: thumbnailReady(photo),
-        action: { thumbnailAction($0, photo: photo) }
-      ) {
-        Button {
-          selectThumbnail(photo)
-        } label: {
-          PhotoImageView(
-            photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
-            edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), sessionID: workspace.sessionID,
-            cacheGeneration: thumbnailCacheGeneration
-          )
-          .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Select \(photo.filename)").accessibilityValue(spokenValue)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .simultaneousGesture(TapGesture(count: 2).onEnded { showPreview = true })
-      }
-      thumbnailDecisions(photo, selected: selected)
-      Button {
-        selectThumbnail(photo)
-      } label: {
-        VStack(alignment: .leading, spacing: 4) {
-          if workspace.groupPairs, workspace.pairedCount(photo) > 1 {
-            Text("RAW + JPEG").font(.caption2)
-          }
-          Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
-          thumbnailInformation(information)
-        }.foregroundStyle(selected ? Color.white : Color.secondary).frame(
-          maxWidth: .infinity, alignment: .leading
-        ).contentShape(Rectangle())
-      }.buttonStyle(.plain)
-      if workspace.imageEdits[photo.id]?.isEdited == true {
-        Text(workspace.imageEdits[photo.id]?.crop != nil ? "Cropped · Photo edit" : "Photo edit")
-          .font(.caption2).foregroundStyle(.secondary)
-      }
-    }
-    .padding(8)
-    .background(
-      selected ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.025),
-      in: RoundedRectangle(cornerRadius: 7)
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: 7).strokeBorder(
-        selected ? Color.accentColor : .clear, lineWidth: 2)
-    )
-    .contextMenu {
-      ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
-        Button(flag.title + " Selection") {
-          workspace.applyThumbnailDecision(to: photo.id, flag: flag)
-        }.disabled(!thumbnailReady(photo))
-      }
-      Menu("Stars") {
-        ForEach(0...5, id: \.self) { rating in
-          Button(rating == 0 ? "Clear Stars" : "\(rating) Stars") {
-            workspace.applyThumbnailDecision(to: photo.id, rating: rating)
-          }
-        }
-      }.disabled(!thumbnailReady(photo))
-      Divider()
-      ForEach([PhotoEditAction.counterclockwise, .clockwise, .horizontal, .vertical], id: \.self) {
-        action in
-        Button(action.rawValue + " Selection") {
+  @ViewBuilder private func thumbnail(_ photo: PhotoItem) -> some View {
+    if let state = workspace.thumbnailState(for: photo.id) {
+      WorkspaceThumbnail(
+        photo: photo, state: state, selection: workspace.selectionPresentation,
+        thumbnails: thumbnails, sessionID: workspace.sessionID,
+        cacheGeneration: thumbnailCacheGeneration, thumbnailEdge: thumbnailEdge,
+        thumbnailLabels: thumbnailLabels, groupPairs: workspace.groupPairs,
+        hasCopiedCrop: copiedCrop != nil,
+        select: { selectThumbnail(photo) },
+        action: { thumbnailAction($0, photo: photo) },
+        openPreview: { showPreview = true },
+        metadata: {
+          prepareThumbnail(photo)
+          showWorkflow(2)
+        },
+        apply: { rating, flag in
+          workspace.applyThumbnailDecision(to: photo.id, rating: rating, flag: flag)
+          gridFocused = true
+        },
+        edit: { action in
           prepareThumbnail(photo)
           workspace.editSelection(action)
-        }.disabled(!thumbnailReady(photo))
-      }
-      Button("Crop…") {
-        prepareThumbnail(photo)
-        croppingPhoto = photo
-      }.disabled(!thumbnailReady(photo))
-      Button("Copy Crop") { copiedCrop = workspace.imageEdits[photo.id]?.crop }.disabled(
-        workspace.imageEdits[photo.id]?.crop == nil)
-      Button("Paste Crop to Selection") {
-        prepareThumbnail(photo)
-        pasteCrop()
-      }.disabled(copiedCrop == nil || !thumbnailReady(photo))
-      Button("Clear Crop from Selection") {
-        prepareThumbnail(photo)
-        workspace.editSelection(.clearCrop)
-      }.disabled(!thumbnailReady(photo))
-      Button("Reset Image Edits for Selection") {
-        prepareThumbnail(photo)
-        workspace.editSelection(.reset)
-      }.disabled(!thumbnailReady(photo))
-      Divider()
-      Button("Edit IPTC & Keywords…") {
-        prepareThumbnail(photo)
-        showWorkflow(2)
-      }
+        },
+        copyCrop: { copiedCrop = state.edit.crop },
+        pasteCrop: {
+          prepareThumbnail(photo)
+          pasteCrop()
+        }
+      ).equatable()
     }
   }
   private func thumbnailAction(_ action: ThumbnailAction, photo: PhotoItem) {
@@ -708,53 +636,10 @@ public struct WorkspaceView: View {
     workspace.decisionsReady.contains(photo.id)
       && (!workspace.selectedIDs.contains(photo.id) || workspace.decisionSelectionReady)
   }
-  private func thumbnailDecisions(_ photo: PhotoItem, selected: Bool) -> some View {
-    let decision = workspace.decisions[photo.id] ?? CullingDecision()
-    return HStack(spacing: 0) {
-      Menu {
-        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
-          Button(flag.title) {
-            workspace.applyThumbnailDecision(to: photo.id, flag: flag)
-            gridFocused = true
-          }
-        }
-      } label: {
-        Image(systemName: decision.flag.symbol).frame(width: 18, height: 24)
-      }
-      .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-      .accessibilityLabel("Flag \(photo.filename)").accessibilityValue(decision.flag.title).help(
-        "Flag this photo, or the selected group when this photo is selected. Reject never deletes files."
-      )
-      ForEach(1...5, id: \.self) { rating in
-        Button {
-          let current = selected ? workspace.selectionSummary.rating : decision.rating
-          workspace.applyThumbnailDecision(to: photo.id, rating: current == rating ? 0 : rating)
-          gridFocused = true
-        } label: {
-          Image(systemName: rating <= decision.rating ? "star.fill" : "star").font(
-            .system(size: 11)
-          ).frame(maxWidth: .infinity).frame(height: 24).contentShape(Rectangle())
-        }.buttonStyle(.plain).accessibilityLabel("\(rating) stars for \(photo.filename)")
-          .help(
-            "Set \(rating) stars for this photo or selected group. Click the current rating again to clear; flags stay independent."
-          )
-      }
-    }.foregroundStyle(.secondary).disabled(!thumbnailReady(photo))
-  }
   private func copyCrop() {
     copiedCrop = workspace.selectedPhoto.flatMap { workspace.imageEdits[$0.id]?.crop }
   }
   private func pasteCrop() { if let copiedCrop { workspace.pasteCrop(copiedCrop) } }
-
-  private func thumbnailInformation(_ information: [(field: ThumbnailInfoField, value: String)])
-    -> some View
-  {
-    ForEach(information, id: \.field) { item in
-      Text(item.value).font(.caption2.monospacedDigit())
-        .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-        .help(item.field.title + ": " + item.value)
-    }
-  }
 
   private var imageEditControls: some View {
     HStack(spacing: 8) {

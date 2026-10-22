@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "4b385f39ac41c153069fe00ea82976993ea1f200",
+  "conditions": "Two alternating release pairs; identical public-API harness added to baseline only; no concurrent builds/tests/native inputs during timed runs. OS caches and scheduling uncontrolled.",
+  "runs": [
+    {
+      "label": "baseline-1",
+      "notes": [
+        "Synthetic in-memory sample items, no image decoding, filesystem, sidecars or personal database writes.",
+        "Initialization includes native filename ranks and family/display model setup; decision loading uses the unchanged sample path.",
+        "Query timing includes 2000 selection summary and readiness reads; selection construction is timed separately.",
+        "Model timings do not measure SwiftUI body evaluations, displayed frame rate or physical-trackpad smoothness.",
+        "Additional per-photo observable objects trade memory/initialization work for narrower UI dependencies; representative 40k-shoot RSS acceptance remains open."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "initializationMilliseconds": 8.286625,
+          "loadingMilliseconds": 27.185083,
+          "photos": 10000,
+          "queries": 2000,
+          "queryMilliseconds": 5424.306709,
+          "selectionMilliseconds": 0.326
+        },
+        {
+          "correct": true,
+          "initializationMilliseconds": 19.317458,
+          "loadingMilliseconds": 112.928625,
+          "photos": 40000,
+          "queries": 2000,
+          "queryMilliseconds": 24840.9285,
+          "selectionMilliseconds": 1.234292
+        }
+      ],
+      "schemaVersion": 1
+    },
+    {
+      "label": "updated-1",
+      "notes": [
+        "Synthetic in-memory sample items, no image decoding, filesystem, sidecars or personal database writes.",
+        "Initialization includes native filename ranks and family/display model setup; decision loading uses the unchanged sample path.",
+        "Query timing includes 2000 selection summary and readiness reads; selection construction is timed separately.",
+        "Model timings do not measure SwiftUI body evaluations, displayed frame rate or physical-trackpad smoothness.",
+        "Additional per-photo observable objects trade memory/initialization work for narrower UI dependencies; representative 40k-shoot RSS acceptance remains open."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "initializationMilliseconds": 11.265459,
+          "loadingMilliseconds": 33.3305,
+          "photos": 10000,
+          "queries": 2000,
+          "queryMilliseconds": 0.055125,
+          "selectionMilliseconds": 7.153584
+        },
+        {
+          "correct": true,
+          "initializationMilliseconds": 27.981,
+          "loadingMilliseconds": 141.299166,
+          "photos": 40000,
+          "queries": 2000,
+          "queryMilliseconds": 0.103709,
+          "selectionMilliseconds": 32.939125
+        }
+      ],
+      "schemaVersion": 1
+    },
+    {
+      "label": "updated-2",
+      "notes": [
+        "Synthetic in-memory sample items, no image decoding, filesystem, sidecars or personal database writes.",
+        "Initialization includes native filename ranks and family/display model setup; decision loading uses the unchanged sample path.",
+        "Query timing includes 2000 selection summary and readiness reads; selection construction is timed separately.",
+        "Model timings do not measure SwiftUI body evaluations, displayed frame rate or physical-trackpad smoothness.",
+        "Additional per-photo observable objects trade memory/initialization work for narrower UI dependencies; representative 40k-shoot RSS acceptance remains open."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "initializationMilliseconds": 11.055583,
+          "loadingMilliseconds": 33.876208,
+          "photos": 10000,
+          "queries": 2000,
+          "queryMilliseconds": 0.0545,
+          "selectionMilliseconds": 7.118875
+        },
+        {
+          "correct": true,
+          "initializationMilliseconds": 27.82575,
+          "loadingMilliseconds": 140.669333,
+          "photos": 40000,
+          "queries": 2000,
+          "queryMilliseconds": 0.101375,
+          "selectionMilliseconds": 32.966625
+        }
+      ],
+      "schemaVersion": 1
+    },
+    {
+      "label": "baseline-2",
+      "notes": [
+        "Synthetic in-memory sample items, no image decoding, filesystem, sidecars or personal database writes.",
+        "Initialization includes native filename ranks and family/display model setup; decision loading uses the unchanged sample path.",
+        "Query timing includes 2000 selection summary and readiness reads; selection construction is timed separately.",
+        "Model timings do not measure SwiftUI body evaluations, displayed frame rate or physical-trackpad smoothness.",
+        "Additional per-photo observable objects trade memory/initialization work for narrower UI dependencies; representative 40k-shoot RSS acceptance remains open."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "initializationMilliseconds": 8.226667,
+          "loadingMilliseconds": 27.095417,
+          "photos": 10000,
+          "queries": 2000,
+          "queryMilliseconds": 5133.898334,
+          "selectionMilliseconds": 0.319125
+        },
+        {
+          "correct": true,
+          "initializationMilliseconds": 18.253959,
+          "loadingMilliseconds": 108.862083,
+          "photos": 40000,
+          "queries": 2000,
+          "queryMilliseconds": 23566.663083,
+          "selectionMilliseconds": 1.235666
+        }
+      ],
+      "schemaVersion": 1
+    }
+  ],
+  "observationRegressionsPassed": true,
+  "nativeFunctionalChecksPassed": true,
+  "nativeImageHashMatches": 1000,
+  "framePresentationMeasured": false,
+  "limits": [
+    "Selection summaries queried repeatedly on synthetic in-memory items; not an end-to-end photographer task or demonstrated scroll-frame speedup.",
+    "Per-photo display records and selection snapshots increase setup/selection work; report those costs separately.",
+    "No physical-trackpad, raw-decode, mixed-camera 40k-shoot, RSS or competitor-parity claim."
+  ]
+}

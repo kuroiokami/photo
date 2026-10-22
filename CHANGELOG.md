@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Isolate thumbnail display and selection-readiness updates, and reuse mixed-selection summaries. Preserve group decisions, unknown-file gating, filters and Undo; model timing evidence is separate from native frame smoothness.
+
 - Reuse bounded actor-owned SQLite record-query statements and JSON coders while preserving durable saves, recovery and source protection.
 
 - Append durable ordinary-ingest records instead of rewriting growing manifests for every file; retain verified copying, interrupted recovery and rename mappings.
