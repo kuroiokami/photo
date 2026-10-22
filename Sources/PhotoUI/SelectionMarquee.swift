@@ -6,11 +6,6 @@ struct PhotoTileFrames: PreferenceKey {
     value.merge(nextValue(), uniquingKeysWith: { _, new in new })
   }
 }
-struct PhotoContentOrigin: PreferenceKey {
-  static let defaultValue = CGPoint.zero
-  static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) { value = nextValue() }
-}
-
 struct SelectionMarquee {
   var start: CGPoint
   var end: CGPoint
@@ -22,15 +17,11 @@ struct SelectionMarquee {
   }
 }
 
-/// Tile frames live in content coordinates; scrolling updates only one origin.
 /// Pointer hit-testing data is not UI state. Scroll-position updates must not
 /// invalidate WorkspaceView and rebuild every thumbnail/control on each frame.
 @MainActor
 final class PhotoTileGeometry {
   private var frames: [String: CGRect] = [:]
-  private var contentOrigin = CGPoint.zero
-
-  func moveContent(to origin: CGPoint) { contentOrigin = origin }
 
   func replace(with frames: [String: CGRect]) { self.frames = frames }
   func clear() { frames.removeAll(keepingCapacity: true) }
@@ -39,8 +30,7 @@ final class PhotoTileGeometry {
     let viewport = CGRect(origin: .zero, size: viewportSize)
     return Set(
       frames.filter {
-        let visible = $0.value.offsetBy(dx: contentOrigin.x, dy: contentOrigin.y).intersection(
-          viewport)
+        let visible = $0.value.intersection(viewport)
         return !visible.isNull && rectangle.intersects(visible)
       }.keys)
   }

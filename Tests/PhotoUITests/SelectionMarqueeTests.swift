@@ -22,26 +22,6 @@ struct SelectionMarqueeTests {
     #expect(geometry.hits(in: drag, viewportSize: viewport).isEmpty)
   }
 
-  @Test func contentScrollMovesHitTargetsWithoutReplacingTileFrames() {
-    let geometry = PhotoTileGeometry()
-    geometry.replace(with: [
-      "first": CGRect(x: 10, y: 10, width: 80, height: 80),
-      "second": CGRect(x: 10, y: 240, width: 80, height: 80),
-      "right": CGRect(x: 340, y: 240, width: 80, height: 80),
-    ])
-    let viewport = CGSize(width: 300, height: 200)
-    let drag = CGRect(x: 0, y: 0, width: 100, height: 100)
-    #expect(geometry.hits(in: drag, viewportSize: viewport) == ["first"])
-    geometry.moveContent(to: CGPoint(x: 0, y: -230))
-    #expect(geometry.hits(in: drag, viewportSize: viewport) == ["second"])
-    geometry.moveContent(to: CGPoint(x: -330, y: -230))
-    #expect(geometry.hits(in: drag, viewportSize: viewport) == ["right"])
-    geometry.replace(with: ["new": CGRect(x: 340, y: 240, width: 80, height: 80)])
-    #expect(geometry.hits(in: drag, viewportSize: viewport) == ["new"])
-    geometry.clear()
-    #expect(geometry.hits(in: drag, viewportSize: viewport).isEmpty)
-  }
-
   @Test func draggingOutsideViewportCannotSelectOnlyTheHiddenPartOfATile() {
     let geometry = PhotoTileGeometry()
     geometry.replace(with: ["partial": CGRect(x: 10, y: -40, width: 80, height: 80)])

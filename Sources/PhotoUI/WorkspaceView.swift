@@ -387,7 +387,7 @@ public struct WorkspaceView: View {
         GeometryReader { tile in
           Color.clear.preference(
             key: PhotoTileFrames.self,
-            value: [photo.id: tile.frame(in: .named("ContactSheetContent"))])
+            value: [photo.id: tile.frame(in: .named("ContactSheetViewport"))])
         })
   }
 
@@ -436,29 +436,20 @@ public struct WorkspaceView: View {
         case .ready:
           ScrollViewReader { proxy in
             ScrollView(showPreview ? .horizontal : .vertical) {
-              Group {
-                if showPreview {
-                  LazyHStack(alignment: .top, spacing: 12) {
-                    ForEach(workspace.photos) { photo in
-                      framedThumbnail(photo).frame(width: thumbnailEdge + 16)
-                    }
-                  }.padding(12)
-                } else {
-                  LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-                    spacing: 16
-                  ) {
-                    ForEach(workspace.photos) { photo in framedThumbnail(photo) }
-                  }.padding(16)
-                }
+              if showPreview {
+                LazyHStack(alignment: .top, spacing: 12) {
+                  ForEach(workspace.photos) { photo in
+                    framedThumbnail(photo).frame(width: thumbnailEdge + 16)
+                  }
+                }.padding(12)
+              } else {
+                LazyVGrid(
+                  columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
+                  spacing: 16
+                ) {
+                  ForEach(workspace.photos) { photo in framedThumbnail(photo) }
+                }.padding(16)
               }
-              .coordinateSpace(name: "ContactSheetContent")
-              .background(
-                GeometryReader { content in
-                  Color.clear.preference(
-                    key: PhotoContentOrigin.self,
-                    value: content.frame(in: .named("ContactSheetViewport")).origin)
-                })
             }
             .simultaneousGesture(
               MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
@@ -473,7 +464,6 @@ public struct WorkspaceView: View {
             )
             .coordinateSpace(name: "ContactSheetViewport")
             .onPreferenceChange(PhotoTileFrames.self) { tileGeometry.replace(with: $0) }
-            .onPreferenceChange(PhotoContentOrigin.self) { tileGeometry.moveContent(to: $0) }
             .simultaneousGesture(
               DragGesture(minimumDistance: 5)
                 .onChanged { value in

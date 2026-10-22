@@ -364,6 +364,7 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 
 - [x] Capture native main-thread stalls/CPU work rather than infer scroll feel from decoder timings; add an anonymized trace analyzer and parser tests.
 - [x] Simplify unedited rendering, use typed image request IDs, and reuse formatted labels while preserving edited-image rendering and immediate cache display.
-- [x] Keep tile geometry stable in content coordinates with one scroll offset; test both axes, replacement/clearing and visible-only marquee intersections.
-- [ ] Finish native marquee, hover/edits, keyboard/selection and density/filmstrip checks after unlock, then restore the original browsing context.
-- [ ] Complete matched native captures and physical-trackpad/real-camera/large-shoot acceptance before claiming smoother scrolling or Photo Mechanic parity; see ADR 0028.
+- [x] Preserve viewport-based tile geometry and clip marquee intersections to visible regions; withdraw the content-origin optimization after native acceptance failed.
+- [x] Finish native marquee, quick actions/edits, keyboard/selection and density/filmstrip checks; restore original browsing context and remove the disposable shortcut.
+- [x] Record a matched scripted native pair with settled indexing, warmed rows and identical input sequence/duration; document diagnostic limits.
+- [ ] Complete physical-trackpad/real-camera/large-shoot acceptance before claiming smoother scrolling or Photo Mechanic parity; see ADR 0028.
