@@ -274,3 +274,20 @@ Two alternating release comparisons used the old `cbafe61` ingest implementation
 At 1,000 files, old snapshot publications were 2,000 and encoded payload was 743,787,000 bytes. Updated snapshot publications were four: 1,486,300 snapshot bytes plus 1,288,116 journal bytes, 2,774,416 total. At 100 files the old payload was 7,508,700 bytes versus 277,814 updated. Increasing file count tenfold grew old snapshot payload about 99-fold versus about tenfold for updated bookkeeping. These are observed encoded filesystem payloads, **not physical disk I/O**. Durable per-file appends remain; this does not remove per-file fsync or copying/checksum work.
 
 All source and both-copy payloads matched, all 100/1,000 arrivals completed, and re-ingest verified all 200/2,000 existing copies. Tiny marker files isolate bookkeeping and are not decodable images; no RAW throughput, native UI smoothness, physical-card interruption or representative 10k/40k claim. OS caches and storage state are uncontrolled; attribute polling adds callback overhead. Reproduce with `sh scripts/benchmark.sh --ingest-journal`.
+
+## SQLite statement reuse — 2026-10-21
+
+[ADR 0030](decisions/0030-sqlite-statement-reuse.md) adds a per-connection cache capped at 32 prepared record-query statements and reuses existing default JSON coders across database records. Leases reset execution and clear bindings on success/failure, check reset errors before acknowledging success, and finalize temporary/cached statements at the appropriate lifetime boundary. Schema, FULL synchronization, transaction boundaries, pending-intent/XMP order and filesystem checks remain. This does not batch user-decision saves.
+
+Two alternating release pairs used baseline `2d7bd5d` with only the identical benchmark harness added. The final pairs were repeated after the Swift 6.1 compatibility adjustment; earlier pairs are retained separately in the JSON. Both builds and strict tests finished before timing. Each fresh run uses 1,000 synthetic marker files per workflow, cold initialization and 10,000 warm public image-state/protected-review reads. Source generation/final byte checks are outside timing; normal identity/protection checks and cold-write durability remain inside. [Anonymous reports](benchmarks/2026-10-21-sqlite-statements.json) retain all values.
+
+| Workload | Baseline | Statement reuse |
+| --- | --- | --- |
+| Ordinary cold indexing, 1,000 files | 215–217 ms | 213–234 ms |
+| Ordinary warm image-state reads, 10,000 | 1,786–1,799 ms | 1,685–1,695 ms |
+| Protected-review cold discovery, 1,000 files | 561–562 ms | 546–625 ms |
+| Protected-review warm reads, 10,000 | 1,994–2,012 ms | 1,959–1,969 ms |
+
+These are modest observed service gains (roughly 5–6% ordinary warm reads and 2% review reads), not a general UI/RAW speedup. Cold timings varied and include slower updated samples, so no cold-start improvement is claimed. Filesystem checks and durable cold writes still cost time. The deterministic store regression executes 80 decision/path operations using four application prepare calls and 76 cache hits; SQLite may still internally recompile prepared statements after schema/plan changes. Tests also cover stale bindings, nested leases/capacity, step/body/prepare/decode errors, automatic rollback, schema changes, close/finalization and Unicode review-session isolation/reopening. All generated file bytes remained unchanged and no image sidecars were created.
+
+OS caches/storage state are uncontrolled and two pairs do not establish statistical confidence, physical-media behavior or representative 10k/40k/native frame targets. Marker files are not decoded. Reproduce with `sh scripts/benchmark.sh --sqlite-statements`; narrower UI invalidation remains a separate [checklist](PERFORMANCE_BACKLOG.md) item.

@@ -6,7 +6,7 @@ Last updated: 2026-10-21. This tracks the reviewed optimization suggestions agai
 | --- | --- | --- |
 | 1. Narrow selection readiness observation | Partial | Aggregate readiness is cached per workspace revision. A separate observable readiness object and per-photo tile readiness remain open. The revision is per workspace, not shared globally across all windows. |
 | 2. Ordinary-ingest manifest scaling | Implemented; local acceptance passed | Append records at both destinations, replay and checkpoint by journal generation/offset; see [ADR 0029](decisions/0029-ordinary-ingest-journal.md). |
-| 3. Reuse SQLite prepared statements | Open | DecisionStore and SourceReviewStore still prepare/finalize per operation; SourceReviewStore still creates per-item JSON coders. Preserve reset/bind/error/rollback and actor isolation. |
+| 3. Reuse SQLite prepared statements | Implemented; local acceptance passed | Bounded actor-owned query leases and shared default record coders; reset/bind/error/rollback, nested use and connection lifetime regressions. See [ADR 0030](decisions/0030-sqlite-statement-reuse.md). |
 | 4. Disk-hit filesystem/property work | Open; proposal needs adjustment | Retain source revalidation across reads and pre-decode dimension bounds. A stamp captured before reading does not detect replacement during the read. Measure changes without removing these protections. |
 | 5. Disk-cache lock boundaries | Partial | Disk-read decode is outside the accounting lock; optional writes are bounded/background. The final read touch still shares a lock held by writer filesystem/index work. |
 | 6. Buffered CR3 container reader | Open | Bound and stream box parsing without per-header seek/read and integer arrays; preserve corrupt-layout bounds/orientation/cancellation/fallback. |
@@ -27,10 +27,10 @@ Last updated: 2026-10-21. This tracks the reviewed optimization suggestions agai
 - Reviewed-copy freeze identity/sidecar reuse: open; final checks currently protect changes between review and freeze. Any reuse must retain those checks.
 - RAM/disk URL normalization: open; reconcile aliases without broadening file-identity or cache-staleness behavior.
 
-## Next implementation chunks
+## Implementation sequence
 
-1. Ordinary-ingest recovery/scaling evidence is complete locally; exact-head delivery evidence belongs in its PR.
-2. Actor-owned prepared SQLite statements and source-review JSON coders, with reset/rebind/error/restart coverage and an actual database workload benchmark.
+1. Ordinary-ingest journaling and recovery/scaling evidence merged in [PR 29](https://github.com/kuroiokami/photo/pull/29).
+2. Actor-owned prepared statements and record JSON coders pass local recovery/lifetime tests, release measurements and packaging. Exact-head delivery evidence belongs in the PR.
 3. Narrow readiness/summary observation and selected tile dependencies, with observable invalidation/unknown-decision/group/filter/Undo tests and native interaction checks.
 
 User-decision save batching is separate from prepared-statement reuse and initial-index transactions. Natural filename ranks already reduce repeated sort collation; the first locale-aware sort still uses native collation. Physical-media interruption, memory pressure and representative 10k/40k mixed-camera shoots remain acceptance work, not completed by synthetic service scenarios.

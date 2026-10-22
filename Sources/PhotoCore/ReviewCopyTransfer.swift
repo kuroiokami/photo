@@ -21,15 +21,7 @@ extension DecisionStore {
     plan.uuidString + ":" + target.standardizedFileURL.path
   }
   func reviewReceipt(_ plan: UUID, target: URL) throws -> ReviewCopyReceipt? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "SELECT payload FROM review_copy_receipts WHERE receipt=?", -1, &statement, nil)
-          == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("SELECT payload FROM review_copy_receipts WHERE receipt=?") { db, statement in
       sqlite3_bind_text(
         statement, 1, receiptKey(plan, target), -1,
         unsafeBitCast(-1, to: sqlite3_destructor_type.self))
@@ -38,22 +30,15 @@ extension DecisionStore {
       guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 0) else {
         throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
       }
-      return try JSONDecoder().decode(
+      return try recordDecoder.decode(
         ReviewCopyReceipt.self,
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
   private func putReceipt(_ receipt: ReviewCopyReceipt, plan: UUID) throws {
-    let data = try JSONEncoder().encode(receipt)
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "INSERT OR REPLACE INTO review_copy_receipts(receipt,payload) VALUES(?,?)", -1,
-          &statement, nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    let data = try recordEncoder.encode(receipt)
+    try withStatement("INSERT OR REPLACE INTO review_copy_receipts(receipt,payload) VALUES(?,?)") {
+      db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, receiptKey(plan, receipt.image), -1, transient)
       _ = data.withUnsafeBytes {
@@ -65,14 +50,7 @@ extension DecisionStore {
     }
   }
   private func hasImageEditRecord(_ identity: String) throws -> Bool {
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(db, "SELECT 1 FROM image_edits WHERE identity=?", -1, &statement, nil)
-          == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("SELECT 1 FROM image_edits WHERE identity=?") { db, statement in
       sqlite3_bind_text(
         statement, 1, identity, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
       let step = sqlite3_step(statement)
@@ -83,16 +61,9 @@ extension DecisionStore {
     }
   }
   private func putTransferredEdit(_ edit: PhotoEdit, identity: String) throws {
-    let data = try JSONEncoder().encode(edit)
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "INSERT OR REPLACE INTO image_edits(identity,payload) VALUES(?,?)", -1, &statement,
-          nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    let data = try recordEncoder.encode(edit)
+    try withStatement("INSERT OR REPLACE INTO image_edits(identity,payload) VALUES(?,?)") {
+      db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, identity, -1, transient)
       _ = data.withUnsafeBytes {

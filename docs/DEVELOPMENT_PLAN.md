@@ -376,3 +376,11 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Add cancellation/torn-write/corruption/second-destination failure and append-only publication regressions.
 - [x] Complete release payload/timing comparison, strict/repository checks and release packaging/relaunch; exact-head remote CI/delivery evidence belongs in the PR. See ADR 0029.
 - [ ] Follow with prepared SQLite statement reuse and narrower UI observation as separate changes.
+
+## SQLite record-query reuse — 2026-10-21
+
+- [x] Add bounded actor-owned prepared-statement leases, resetting/clearing all bindings on exit and finalizing before close.
+- [x] Preserve nested SQL, failed prepare/step/body recovery and schema recompilation; reuse default source-review/record JSON coders.
+- [x] Add binding/session isolation, rollback/schema, capacity/lifetime and persisted-reopen regressions.
+- [x] Complete release workflow measurements, packaging/relaunch and repository checks; exact-head remote CI/delivery evidence belongs in the PR. See ADR 0030.
+- [ ] Narrow UI readiness/summary observation in a separate change; user-decision save batching remains separate.

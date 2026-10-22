@@ -36,15 +36,8 @@ extension DecisionStore {
     return current
   }
   func reviewItem(_ session: UUID, identity: String) throws -> SourceReviewItem? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "SELECT payload FROM source_review_items WHERE session=? AND identity=?", -1,
-          &statement, nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("SELECT payload FROM source_review_items WHERE session=? AND identity=?") {
+      db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, session.uuidString, -1, transient)
       sqlite3_bind_text(statement, 2, identity, -1, transient)
@@ -53,22 +46,16 @@ extension DecisionStore {
       guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 0) else {
         throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
       }
-      return try JSONDecoder().decode(
+      return try recordDecoder.decode(
         SourceReviewItem.self,
         from: Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0))))
     }
   }
   func putReview(_ item: SourceReviewItem, session: UUID, identity: String) throws {
-    let payload = try JSONEncoder().encode(item)
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "INSERT OR REPLACE INTO source_review_items(session,identity,payload) VALUES(?,?,?)",
-          -1, &statement, nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    let payload = try recordEncoder.encode(item)
+    try withStatement(
+      "INSERT OR REPLACE INTO source_review_items(session,identity,payload) VALUES(?,?,?)"
+    ) { db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, session.uuidString, -1, transient)
       sqlite3_bind_text(statement, 2, identity, -1, transient)

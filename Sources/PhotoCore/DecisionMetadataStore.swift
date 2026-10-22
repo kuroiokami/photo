@@ -186,14 +186,7 @@ extension DecisionStore {
   }
 
   func metadataRecord(_ identity: String) throws -> StoredMetadata? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "SELECT payload FROM descriptive WHERE identity=?", -1, &statement, nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("SELECT payload FROM descriptive WHERE identity=?") { db, statement in
       sqlite3_bind_text(
         statement, 1, identity, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
       let step = sqlite3_step(statement)
@@ -208,14 +201,8 @@ extension DecisionStore {
   }
   func putMetadata(_ value: StoredMetadata, identity: String) throws {
     let data = try recordEncoder.encode(value)
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "INSERT OR REPLACE INTO descriptive(identity,payload) VALUES(?,?)", -1, &statement,
-          nil) == SQLITE_OK, let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("INSERT OR REPLACE INTO descriptive(identity,payload) VALUES(?,?)") {
+      db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, identity, -1, transient)
       _ = data.withUnsafeBytes {
