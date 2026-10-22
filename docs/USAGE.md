@@ -284,7 +284,7 @@ Both destinations receive `Shoot name/Originals/<source folders>`. Photo recurse
 
 The first fully verified image family’s folder opens once. Subsequent approved arrivals merge into the currently browsed destination folder without Reload or resetting decisions/selection. Unique RAW+JPEG companions complete together. Other source subfolders remain separately browsable; browsing elsewhere is respected. This is a snapshot ingest, not tethered/continuous source watching.
 
-Re-running verifies matching copies; differing targets are not overwritten. Cancellation retains verified copies and resumable manifests. The second destination is an initial snapshot; later edits/renames are not continuously mirrored. Read the [workflow recovery details](WORKFLOW.md#ingest-behavior-and-recovery) before retrying interrupted operations.
+Re-running verifies matching copies; differing targets are not overwritten. Cancellation retains verified copies and resumable copy records. Keep the hidden `.photo-ingest.json` and `.photo-ingest.events` files with interrupted destinations, and resume using the updated app. The second destination is an initial snapshot; later edits/renames are not continuously mirrored. Read the [workflow recovery details](WORKFLOW.md#ingest-behavior-and-recovery) before retrying interrupted operations.
 
 ### Review a source before copying
 

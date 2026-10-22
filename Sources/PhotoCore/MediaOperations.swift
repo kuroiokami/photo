@@ -44,15 +44,16 @@ public struct IngestReport: Sendable {
   public let sameVolumeBackup: Bool
   public let preservedMetadataCount: Int
 }
-struct IngestRecord: Codable {
+struct IngestRecord: Codable, Sendable {
   let relativePath: String
   let originalFilename: String
   let source: URL
   let sha256: String
   let verifiedDestinations: [URL]
 }
-struct IngestManifest: Codable {
+struct IngestManifest: Codable, Sendable {
   var records: [String: IngestRecord] = [:]
+  var journalCheckpoint: IngestJournalCursor? = nil
 }
 
 public struct RenameEntry: Codable, Sendable, Identifiable {
@@ -137,6 +138,17 @@ public actor MediaOperations {
     var manifest = try readManifest(manifestURL)
     var backupManifest = try readManifest(backup.appendingPathComponent(".photo-ingest.json"))
     let files = try ingestFiles(in: source)
+    let backupManifestURL = backup.appendingPathComponent(".photo-ingest.json")
+    // Replay/compact at most once before copying, retaining legacy snapshots and
+    // making interrupted ordinary ingests discoverable by rename/recovery.
+    try checkpointManifest(manifest, at: manifestURL)
+    try checkpointManifest(backupManifest, at: backupManifestURL)
+    let primaryJournal = try IngestJournalWriter(
+      manifest: manifestURL, protection: sourceProtection)
+    let backupJournal = try IngestJournalWriter(
+      manifest: backupManifestURL, protection: sourceProtection)
+    manifest.journalCheckpoint = primaryJournal.cursor
+    backupManifest.journalCheckpoint = backupJournal.cursor
     let families = Dictionary(grouping: files, by: { $0.deletingLastPathComponent() }).values
       .flatMap { contents in
         let images = contents.filter(PhotoFormats.supports)
@@ -182,12 +194,13 @@ public actor MediaOperations {
         throw MediaOperationError.invalid(
           "A source file changed during ingest. Retry after capture has finished.")
       }
-      manifest.records[relative] = IngestRecord(
+      let record = IngestRecord(
         relativePath: relative, originalFilename: file.lastPathComponent,
         source: file, sha256: hash, verifiedDestinations: targets)
-      try durableJSON(manifest, at: manifestURL)
-      backupManifest.records[relative] = manifest.records[relative]
-      try durableJSON(backupManifest, at: backup.appendingPathComponent(".photo-ingest.json"))
+      manifest.journalCheckpoint = try primaryJournal.append(record)
+      backupManifest.journalCheckpoint = try backupJournal.append(record)
+      manifest.records[relative] = record
+      backupManifest.records[relative] = record
       publishedTargets[file] = targets[0]
       var arrivals: [URL] = []
       for family in dependencies[file] ?? [] {
@@ -202,6 +215,8 @@ public actor MediaOperations {
           completed: index + 1, total: files.count, filename: file.lastPathComponent,
           directory: arrivals.first?.deletingLastPathComponent(), verifiedImages: arrivals))
     }
+    try checkpointManifest(manifest, at: manifestURL)
+    try checkpointManifest(backupManifest, at: backupManifestURL)
     let a =
       try FileManager.default.attributesOfItem(atPath: primary.path)[.systemNumber] as? NSNumber
     let b =
@@ -537,7 +552,7 @@ public actor MediaOperations {
           relativePath: record.relativePath, originalFilename: record.originalFilename,
           source: record.source, sha256: record.sha256, verifiedDestinations: destinations)
       }
-      if changed { try durableJSON(manifest, at: url) }
+      if changed { try checkpointManifest(manifest, at: url) }
     }
   }
 
@@ -690,7 +705,7 @@ public actor MediaOperations {
     }
     try sourceProtection.withWritable([temporary, target]) {
       try FileManager.default.moveItem(at: temporary, to: target)
-      try syncDirectory(target.deletingLastPathComponent())
+      try Self.syncDirectory(target.deletingLastPathComponent())
     }
     return true
   }
@@ -745,9 +760,12 @@ public actor MediaOperations {
       })
   }
   func readManifest(_ url: URL) throws -> IngestManifest {
-    guard FileManager.default.fileExists(atPath: url.path) else { return IngestManifest() }
-    _ = try FileFingerprint.read(url)
-    return try JSONDecoder().decode(IngestManifest.self, from: Data(contentsOf: url))
+    var snapshot = IngestManifest()
+    if FileManager.default.fileExists(atPath: url.path) {
+      _ = try FileFingerprint.read(url)
+      snapshot = try JSONDecoder().decode(IngestManifest.self, from: Data(contentsOf: url))
+    }
+    return try IngestJournal.replay(snapshot, at: IngestJournal.url(for: url))
   }
   func durableJSON<T: Encodable>(_ value: T, at url: URL) throws {
     return try sourceProtection.withWritable([url]) {
@@ -758,10 +776,10 @@ public actor MediaOperations {
       let file = try FileHandle(forWritingTo: url)
       try file.synchronize()
       try file.close()
-      try syncDirectory(url.deletingLastPathComponent())
+      try Self.syncDirectory(url.deletingLastPathComponent())
     }
   }
-  private func syncDirectory(_ folder: URL) throws {
+  static func syncDirectory(_ folder: URL) throws {
     let handle = Darwin.open(folder.path, O_RDONLY)
     guard handle >= 0 else {
       throw MediaOperationError.invalid(

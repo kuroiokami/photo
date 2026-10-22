@@ -368,3 +368,11 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Finish native marquee, quick actions/edits, keyboard/selection and density/filmstrip checks; restore original browsing context and remove the disposable shortcut.
 - [x] Record a matched scripted native pair with settled indexing, warmed rows and identical input sequence/duration; document diagnostic limits.
 - [ ] Complete physical-trackpad/real-camera/large-shoot acceptance before claiming smoother scrolling or Photo Mechanic parity; see ADR 0028.
+
+## Ordinary-ingest persistence scaling — 2026-10-21
+
+- [x] Replace per-file growing manifest rewrites with durable records at both destinations; preserve source/copy verification and arrival gating.
+- [x] Replay legacy snapshots plus journals; checkpoint by generation/offset so rename mappings survive interruption before journal removal.
+- [x] Add cancellation/torn-write/corruption/second-destination failure and append-only publication regressions.
+- [x] Complete release payload/timing comparison, strict/repository checks and release packaging/relaunch; exact-head remote CI/delivery evidence belongs in the PR. See ADR 0029.
+- [ ] Follow with prepared SQLite statement reuse and narrower UI observation as separate changes.

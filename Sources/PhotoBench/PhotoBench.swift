@@ -75,6 +75,13 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments == ["--ingest-journal"] {
+      let report = try await IngestJournalBenchmark.run()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     if arguments == ["--thumbnail-cache"] {
       let report = try await ThumbnailCacheBenchmark.run()
       let encoder = JSONEncoder()
@@ -122,6 +129,7 @@ private struct PhotoBench {
       print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
+      print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }
