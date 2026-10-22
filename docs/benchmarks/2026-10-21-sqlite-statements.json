@@ -18,6 +18,99 @@
           "Fresh disposable databases per run; generation and final byte/sidecar checks are outside timing. OS caches are uncontrolled.",
           "These are service timings, not UI frame rates, RAW decoder speed or select-all decision-save batching."
         ],
+        "ordinaryColdIndexMilliseconds": 214.734167,
+        "ordinaryWarmReadMilliseconds": 1786.32625,
+        "originalsUnchanged": true,
+        "readsPerWorkflow": 10000,
+        "reviewColdIndexMilliseconds": 561.120125,
+        "reviewWarmReadMilliseconds": 2012.0035,
+        "schemaVersion": 1,
+        "valuesCorrect": true
+      }
+    },
+    {
+      "label": "updated-1",
+      "implementation": "final compiler-compatible statement leases and shared default JSON coders",
+      "report": {
+        "filesPerWorkflow": 1000,
+        "notes": [
+          "1000 synthetic marker files per workflow, 10000 warm image-state/review reads; no pixel decoding or personal libraries.",
+          "Ordinary cold indexing retains 16-file transactions; protected review discovery retains existing per-row durability. Warm reads include normal filesystem identity/protection checks.",
+          "Fresh disposable databases per run; generation and final byte/sidecar checks are outside timing. OS caches are uncontrolled.",
+          "These are service timings, not UI frame rates, RAW decoder speed or select-all decision-save batching."
+        ],
+        "ordinaryColdIndexMilliseconds": 212.966042,
+        "ordinaryWarmReadMilliseconds": 1695.3297499999999,
+        "originalsUnchanged": true,
+        "readsPerWorkflow": 10000,
+        "reviewColdIndexMilliseconds": 624.550291,
+        "reviewWarmReadMilliseconds": 1969.195125,
+        "schemaVersion": 1,
+        "valuesCorrect": true
+      }
+    },
+    {
+      "label": "updated-2",
+      "implementation": "final compiler-compatible statement leases and shared default JSON coders",
+      "report": {
+        "filesPerWorkflow": 1000,
+        "notes": [
+          "1000 synthetic marker files per workflow, 10000 warm image-state/review reads; no pixel decoding or personal libraries.",
+          "Ordinary cold indexing retains 16-file transactions; protected review discovery retains existing per-row durability. Warm reads include normal filesystem identity/protection checks.",
+          "Fresh disposable databases per run; generation and final byte/sidecar checks are outside timing. OS caches are uncontrolled.",
+          "These are service timings, not UI frame rates, RAW decoder speed or select-all decision-save batching."
+        ],
+        "ordinaryColdIndexMilliseconds": 234.245458,
+        "ordinaryWarmReadMilliseconds": 1685.301125,
+        "originalsUnchanged": true,
+        "readsPerWorkflow": 10000,
+        "reviewColdIndexMilliseconds": 546.139667,
+        "reviewWarmReadMilliseconds": 1959.277709,
+        "schemaVersion": 1,
+        "valuesCorrect": true
+      }
+    },
+    {
+      "label": "baseline-2",
+      "implementation": "2d7bd5d + identical benchmark-only harness",
+      "report": {
+        "filesPerWorkflow": 1000,
+        "notes": [
+          "1000 synthetic marker files per workflow, 10000 warm image-state/review reads; no pixel decoding or personal libraries.",
+          "Ordinary cold indexing retains 16-file transactions; protected review discovery retains existing per-row durability. Warm reads include normal filesystem identity/protection checks.",
+          "Fresh disposable databases per run; generation and final byte/sidecar checks are outside timing. OS caches are uncontrolled.",
+          "These are service timings, not UI frame rates, RAW decoder speed or select-all decision-save batching."
+        ],
+        "ordinaryColdIndexMilliseconds": 216.7375,
+        "ordinaryWarmReadMilliseconds": 1798.71675,
+        "originalsUnchanged": true,
+        "readsPerWorkflow": 10000,
+        "reviewColdIndexMilliseconds": 561.696833,
+        "reviewWarmReadMilliseconds": 1993.9265,
+        "schemaVersion": 1,
+        "valuesCorrect": true
+      }
+    }
+  ],
+  "limits": [
+    "Two alternating release pairs on the same local Mac, with fresh disposable databases; OS/storage caches are uncontrolled.",
+    "Cold ordinary indexing retains 16-file transactions and review discovery retains its existing per-row synchronization. Warm reads include file identity and source protection checks.",
+    "No pixel decoding, native UI frame measurement, user-decision transaction batching, physical-card or 10k/40k shoot acceptance.",
+    "Every run returned expected values and preserved all marker-file bytes without creating image sidecars.",
+    "Earlier pre-compatibility results are retained separately; use runs for the final implementation. Cold timings vary and include slower updated samples, so no cold-start improvement is claimed."
+  ],
+  "exploratoryBeforeCompilerCompatibilityFix": [
+    {
+      "label": "baseline-1",
+      "implementation": "2d7bd5d + identical benchmark-only harness",
+      "report": {
+        "filesPerWorkflow": 1000,
+        "notes": [
+          "1000 synthetic marker files per workflow, 10000 warm image-state/review reads; no pixel decoding or personal libraries.",
+          "Ordinary cold indexing retains 16-file transactions; protected review discovery retains existing per-row durability. Warm reads include normal filesystem identity/protection checks.",
+          "Fresh disposable databases per run; generation and final byte/sidecar checks are outside timing. OS caches are uncontrolled.",
+          "These are service timings, not UI frame rates, RAW decoder speed or select-all decision-save batching."
+        ],
         "ordinaryColdIndexMilliseconds": 218.823875,
         "ordinaryWarmReadMilliseconds": 1800.8177500000002,
         "originalsUnchanged": true,
@@ -91,11 +184,5 @@
         "valuesCorrect": true
       }
     }
-  ],
-  "limits": [
-    "Two alternating release pairs on the same local Mac, with fresh disposable databases; OS/storage caches are uncontrolled.",
-    "Cold ordinary indexing retains 16-file transactions and review discovery retains its existing per-row synchronization. Warm reads include file identity and source protection checks.",
-    "No pixel decoding, native UI frame measurement, user-decision transaction batching, physical-card or 10k/40k shoot acceptance.",
-    "Every run returned expected values and preserved all marker-file bytes without creating image sidecars."
   ]
 }

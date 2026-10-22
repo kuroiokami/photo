@@ -63,10 +63,11 @@ public actor DecisionStore {
   func withStatement<T>(_ sql: String, _ body: (OpaquePointer, OpaquePointer) throws -> T) throws
     -> T
   {
-    try withDB { _ in
-      guard let connection else { throw DecisionStoreError.database("Connection unavailable") }
-      return try connection.withStatement(sql, body)
-    }
+    // Initialize separately: forwarding an actor-bound body through another
+    // actor-bound closure is rejected by older supported Swift compilers.
+    if connection == nil { try withDB { _ in () } }
+    guard let connection else { throw DecisionStoreError.database("Connection unavailable") }
+    return try connection.withStatement(sql, body)
   }
 
   func key(for image: URL) throws -> String {
