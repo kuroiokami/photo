@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Reuse bounded actor-owned SQLite record-query statements and JSON coders while preserving durable saves, recovery and source protection.
+
 - Append durable ordinary-ingest records instead of rewriting growing manifests for every file; retain verified copying, interrupted recovery and rename mappings.
 
 - Simplify unedited thumbnail/Fit rendering, reuse typed image-request identities and EXIF labels, and clip marquee hits to visible thumbnail regions. Add native main-thread trace analysis and a matched scripted comparison; physical-trackpad and representative-library smoothness acceptance remains pending.

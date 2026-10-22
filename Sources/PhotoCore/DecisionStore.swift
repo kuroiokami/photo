@@ -49,7 +49,7 @@ public actor DecisionStore {
       .appendingPathComponent("Photo/decisions.sqlite"))
   let databaseURL: URL
   public nonisolated let sourceProtection: SourceProtection
-  private var connection: DatabaseConnection?
+  private var connection: SQLiteConnection?
   // Actor-owned, default configuration shared by decision and metadata records.
   let recordEncoder = JSONEncoder()
   let recordDecoder = JSONDecoder()
@@ -58,12 +58,15 @@ public actor DecisionStore {
     self.sourceProtection = sourceProtection
   }
 
-  // Only the owning DecisionStore actor uses this handle. The wrapper closes
-  // it on destruction without exposing a non-Sendable pointer across actors.
-  private final class DatabaseConnection: @unchecked Sendable {
-    let handle: OpaquePointer
-    init(_ handle: OpaquePointer) { self.handle = handle }
-    deinit { sqlite3_close(handle) }
+  var statementStatistics: SQLiteStatementStatistics? { connection?.statistics }
+
+  func withStatement<T>(_ sql: String, _ body: (OpaquePointer, OpaquePointer) throws -> T) throws
+    -> T
+  {
+    try withDB { _ in
+      guard let connection else { throw DecisionStoreError.database("Connection unavailable") }
+      return try connection.withStatement(sql, body)
+    }
   }
 
   func key(for image: URL) throws -> String {
@@ -99,7 +102,7 @@ public actor DecisionStore {
       if let handle { sqlite3_close(handle) }
       throw DecisionStoreError.database("Cannot open decisions database")
     }
-    let opened = DatabaseConnection(db)
+    let opened = SQLiteConnection(db)
     sqlite3_busy_timeout(db, 3000)
     guard
       sqlite3_exec(
@@ -114,14 +117,7 @@ public actor DecisionStore {
   }
 
   func read(_ key: String) throws -> StoredDecision? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "SELECT payload FROM decisions WHERE identity = ?", -1, &statement, nil) == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("SELECT payload FROM decisions WHERE identity = ?") { db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, key, -1, transient)
       let result = sqlite3_step(statement)
@@ -137,15 +133,8 @@ public actor DecisionStore {
 
   func write(_ value: StoredDecision, key: String) throws {
     let data = try recordEncoder.encode(value)
-    try withDB { db in
-      var statement: OpaquePointer?
-      guard
-        sqlite3_prepare_v2(
-          db, "INSERT OR REPLACE INTO decisions(identity,payload) VALUES(?,?)", -1, &statement, nil)
-          == SQLITE_OK,
-        let statement
-      else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-      defer { sqlite3_finalize(statement) }
+    try withStatement("INSERT OR REPLACE INTO decisions(identity,payload) VALUES(?,?)") {
+      db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, key, -1, transient)
       _ = data.withUnsafeBytes {
@@ -158,16 +147,11 @@ public actor DecisionStore {
   }
 
   func pathIdentity(_ image: URL, update: String? = nil) throws -> String? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      let sql =
-        update == nil
-        ? "SELECT identity FROM paths WHERE path = ?"
-        : "INSERT OR REPLACE INTO paths(path,identity) VALUES(?,?)"
-      guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
-        throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
-      }
-      defer { sqlite3_finalize(statement) }
+    let sql =
+      update == nil
+      ? "SELECT identity FROM paths WHERE path = ?"
+      : "INSERT OR REPLACE INTO paths(path,identity) VALUES(?,?)"
+    return try withStatement(sql) { db, statement in
       let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
       sqlite3_bind_text(statement, 1, image.standardizedFileURL.path, -1, transient)
       if let update { sqlite3_bind_text(statement, 2, update, -1, transient) }

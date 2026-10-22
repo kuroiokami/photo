@@ -148,22 +148,16 @@ extension DecisionStore {
               db, "UPDATE metadata_history SET undone=\(history.1 ? 1 : 0) WHERE seq=\(history.0)")
           } else {
             try Self.metadataSQL(db, "DELETE FROM metadata_history WHERE undone=1")
-            let payload = try JSONEncoder().encode(normalized.map(Self.historyProjection))
-            var statement: OpaquePointer?
-            guard
-              sqlite3_prepare_v2(
-                db, "INSERT INTO metadata_history(payload) VALUES(?)", -1, &statement, nil)
-                == SQLITE_OK,
-              let statement
-            else { throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db))) }
-            defer { sqlite3_finalize(statement) }
-            _ = payload.withUnsafeBytes {
-              sqlite3_bind_blob(
-                statement, 1, $0.baseAddress, Int32($0.count),
-                unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-            }
-            guard sqlite3_step(statement) == SQLITE_DONE else {
-              throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+            let payload = try recordEncoder.encode(normalized.map(Self.historyProjection))
+            try withStatement("INSERT INTO metadata_history(payload) VALUES(?)") { db, statement in
+              _ = payload.withUnsafeBytes {
+                sqlite3_bind_blob(
+                  statement, 1, $0.baseAddress, Int32($0.count),
+                  unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+              }
+              guard sqlite3_step(statement) == SQLITE_DONE else {
+                throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
+              }
             }
             try Self.metadataSQL(
               db,
@@ -198,14 +192,9 @@ extension DecisionStore {
     }
   }
   private func metadataHistory(undone: Bool) throws -> HistoryBatch? {
-    try withDB { db in
-      var statement: OpaquePointer?
-      let sql =
-        "SELECT seq,payload FROM metadata_history WHERE undone=\(undone ? 1 : 0) ORDER BY seq \(undone ? "ASC" : "DESC") LIMIT 1"
-      guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
-        throw DecisionStoreError.database(String(cString: sqlite3_errmsg(db)))
-      }
-      defer { sqlite3_finalize(statement) }
+    let sql =
+      "SELECT seq,payload FROM metadata_history WHERE undone=\(undone ? 1 : 0) ORDER BY seq \(undone ? "ASC" : "DESC") LIMIT 1"
+    return try withStatement(sql) { db, statement in
       let step = sqlite3_step(statement)
       if step == SQLITE_DONE { return nil }
       guard step == SQLITE_ROW, let bytes = sqlite3_column_blob(statement, 1) else {
@@ -214,7 +203,7 @@ extension DecisionStore {
       let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 1)))
       return HistoryBatch(
         sequence: sqlite3_column_int64(statement, 0),
-        plans: try JSONDecoder().decode([MetadataFilePlan].self, from: data))
+        plans: try recordDecoder.decode([MetadataFilePlan].self, from: data))
     }
   }
 }
