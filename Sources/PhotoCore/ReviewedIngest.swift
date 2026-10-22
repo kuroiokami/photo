@@ -268,8 +268,10 @@ extension MediaOperations {
     }
     // Append-only provenance above is durable before publication. Materialize the
     // ordinary ingest manifests once, avoiding a growing JSON rewrite per photo.
-    try durableJSON(primaryManifest, at: plan.primary.appendingPathComponent(".photo-ingest.json"))
-    try durableJSON(backupManifest, at: plan.backup.appendingPathComponent(".photo-ingest.json"))
+    try checkpointManifest(
+      primaryManifest, at: plan.primary.appendingPathComponent(".photo-ingest.json"))
+    try checkpointManifest(
+      backupManifest, at: plan.backup.appendingPathComponent(".photo-ingest.json"))
     let a =
       try FileManager.default.attributesOfItem(atPath: plan.primary.path)[.systemNumber]
       as? NSNumber

@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "runOrder": [
+    "baseline-1",
+    "updated-1",
+    "updated-2",
+    "baseline-2"
+  ],
+  "runs": [
+    {
+      "label": "baseline-1",
+      "implementation": "cbafe61 ingest + identical benchmark-only harness",
+      "report": {
+        "notes": [
+          "100/1000 synthetic 4 KiB marker files, two disposable destinations on one local volume; no image decoding.",
+          "Snapshot payload bytes count observed atomic snapshot publications; journal bytes count appended file growth, including headers.",
+          "These are encoded filesystem payloads, not physical I/O bytes/fsync latency, RAW throughput, native UI responsiveness or physical-card acceptance.",
+          "Attribute polling runs in progress callbacks; OS caches are uncontrolled. Source/copy verification and resume are checked separately from timing."
+        ],
+        "samples": [
+          {
+            "arrivals": 100,
+            "elapsedMilliseconds": 1167.831083,
+            "files": 100,
+            "journalPayloadBytes": 0,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 200,
+            "resumeMilliseconds": 561.630209,
+            "snapshotPayloadBytes": 7508700,
+            "snapshotPublications": 200
+          },
+          {
+            "arrivals": 1000,
+            "elapsedMilliseconds": 18934.72475,
+            "files": 1000,
+            "journalPayloadBytes": 0,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 2000,
+            "resumeMilliseconds": 15131.906916,
+            "snapshotPayloadBytes": 743787000,
+            "snapshotPublications": 2000
+          }
+        ],
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "updated-1",
+      "implementation": "append-only ordinary ingest",
+      "report": {
+        "notes": [
+          "100/1000 synthetic 4 KiB marker files, two disposable destinations on one local volume; no image decoding.",
+          "Snapshot payload bytes count observed atomic snapshot publications; journal bytes count appended file growth, including headers.",
+          "These are encoded filesystem payloads, not physical I/O bytes/fsync latency, RAW throughput, native UI responsiveness or physical-card acceptance.",
+          "Attribute polling runs in progress callbacks; OS caches are uncontrolled. Source/copy verification and resume are checked separately from timing."
+        ],
+        "samples": [
+          {
+            "arrivals": 100,
+            "elapsedMilliseconds": 1073.704125,
+            "files": 100,
+            "journalPayloadBytes": 128916,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 200,
+            "resumeMilliseconds": 429.942791,
+            "snapshotPayloadBytes": 148898,
+            "snapshotPublications": 4
+          },
+          {
+            "arrivals": 1000,
+            "elapsedMilliseconds": 10356.3085,
+            "files": 1000,
+            "journalPayloadBytes": 1288116,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 2000,
+            "resumeMilliseconds": 4252.061125,
+            "snapshotPayloadBytes": 1486300,
+            "snapshotPublications": 4
+          }
+        ],
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "updated-2",
+      "implementation": "append-only ordinary ingest",
+      "report": {
+        "notes": [
+          "100/1000 synthetic 4 KiB marker files, two disposable destinations on one local volume; no image decoding.",
+          "Snapshot payload bytes count observed atomic snapshot publications; journal bytes count appended file growth, including headers.",
+          "These are encoded filesystem payloads, not physical I/O bytes/fsync latency, RAW throughput, native UI responsiveness or physical-card acceptance.",
+          "Attribute polling runs in progress callbacks; OS caches are uncontrolled. Source/copy verification and resume are checked separately from timing."
+        ],
+        "samples": [
+          {
+            "arrivals": 100,
+            "elapsedMilliseconds": 1086.503709,
+            "files": 100,
+            "journalPayloadBytes": 128916,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 200,
+            "resumeMilliseconds": 445.037875,
+            "snapshotPayloadBytes": 148898,
+            "snapshotPublications": 4
+          },
+          {
+            "arrivals": 1000,
+            "elapsedMilliseconds": 10684.587375,
+            "files": 1000,
+            "journalPayloadBytes": 1288116,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 2000,
+            "resumeMilliseconds": 4320.326834,
+            "snapshotPayloadBytes": 1486300,
+            "snapshotPublications": 4
+          }
+        ],
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "baseline-2",
+      "implementation": "cbafe61 ingest + identical benchmark-only harness",
+      "report": {
+        "notes": [
+          "100/1000 synthetic 4 KiB marker files, two disposable destinations on one local volume; no image decoding.",
+          "Snapshot payload bytes count observed atomic snapshot publications; journal bytes count appended file growth, including headers.",
+          "These are encoded filesystem payloads, not physical I/O bytes/fsync latency, RAW throughput, native UI responsiveness or physical-card acceptance.",
+          "Attribute polling runs in progress callbacks; OS caches are uncontrolled. Source/copy verification and resume are checked separately from timing."
+        ],
+        "samples": [
+          {
+            "arrivals": 100,
+            "elapsedMilliseconds": 1159.349583,
+            "files": 100,
+            "journalPayloadBytes": 0,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 200,
+            "resumeMilliseconds": 568.25375,
+            "snapshotPayloadBytes": 7508700,
+            "snapshotPublications": 200
+          },
+          {
+            "arrivals": 1000,
+            "elapsedMilliseconds": 18870.31,
+            "files": 1000,
+            "journalPayloadBytes": 0,
+            "originalsAndBothCopiesMatch": true,
+            "resumeAlreadyVerified": 2000,
+            "resumeMilliseconds": 14871.863334,
+            "snapshotPayloadBytes": 743787000,
+            "snapshotPublications": 2000
+          }
+        ],
+        "schemaVersion": 1
+      }
+    }
+  ],
+  "limits": [
+    "Two alternating release pairs on one reference Mac/local volume; uncontrolled OS caches and callback attribute-polling overhead.",
+    "4 KiB synthetic marker files isolate bookkeeping; they do not represent full RAW/video media throughput.",
+    "Payload accounting measures encoded snapshot publications and journal growth, not physical device I/O or fsync implementation details.",
+    "Both destination bytes, source bytes, arrivals and incremental re-ingest verified for every sample.",
+    "No physical-card interruption, native UI frame-time or 10k/40k acceptance claim."
+  ]
+}
