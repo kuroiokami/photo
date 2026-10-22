@@ -291,3 +291,19 @@ Two alternating release pairs used baseline `2d7bd5d` with only the identical be
 These are modest observed service gains (roughly 5–6% ordinary warm reads and 2% review reads), not a general UI/RAW speedup. Cold timings varied and include slower updated samples, so no cold-start improvement is claimed. Filesystem checks and durable cold writes still cost time. The deterministic store regression executes 80 decision/path operations using four application prepare calls and 76 cache hits; SQLite may still internally recompile prepared statements after schema/plan changes. Tests also cover stale bindings, nested leases/capacity, step/body/prepare/decode errors, automatic rollback, schema changes, close/finalization and Unicode review-session isolation/reopening. All generated file bytes remained unchanged and no image sidecars were created.
 
 OS caches/storage state are uncontrolled and two pairs do not establish statistical confidence, physical-media behavior or representative 10k/40k/native frame targets. Marker files are not decoded. Reproduce with `sh scripts/benchmark.sh --sqlite-statements`; narrower UI invalidation remains a separate [checklist](PERFORMANCE_BACKLOG.md) item.
+
+## Thumbnail observation and selection summaries — 2026-10-22
+
+[ADR 0031](decisions/0031-thumbnail-observation.md) isolates photo display/readiness dependencies and caches selected-family summaries. [Anonymous evidence](benchmarks/2026-10-22-thumbnail-observation.json) contains two alternating release pairs: main `4b385f3` with only the identical benchmark harness, updated, updated, main. No concurrent builds/tests/native inputs during the timed runs; OS caches/scheduling uncontrolled. Run `sh scripts/benchmark.sh --selection-summary`.
+
+| Synthetic model workload | Baseline, two runs | Updated, two runs |
+| --- | --- | --- |
+| Initialize 10k / 40k items | 8.2–8.3 / 18.3–19.3 ms | 11.1–11.3 / 27.8–28.0 ms |
+| Load sample decisions, 10k / 40k | 27.1–27.2 / 108.9–112.9 ms | 33.3–33.9 / 140.7–141.3 ms |
+| Select all, 10k / 40k | 0.32–0.33 / 1.23–1.24 ms | 7.12–7.15 / 32.94–32.97 ms |
+| 2,000 summary + readiness queries, 10k selected | 5,134–5,424 ms | 0.05–0.06 ms |
+| 2,000 summary + readiness queries, 40k selected | 23,567–24,841 ms | 0.10 ms |
+
+Every result matched expected count/stars/flags/readiness. Setup and membership costs increased: each live photo now owns a display object, and selection changes maintain a represented-record snapshot. Repeated queries reuse one summary and a maintained Boolean instead of repeatedly expanding/mapping selections. This deliberately repetitive microbenchmark demonstrates removal of that work, not an equivalent whole-app speedup. Items are synthetic sample models, with no image pixels, filesystem/XMP or personal database writes. Representative 40k-shoot memory/RSS remains acceptance work.
+
+Five new regressions cover actual Observation notification isolation, cached mixed summaries/Undo, unknown-family gating, verified pair arrivals/removal/session replacement/persisted reopening and filters/rating order. Native release checks on 1,000 synthetic JPEG/PNG gradients passed group thumbnail stars/flags, repeat-star clearing, two-step Undo, rotation/crop and Undo, three pages down/back, contact-sheet/filmstrip selection, density reflow and EXIF label configuration. All 1,000 image hashes matched after image-edit checks. No native frame/body-evaluation comparison or physical-trackpad/competitor smoothness claim is made for this chunk.

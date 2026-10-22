@@ -384,3 +384,11 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Add binding/session isolation, rollback/schema, capacity/lifetime and persisted-reopen regressions.
 - [x] Complete release workflow measurements, packaging/relaunch and repository checks; exact-head remote CI/delivery evidence belongs in the PR. See ADR 0030.
 - [ ] Narrow UI readiness/summary observation in a separate change; user-decision save batching remains separate.
+
+## Thumbnail observation and selection summaries — 2026-10-22
+
+- [x] Separate selection readiness/summary and photo-specific display observation from broad workspace containers.
+- [x] Cache mixed selected-family summaries and preserve partial-load gating, arrivals/removal/session isolation, sorting/filtering and Undo.
+- [x] Verify extracted contact-sheet/filmstrip controls, scrolling, density/label changes and disposable edits natively.
+- [x] Complete final strict/repository checks, repeated release model measurements and context restoration; exact-head CI/delivery evidence belongs in the PR. See ADR 0031.
+- [ ] Obtain native frame/body-evaluation, physical-trackpad and representative large-shoot RSS evidence; keep other optimization suggestions separate.

@@ -11,16 +11,19 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem] {
-    didSet { selectionReadinessRevision &+= 1 }
+    didSet { refreshSelectionPresentation() }
   }
   public private(set) var selectedIDs: Set<String> = [] {
     didSet {
-      selectionReadinessRevision &+= 1
+      for id in oldValue.symmetricDifference(selectedIDs) {
+        thumbnailStates[id]?.selected = selectedIDs.contains(id)
+      }
+      refreshSelectionPresentation()
       publishSelectedPending()
     }
   }
   public private(set) var groupPairs = false {
-    didSet { selectionReadinessRevision &+= 1 }
+    didSet { refreshSelectionPresentation() }
   }
   public private(set) var sourceReview: SourceReviewSession?
   public var isSourceReview: Bool { sourceReview != nil }
@@ -51,10 +54,43 @@ public final class WorkspaceState {
   }
   private var selectionAnchorID: String?
   @ObservationIgnored private var familyMembers: [String: [PhotoItem]] = [:] {
-    didSet { selectionReadinessRevision &+= 1 }
+    didSet { refreshSelectionPresentation() }
   }
   @ObservationIgnored private var allByID: [String: PhotoItem] = [:] {
-    didSet { selectionReadinessRevision &+= 1 }
+    didSet {
+      thumbnailStates = allByID.mapValues { photo in
+        let value = thumbnailStates[photo.id] ?? PhotoThumbnailState()
+        if value.selected != selectedIDs.contains(photo.id) {
+          value.selected = selectedIDs.contains(photo.id)
+        }
+        let count = familyMembers[photo.id]?.count ?? 1
+        if value.pairedCount != count { value.pairedCount = count }
+        return value
+      }
+      refreshSelectionPresentation()
+    }
+  }
+  @ObservationIgnored private var thumbnailStates: [String: PhotoThumbnailState] = [:]
+  @ObservationIgnored public let selectionPresentation = WorkspaceSelectionState()
+  public func thumbnailState(for id: String) -> PhotoThumbnailState? { thumbnailStates[id] }
+
+  @ObservationIgnored private var selectionMembershipEvaluations = 0
+  private func refreshSelectionPresentation() {
+    selectionMembershipEvaluations += 1
+    selectionPresentation.replace(operationPhotos, decisions: decisions, ready: decisionsReady)
+  }
+  private func publishThumbnailDecision(_ id: String) {
+    let decision = decisions[id] ?? CullingDecision()
+    let ready = decisionsReady.contains(id)
+    if let value = thumbnailStates[id] {
+      if value.decision != decision { value.decision = decision }
+      if value.ready != ready { value.ready = ready }
+    }
+    selectionPresentation.update(id, decision: decision, ready: ready)
+  }
+  private func publishThumbnailEdit(_ id: String) {
+    let edit = imageEdits[id] ?? PhotoEdit()
+    if let value = thumbnailStates[id], value.edit != edit { value.edit = edit }
   }
   public var filePhotos: [PhotoItem] { allPhotos }
   public var persistence: DecisionStore { decisionStore }
@@ -80,22 +116,10 @@ public final class WorkspaceState {
   public var firstSelectedPhoto: PhotoItem? {
     photos.first { selectedIDs.contains($0.id) } ?? selectedPhoto
   }
-  public var selectionSummary: DecisionSelectionSummary {
-    DecisionSelectionSummary(operationPhotos.map { decisions[$0.id] ?? CullingDecision() })
-  }
-  // Observable revision keeps SwiftUI subscribed even on the constant-time cache path.
-  private var selectionReadinessRevision = 0
-  @ObservationIgnored private var readinessCache: (revision: Int, ready: Bool)?
-  @ObservationIgnored public private(set) var selectionReadinessEvaluations = 0
-  public var decisionSelectionReady: Bool {
-    let revision = selectionReadinessRevision
-    if let cached = readinessCache, cached.revision == revision { return cached.ready }
-    let targets = operationPhotos
-    let ready = !targets.isEmpty && targets.allSatisfy { decisionsReady.contains($0.id) }
-    readinessCache = (revision, ready)
-    selectionReadinessEvaluations += 1
-    return ready
-  }
+  public var selectionSummary: DecisionSelectionSummary { selectionPresentation.summary }
+  // Retained diagnostic API: readiness is now maintained without selection scans.
+  public var selectionReadinessEvaluations: Int { selectionMembershipEvaluations }
+  public var decisionSelectionReady: Bool { selectionPresentation.ready }
   public func selectAllVisible() {
     selectedIDs = Set(photos.map(\.id))
     if selectedIndex == nil, !photos.isEmpty { selectedIndex = 0 }
@@ -187,9 +211,7 @@ public final class WorkspaceState {
   public private(set) var saveStatus: [String: String] = [:]
   public private(set) var decisionsLoading = false
   @ObservationIgnored private var reloadSelection: String?
-  public private(set) var decisionsReady: Set<String> = [] {
-    didSet { selectionReadinessRevision &+= 1 }
-  }
+  public private(set) var decisionsReady: Set<String> = []
   public var autoAdvance = UserDefaults.standard.bool(forKey: "Photo.autoAdvance") {
     didSet { UserDefaults.standard.set(autoAdvance, forKey: "Photo.autoAdvance") }
   }
@@ -229,7 +251,7 @@ public final class WorkspaceState {
   @ObservationIgnored private var allPhotos: [PhotoItem] = []
   public private(set) var selectedIndex: Int? {
     didSet {
-      selectionReadinessRevision &+= 1
+      refreshSelectionPresentation()
       publishSelectedPending()
     }
   }
@@ -534,7 +556,12 @@ public final class WorkspaceState {
     guard !updates.isEmpty || indexedCount != progress else { return }
     let trace = PhotoTrace.begin("PublishMetadata")
     defer { PhotoTrace.end(trace) }
-    if !updates.isEmpty { metadata.merge(updates) { _, new in new } }
+    if !updates.isEmpty {
+      metadata.merge(updates) { _, new in new }
+      for (id, metadata) in updates {
+        if let value = thumbnailStates[id], value.metadata != metadata { value.metadata = metadata }
+      }
+    }
     indexedCount = progress
     publicationMetrics.metadata += 1
     PhotoTrace.event("MetadataPublished", in: trace)
@@ -627,6 +654,7 @@ public final class WorkspaceState {
   }
 
   private func resetDecisions() {
+    thumbnailStates = [:]
     pendingDecisions = [:]
     pendingMetadata = [:]
     pendingMetadataReads = 0
@@ -771,6 +799,10 @@ public final class WorkspaceState {
     sourceReviewedIDs.formUnion(loaded.filter { $0.value.entry.reviewed }.keys)
     saveStatus.merge(loaded.mapValues { $0.entry.status }) { _, new in new }
     decisionsReady.formUnion(loaded.keys)
+    for id in loaded.keys {
+      publishThumbnailDecision(id)
+      publishThumbnailEdit(id)
+    }
     publicationMetrics.decisions += 1
     PhotoTrace.event("DecisionsPublished", in: trace)
     if let selectedID, loaded[selectedID] != nil {
@@ -851,6 +883,7 @@ public final class WorkspaceState {
       decisionRevision += 1
       for change in changes {
         decisions[change.photo.id] = change.after
+        publishThumbnailDecision(change.photo.id)
         if change.afterReviewed { sourceReviewedIDs.insert(change.photo.id) }
         sourceFields[change.photo.id] = change.afterFields
         persist(change.photo, change.after, reviewed: change.afterReviewed)
@@ -911,7 +944,10 @@ public final class WorkspaceState {
       return before == after ? nil : EditItemChange(photo: photo, before: before, after: after)
     }
     guard !changes.isEmpty else { return }
-    for item in changes { imageEdits[item.photo.id] = item.after }
+    for item in changes {
+      imageEdits[item.photo.id] = item.after
+      publishThumbnailEdit(item.photo.id)
+    }
     undoStack.append(.edit(changes, selectedID ?? changes[0].photo.id))
     redoStack = []
     persistEdits(changes.map(\.photo))
@@ -983,7 +1019,10 @@ public final class WorkspaceState {
     switch change {
     case .decision(let decision): restoreDecision(decision, undo: undo)
     case .edit(let items, let focus):
-      for item in items { imageEdits[item.photo.id] = undo ? item.before : item.after }
+      for item in items {
+        imageEdits[item.photo.id] = undo ? item.before : item.after
+        publishThumbnailEdit(item.photo.id)
+      }
       persistEdits(items.map(\.photo))
       rebuildVisible(preferred: focus)
     }
@@ -993,6 +1032,7 @@ public final class WorkspaceState {
     for item in change.items {
       let value = undo ? item.before : item.after
       decisions[item.photo.id] = value
+      publishThumbnailDecision(item.photo.id)
       let reviewed = undo ? item.beforeReviewed : item.afterReviewed
       if reviewed {
         sourceReviewedIDs.insert(item.photo.id)
@@ -1064,6 +1104,7 @@ public final class WorkspaceState {
       guard session == sessionID else { return }
       decisionRevision += 1
       decisions[photo.id] = entry.decision
+      publishThumbnailDecision(photo.id)
       saveStatus[photo.id] = entry.status
       repositionRating(photo)
       rebuildVisible(preferred: photo.id)

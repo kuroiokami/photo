@@ -75,6 +75,13 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments == ["--selection-summary"] {
+      let report = await SelectionSummaryBenchmark.run()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     if arguments == ["--sqlite-statements"] {
       let report = try await SQLiteStatementBenchmark.run()
       let encoder = JSONEncoder()
@@ -138,6 +145,7 @@ private struct PhotoBench {
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
       print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
+      print("       PhotoBench --selection-summary > selection-summary-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }
