@@ -7,6 +7,15 @@ private typealias ImageStorage = SwiftUI.State<PhotoPreview?>
 private typealias ErrorStorage = SwiftUI.State<String?>
 private typealias RetryStorage = SwiftUI.State<Int>
 
+private struct ImageRequestIdentity: Equatable {
+  let photoID: String
+  let pipeline: ObjectIdentifier
+  let session: UUID?
+  let maximumPixelSize: Int
+  let cacheGeneration: Int
+  let retry: Int
+}
+
 struct PhotoImageView: View {
   let photo: PhotoItem
   let pipeline: ImagePipeline
@@ -24,8 +33,15 @@ struct PhotoImageView: View {
     ZStack {
       Color.black.opacity(0.12)
       if let preview = preview ?? immediatePreview {
-        EditedBitmap(image: preview.image, edit: edit)
-          .accessibilityLabel(photo.filename)
+        if edit.isEdited {
+          EditedBitmap(image: preview.image, edit: edit)
+            .accessibilityLabel(photo.filename)
+        } else {
+          // Most culling frames need no custom AppKit drawing/view bridge.
+          Image(decorative: preview.image, scale: 1)
+            .resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+            .accessibilityLabel(photo.filename)
+        }
       } else if let error {
         VStack(spacing: 8) {
           Image(systemName: "exclamationmark.triangle").font(.title2)
@@ -51,8 +67,9 @@ struct PhotoImageView: View {
       }
     }
     .task(
-      id:
-        "\(photo.id)-\(ObjectIdentifier(pipeline))-\(String(describing: sessionID))-\(maximumPixelSize)-\(cacheGeneration)-\(retry)",
+      id: ImageRequestIdentity(
+        photoID: photo.id, pipeline: ObjectIdentifier(pipeline), session: sessionID,
+        maximumPixelSize: maximumPixelSize, cacheGeneration: cacheGeneration, retry: retry),
       priority: detailed ? .userInitiated : .utility
     ) { await load() }
     .onDisappear { preview = nil }

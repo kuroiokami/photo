@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "comparisonComplete": true,
+  "originalImageCount": 1000,
+  "originalsUnchanged": true,
+  "conditions": "Release builds, synthetic JPEG/PNG gradients, same folder/window, 160-point contact-sheet density, automated page scrolling. Uncontrolled OS caches; no physical-trackpad or Photo Mechanic comparison.",
+  "runs": [
+    {
+      "label": "baseline-exploratory",
+      "baselineCommit": "b3670ff",
+      "captureSeconds": 30,
+      "pageInputs": 24,
+      "indexingCompletionExplicitlyVerified": false,
+      "metrics": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "appKitBitmap": 3.0,
+          "swiftUIFocus": 1657.0,
+          "swiftUILazyGrid": 363.0,
+          "swiftUIPreferences": 295.0,
+          "swiftUIViewGraph": 3079.0
+        },
+        "mainThreadSampleWeightMilliseconds": 5445.0,
+        "maximumPotentialStallMilliseconds": 304.946083,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 45,
+        "potentialStallUnionMilliseconds": 4911.18104,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 13,
+          "Microhang": 4,
+          "Potential Interaction Delay": 28
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "baseline-settled-exploratory",
+      "baselineCommit": "b3670ff",
+      "captureSeconds": 20,
+      "pageInputs": 24,
+      "indexingCompletionExplicitlyVerified": true,
+      "metrics": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "appKitBitmap": 3.0,
+          "swiftUIFocus": 1115.0,
+          "swiftUILazyGrid": 275.0,
+          "swiftUIPreferences": 246.0,
+          "swiftUIViewGraph": 2210.0
+        },
+        "mainThreadSampleWeightMilliseconds": 3706.0,
+        "maximumPotentialStallMilliseconds": 1746.15975,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 32,
+        "potentialStallUnionMilliseconds": 5602.599842,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 8,
+          "Hang": 1,
+          "Microhang": 5,
+          "Potential Interaction Delay": 18
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "updated-shorter-exploratory",
+      "captureSeconds": 20,
+      "pageInputs": 10,
+      "indexingCompletionExplicitlyVerified": true,
+      "metrics": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "swiftUIFocus": 458.0,
+          "swiftUILazyGrid": 58.0,
+          "swiftUIPreferences": 89.0,
+          "swiftUIViewGraph": 809.0
+        },
+        "mainThreadSampleWeightMilliseconds": 1700.0,
+        "maximumPotentialStallMilliseconds": 586.416833,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 31,
+        "potentialStallUnionMilliseconds": 2994.379459,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 6,
+          "Hang": 1,
+          "Microhang": 1,
+          "Potential Interaction Delay": 23
+        },
+        "schemaVersion": 1
+      }
+    },
+    {
+      "label": "baseline-matched-final",
+      "captureSeconds": 60,
+      "pageInputs": 10,
+      "inputSequence": "five one-page down inputs, then five one-page up inputs",
+      "indexingCompletionExplicitlyVerified": true,
+      "warmedReturningRows": true,
+      "metrics": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "appKitBitmap": 4.0,
+          "swiftUIFocus": 1042.0,
+          "swiftUILazyGrid": 467.0,
+          "swiftUIPreferences": 171.0,
+          "swiftUIViewGraph": 2129.0
+        },
+        "mainThreadSampleWeightMilliseconds": 4150.0,
+        "maximumPotentialStallMilliseconds": 402.234958,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 17,
+        "potentialStallUnionMilliseconds": 3691.385292,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 6,
+          "Microhang": 7,
+          "Potential Interaction Delay": 4
+        },
+        "schemaVersion": 1
+      },
+      "baselineCommit": "b3670ff"
+    },
+    {
+      "label": "updated-matched-final",
+      "captureSeconds": 60,
+      "pageInputs": 10,
+      "inputSequence": "five one-page down inputs, then five one-page up inputs",
+      "indexingCompletionExplicitlyVerified": true,
+      "warmedReturningRows": true,
+      "metrics": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "swiftUIFocus": 815.0,
+          "swiftUILazyGrid": 234.0,
+          "swiftUIPreferences": 122.0,
+          "swiftUIViewGraph": 1225.0
+        },
+        "mainThreadSampleWeightMilliseconds": 3103.0,
+        "maximumPotentialStallMilliseconds": 330.767583,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 15,
+        "potentialStallUnionMilliseconds": 2630.698417,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 9,
+          "Microhang": 3,
+          "Potential Interaction Delay": 3
+        },
+        "schemaVersion": 1
+      },
+      "implementation": "SwiftUI unedited images, typed request IDs, reused labels; viewport geometry retained"
+    }
+  ],
+  "limits": [
+    "First three exploratory runs have unequal input counts/capture durations and are not matched comparisons.",
+    "Final pair uses the same ten inputs, window, density, first-photo selection, settled indexing and warmed rows; it is one pair with uncontrolled OS caches and scripted accessibility overhead.",
+    "Input endpoint positions were observed before capture ended; individual inputs were not timestamp-correlated to trace rows.",
+    "Potential stalls and sampled CPU weight do not measure presented FPS, dropped frames, subjective smoothness or competitor parity.",
+    "Content-origin geometry optimization was withdrawn after failed native selection acceptance."
+  ],
+  "comparisonScope": "One matched scripted baseline/final pair; physical-trackpad and representative-library acceptance remain open.",
+  "nativeFunctionalChecksPassed": true,
+  "originalBrowsingContextRestored": true
+}

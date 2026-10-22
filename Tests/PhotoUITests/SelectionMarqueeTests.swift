@@ -22,6 +22,19 @@ struct SelectionMarqueeTests {
     #expect(geometry.hits(in: drag, viewportSize: viewport).isEmpty)
   }
 
+  @Test func draggingOutsideViewportCannotSelectOnlyTheHiddenPartOfATile() {
+    let geometry = PhotoTileGeometry()
+    geometry.replace(with: ["partial": CGRect(x: 10, y: -40, width: 80, height: 80)])
+    let viewport = CGSize(width: 300, height: 200)
+    #expect(
+      geometry.hits(in: CGRect(x: 0, y: -35, width: 100, height: 20), viewportSize: viewport)
+        .isEmpty)
+    #expect(
+      geometry.hits(in: CGRect(x: 0, y: 0, width: 100, height: 20), viewportSize: viewport) == [
+        "partial"
+      ])
+  }
+
   @Test func marqueeDirectionAndSelectionBaseStayIndependentOfScrolling() {
     let geometry = PhotoTileGeometry()
     geometry.replace(with: [

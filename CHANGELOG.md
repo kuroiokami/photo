@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Simplify unedited thumbnail/Fit rendering, reuse typed image-request identities and EXIF labels, and clip marquee hits to visible thumbnail regions. Add native main-thread trace analysis and a matched scripted comparison; physical-trackpad and representative-library smoothness acceptance remains pending.
+
 - Reuse selection-readiness checks and native filename ranks, batch initial decision indexing, and move optional thumbnail-cache writes onto a bounded background queue. Preserve source-change checks, cache clearing and durable decisions.
 
 - Publish background EXIF/decision results in small groups while keeping selected-photo information immediate; add local performance markers and a concurrent-ingest service scenario.

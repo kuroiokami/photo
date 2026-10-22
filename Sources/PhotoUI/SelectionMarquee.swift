@@ -30,7 +30,8 @@ final class PhotoTileGeometry {
     let viewport = CGRect(origin: .zero, size: viewportSize)
     return Set(
       frames.filter {
-        viewport.intersects($0.value) && rectangle.intersects($0.value)
+        let visible = $0.value.intersection(viewport)
+        return !visible.isNull && rectangle.intersects(visible)
       }.keys)
   }
 }
