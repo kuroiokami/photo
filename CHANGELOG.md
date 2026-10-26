@@ -18,6 +18,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Prototype reusable native contact-sheet cells while preserving culling controls and image services. Native drag/accessibility acceptance and a matched release scrolling comparison remain pending; this draft is not an accepted speed fix.
+
 - Add privacy-safe macOS sample analysis and parser tests for scrolling investigations. Record and withdraw a row-layout experiment that did not establish a reliable speedup; rapid grid lag remains open.
 
 - Isolate header/progress, preview and saving-status view dependencies from the contact sheet. Extend read-only profiling to shoots distributed across subfolders.
