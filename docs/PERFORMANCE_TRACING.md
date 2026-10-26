@@ -98,3 +98,20 @@ sh scripts/benchmark.sh --scale-tree /tmp/photo-shoot > /tmp/photo-shoot-report.
 ```
 
 Schema 2 reports `includesSubfolders`; the 40k file ceiling applies to the entire chosen tree. This command runs the real recursive workspace pipeline with distinct identities, relative labels, complete indexing, selection and navigation. It retains the same hashing/cache/database/RSS limitations as `--scale`. In the native app, select the parent and turn on **Include Subfolders**; record whether EXIF indexing is still active during input. Also test a normal individual card folder. Match scope, files, window/density, input count, cache and indexing state before interpreting before/after timings. Neither a successful scripted input nor CPU-only tracing measures presented FPS.
+
+## Native `sample` fallback
+
+When an Instruments capture exports no usable CPU rows, a short macOS sample can expose layout/responder stacks:
+
+```sh
+sh scripts/build-app.sh --release
+xcrun dwarfdump --uuid .build/release/Photo .build/Photo.app/Contents/MacOS/Photo
+# Verify the two UUIDs match, then launch the packaged app.
+sample Photo 30 2 -file /tmp/photo-scroll.sample
+python3 scripts/analyze-scroll-sample.py /tmp/photo-scroll.sample > /tmp/photo-scroll-sample-summary.json
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+```
+
+The build script defaults to debug when `--release` is omitted. Verify the actual packaged binary for every comparison; discard mixed-configuration runs. Only sample one Photo process. Keep raw sample files outside Git. The analyzer emits no raw symbols, paths, captions, addresses, identifiers or filenames. It checks sample-weight consistency and unions stack branches/recursion within each category; categories overlap and must not be added together.
+
+These are **stack sample counts including waits**, not CPU milliseconds, frame/body counts, hitches or FPS. Sampling and accessibility inspection can substantially change the workload. Finish indexing, warm the same rows, hold the window/density/selection/labels fixed and ensure all input ends before capture stops. Record activation and inspection steps too. Use fixed-position input with a final inspection to reduce repeated accessibility serialization; confirm scrolling actually occurred and returned. Retain unprofiled controls and report an inconclusive result honestly. [The row-layout experiment](PERFORMANCE.md#rapid-full-contact-sheet-experiment--2026-10-26) was withdrawn because no reliable overall improvement was established.
