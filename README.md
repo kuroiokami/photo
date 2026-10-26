@@ -62,7 +62,7 @@ The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**.
 
 Photo keeps original image bytes unchanged. Explicit **Move to Trash** removes selected working files and exclusive sidecars from their folder; Finder can restore them. Protected pre-copy sources cannot be trashed. Rotate, mirror and crop edits currently stay within Photo; they are not applied to delivery copies or transferred to Lightroom. Ratings, flags and descriptive metadata use a separate XMP workflow.
 
-Large-shoot performance is still being tuned. Synthetic 2k/10k combined-folder and 10k single-folder scripted checks now respond during information loading. Rapid contact-sheet scrolling can still lag after information finishes loading. A layout trial did not establish a reliable improvement and was withdrawn. Real-shoot, physical-trackpad and 40k desktop acceptance remain open; see the [latest findings](docs/PERFORMANCE.md#rapid-full-contact-sheet-experiment--2026-10-26).
+Large-shoot performance is still being tuned. The reusable full Contact Sheet grid reduces process CPU and potential-stall duration in controlled 115-photo and synthetic 10k scrolling checks. Those scripted results do not establish physical-trackpad smoothness, competitor parity or representative RAW/40k performance. See the [measurements and remaining limits](docs/PERFORMANCE.md#native-reusable-contact-sheet--2026-10-26).
 
 Lightroom application-level round trips, real Canon CRW files and broader camera/platform coverage still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
 

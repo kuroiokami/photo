@@ -452,89 +452,94 @@ public struct WorkspaceView: View {
             Button("Open Folder…", action: openFolder)
           }
         case .ready:
-          ScrollViewReader { proxy in
-            ScrollView(showPreview ? .horizontal : .vertical) {
-              if showPreview {
+          if !showPreview {
+            NativeContactSheet(
+              workspace: workspace, columns: columns, thumbnailEdge: thumbnailEdge,
+              availableWidth: geometry.size.width, labels: thumbnailLabels,
+              folderLabels: workspace.includesSubfolders,
+              cacheGeneration: thumbnailCacheGeneration, hasCopiedCrop: copiedCrop != nil,
+              selectionFocus: { gridFocused = $0 },
+              content: { photo, height in AnyView(thumbnail(photo, fixedContentHeight: height)) },
+              navigate: { workspace.moveSelection(by: $0, extending: $1) },
+              preview: { showPreview = $0 },
+              magnify: { thumbnailSize = min(240, max(110, thumbnailSize * (1 + $0))) })
+          } else {
+            ScrollViewReader { proxy in
+              ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 12) {
                   ForEach(workspace.photos) { photo in
                     framedThumbnail(photo).frame(width: thumbnailEdge + 16)
                   }
                 }.padding(12)
-              } else {
-                LazyVGrid(
-                  columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-                  spacing: 16
-                ) {
-                  ForEach(workspace.photos) { photo in framedThumbnail(photo) }
-                }.padding(16)
               }
-            }
-            .simultaneousGesture(
-              MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
-                if pinchSize == nil { pinchSize = thumbnailEdge }
-                let size = (pinchSize ?? thumbnailEdge) * value.magnification
-                if showPreview {
-                  filmstripSize = min(170, max(90, size))
-                } else {
-                  thumbnailSize = min(240, max(110, size))
-                }
-              }.onEnded { _ in pinchSize = nil }
-            )
-            .coordinateSpace(name: "ContactSheetViewport")
-            .onPreferenceChange(PhotoTileFrames.self) { tileGeometry.replace(with: $0) }
-            .simultaneousGesture(
-              DragGesture(minimumDistance: 5)
-                .onChanged { value in
-                  if marquee == nil {
-                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
-                    marquee = SelectionMarquee(
-                      start: value.startLocation, end: value.location,
-                      base: modifiers.contains(.command) || modifiers.contains(.shift)
-                        ? workspace.selectedIDs : [])
+              .simultaneousGesture(
+                MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
+                  if pinchSize == nil { pinchSize = thumbnailEdge }
+                  let size = (pinchSize ?? thumbnailEdge) * value.magnification
+                  if showPreview {
+                    filmstripSize = min(170, max(90, size))
+                  } else {
+                    thumbnailSize = min(240, max(110, size))
                   }
-                  marquee?.end = value.location
-                  guard let marquee else { return }
-                  let hits = tileGeometry.hits(in: marquee.rectangle, viewportSize: geometry.size)
-                  workspace.selectGroup(marquee.base.union(hits))
-                }.onEnded { _ in
-                  marquee = nil
-                  gridFocused = true
+                }.onEnded { _ in pinchSize = nil }
+              )
+              .coordinateSpace(name: "ContactSheetViewport")
+              .onPreferenceChange(PhotoTileFrames.self) { tileGeometry.replace(with: $0) }
+              .simultaneousGesture(
+                DragGesture(minimumDistance: 5)
+                  .onChanged { value in
+                    if marquee == nil {
+                      let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+                      marquee = SelectionMarquee(
+                        start: value.startLocation, end: value.location,
+                        base: modifiers.contains(.command) || modifiers.contains(.shift)
+                          ? workspace.selectedIDs : [])
+                    }
+                    marquee?.end = value.location
+                    guard let marquee else { return }
+                    let hits = tileGeometry.hits(in: marquee.rectangle, viewportSize: geometry.size)
+                    workspace.selectGroup(marquee.base.union(hits))
+                  }.onEnded { _ in
+                    marquee = nil
+                    gridFocused = true
+                  }
+              )
+              .overlay(alignment: .topLeading) {
+                if let marquee {
+                  Rectangle().fill(Color.accentColor.opacity(0.12))
+                    .overlay(Rectangle().stroke(Color.accentColor, lineWidth: 1))
+                    .frame(width: marquee.rectangle.width, height: marquee.rectangle.height)
+                    .offset(x: marquee.rectangle.minX, y: marquee.rectangle.minY)
+                    .allowsHitTesting(false)
                 }
-            )
-            .overlay(alignment: .topLeading) {
-              if let marquee {
-                Rectangle().fill(Color.accentColor.opacity(0.12))
-                  .overlay(Rectangle().stroke(Color.accentColor, lineWidth: 1))
-                  .frame(width: marquee.rectangle.width, height: marquee.rectangle.height)
-                  .offset(x: marquee.rectangle.minX, y: marquee.rectangle.minY)
-                  .allowsHitTesting(false)
-              }
-            }.clipped()
-            .onAppear {
-              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
-            }
-            .onChange(of: SelectionReveal(id: workspace.selectedID, index: workspace.selectedIndex))
-            {
-              guard marquee == nil else { return }
-              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
-            }
-            .task(
-              id: GridLayout(
-                size: geometry.size, thumbnailSize: thumbnailEdge, showsPreview: showPreview)
-            ) {
-              // Lazy-grid positions settle after pane/density reflow. Coalesce
-              // intermediate layouts, then reveal the current selection once.
-              do {
-                try await Task.sleep(for: .milliseconds(50))
-                try Task.checkCancellation()
+              }.clipped()
+              .onAppear {
                 if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
-              } catch {}
+              }
+              .onChange(
+                of: SelectionReveal(id: workspace.selectedID, index: workspace.selectedIndex)
+              ) {
+                guard marquee == nil else { return }
+                if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+              }
+              .task(
+                id: GridLayout(
+                  size: geometry.size, thumbnailSize: thumbnailEdge, showsPreview: showPreview)
+              ) {
+                // Lazy-grid positions settle after pane/density reflow. Coalesce
+                // intermediate layouts, then reveal the current selection once.
+                do {
+                  try await Task.sleep(for: .milliseconds(50))
+                  try Task.checkCancellation()
+                  if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+                } catch {}
+              }
             }
-          }
-          .id(workspace.sessionID)
-          .onChange(of: workspace.sessionID) {
-            tileGeometry.clear()
-            marquee = nil
+            .id(workspace.sessionID)
+            .onChange(of: workspace.sessionID) {
+              tileGeometry.clear()
+              marquee = nil
+            }
           }
         }
       }
@@ -587,7 +592,9 @@ public struct WorkspaceView: View {
     }
   }
 
-  @ViewBuilder private func thumbnail(_ photo: PhotoItem) -> some View {
+  @ViewBuilder private func thumbnail(_ photo: PhotoItem, fixedContentHeight: Double? = nil)
+    -> some View
+  {
     if let state = workspace.thumbnailState(for: photo.id) {
       WorkspaceThumbnail(
         photo: photo, state: state, selection: workspace.selectionPresentation,
@@ -595,7 +602,7 @@ public struct WorkspaceView: View {
         cacheGeneration: thumbnailCacheGeneration, thumbnailEdge: thumbnailEdge,
         thumbnailLabels: thumbnailLabels, groupPairs: workspace.groupPairs,
         folderLabel: workspace.includesSubfolders ? workspace.folderLabel(for: photo.id) : nil,
-        hasCopiedCrop: copiedCrop != nil,
+        hasCopiedCrop: copiedCrop != nil, fixedContentHeight: fixedContentHeight,
         select: { selectThumbnail(photo) },
         action: { thumbnailAction($0, photo: photo) },
         openPreview: { showPreview = true },

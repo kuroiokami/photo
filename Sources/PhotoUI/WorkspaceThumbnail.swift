@@ -17,6 +17,7 @@ struct WorkspaceThumbnail: View, Equatable {
   let groupPairs: Bool
   let folderLabel: String?
   let hasCopiedCrop: Bool
+  var fixedContentHeight: Double? = nil
   let select: () -> Void
   let action: (ThumbnailAction) -> Void
   let openPreview: () -> Void
@@ -32,6 +33,7 @@ struct WorkspaceThumbnail: View, Equatable {
       && lhs.cacheGeneration == rhs.cacheGeneration && lhs.thumbnailEdge == rhs.thumbnailEdge
       && lhs.thumbnailLabels == rhs.thumbnailLabels && lhs.groupPairs == rhs.groupPairs
       && lhs.hasCopiedCrop == rhs.hasCopiedCrop && lhs.folderLabel == rhs.folderLabel
+      && lhs.fixedContentHeight == rhs.fixedContentHeight
   }
   private var canEdit: Bool { state.ready && (!state.selected || selection.ready) }
   var body: some View {
@@ -86,6 +88,7 @@ struct WorkspaceThumbnail: View, Equatable {
           .font(.caption2).foregroundStyle(.secondary)
       }
     }
+    .frame(height: fixedContentHeight.map { CGFloat($0) }, alignment: .top)
     .padding(8)
     .background(
       selected ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.025),

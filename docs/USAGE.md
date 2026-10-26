@@ -85,7 +85,7 @@ A saved folder stays in the sidebar until removed. Expand its arrow to discover 
 - **Escape:** return to Contact Sheet.
 - **Double-click a thumbnail image:** open Preview.
 
-Each view keeps its own thumbnail size during the session. Use its slider or pinch over the collection to adjust density. The filmstrip scrolls horizontally; the focused photo is revealed after keyboard navigation or sorting.
+The Contact Sheet uses evenly sized cards, with room for the Photo edit indicator so editing does not move the rows. Each view keeps its own thumbnail size during the session. Use its slider or pinch over the collection to adjust density. The filmstrip scrolls horizontally; the focused photo is revealed after keyboard navigation or sorting.
 
 Background shooting information and saved decisions appear in small updates while a folder loads. Photo prioritizes the focused photo; choosing an EXIF sort waits for indexing to finish before reordering the collection.
 
@@ -103,14 +103,14 @@ Choose **View → Clear Thumbnail Cache** if you need thumbnails recreated. This
 | ⌘-click | Add/remove an individual photo |
 | Shift-click | Select the range from the stable anchor |
 | Shift-arrow | Extend a range while navigating |
-| Drag a rectangle | Select thumbnails intersecting the visible rectangle |
+| Drag from a gap or margin in the Contact Sheet | Select thumbnails intersecting the visible rectangle |
 | ⌘/Shift + rectangle | Add to the existing selection |
 | ⌘A | Select all currently visible photos |
 | ⌘D | Deselect all |
 | ⇧⌘O | Invert the visible selection |
 | ⌘T | Select visible picks |
 
-Rectangle selection does not auto-scroll beyond the viewport. Filters restrict Select All and other visible-selection commands.
+Start a grid rectangle on the background rather than an image or button. Release the drag, then use P/X/U or 0–5 immediately to decide on the group. Rectangle selection does not auto-scroll beyond the viewport. Filters restrict Select All and other visible-selection commands.
 
 **RAW+JPEG** groups one unique same-folder/stem RAW+JPEG pair into one representative. Ratings, flags and image-edit actions on that representative target both physical files. They retain independent identities/sidecars. Ambiguous multi-RAW/stem matches are not combined.
 
