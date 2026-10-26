@@ -409,3 +409,11 @@ Add an explicit **Include Subfolders** option for a shoot spread across card/day
 Evaluate progress/header, preview and saving status in separate SwiftUI bodies so indexing does not register those dictionary/counter dependencies on the collection’s parent. Extend `PhotoBench --scale-tree` to exercise the same read-only pipeline across descendants. Treat 10k/40k single-folder cases as stress checks alongside more realistic distributed shoots.
 
 **Acceptance:** recursive/shallow inventory, hidden/package/link exclusion, duplicate names, same-folder pairing, group decisions/Undo, verification gates, source boundaries and cross-folder cleanup regressions; an Observation/rendering isolation regression; native combined-folder browsing, navigation, selection and confirmation checks. Report service timings, native CPU/RSS and photographer/physical-trackpad acceptance separately. Preserve original bytes and retain the existing large-shoot performance caveats until evidence supports narrowing them.
+
+## Rapid full-contact-sheet scrolling experiment — 2026-10-26
+
+- [x] Diagnose native layout/responder work and add a privacy-safe, tested macOS sample analyzer.
+- [x] Prototype arithmetic lazy rows with explicit tile widths, row-aware offscreen keyboard reveal and focused mapping tests; preserve filmstrip/controls/cache/source policies.
+- [x] Record inconclusive repeated unprofiled CPU results and exclude debug/mismatched/incomplete captures from speedup claims.
+- [ ] Complete matched release fixed-position captures, remaining release/native checks and original browsing-context restoration after macOS unlock.
+- [ ] Retain or withdraw the prototype based on evidence; physical-trackpad/frame/real-shoot/40k acceptance remains open. See [ADR 0034](decisions/0034-contact-sheet-row-experiment.md).

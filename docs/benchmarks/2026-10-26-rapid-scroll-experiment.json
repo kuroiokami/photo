@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "status": "experiment; no accepted scroll-speed improvement",
+  "baselineRevision": "f9d29ec52393177b434bd3cc9812a21ae31794e6",
+  "candidate": "arithmetic lazy rows, explicit tile widths and row-based selection reveal",
+  "corpus": {
+    "scaleImages": 10000,
+    "scaleKind": "APFS-cloned project-created JPEG/PNG gradients with distinct inodes and Unicode names",
+    "functionalImages": 115,
+    "functionalKind": "APFS-cloned project-created JPEG gradients with distinct inodes",
+    "originalHashesMatch": true
+  },
+  "view": {
+    "mode": "full Contact Sheet",
+    "thumbnailSize": 160,
+    "columns": 5,
+    "windowPoints": [
+      1280,
+      820
+    ],
+    "labels": 0,
+    "indexing": "settled before measured input",
+    "sourceScope": "direct folder"
+  },
+  "unprofiledProcessCPU": {
+    "method": "ps cputime difference; all Photo threads, two same-process repeats per release version; rows then grid; one warm-up sequence per process",
+    "input": "three down, three up; four pages per step; fresh accessibility tree between steps",
+    "baselineSeconds": [
+      6.04,
+      5.56
+    ],
+    "rowsSeconds": [
+      6.15,
+      5.53
+    ],
+    "conclusion": "no reliable overall CPU reduction; accessibility inspection contributes substantial work; elapsed tool time is not frame latency"
+  },
+  "baselineCoordinateSample": {
+    "requestedSeconds": 30,
+    "intervalMilliseconds": 2,
+    "input": "activate using Open Folder/Cancel; fixed-point three down/three up, four pages each, no intermediate tree inspection; final scrollbar verified at zero; input completed before capture ended",
+    "report": {
+      "schema": 1,
+      "measurement": "stack sample counts including waiting; categories overlap",
+      "mainThreadSampleCount": 11512,
+      "inclusiveMainThreadSampleCounts": {
+        "swiftUILayout": 1595,
+        "swiftUIViewGraph": 1514,
+        "lazyGrid": 285,
+        "lazyStack": 0,
+        "swiftUIFocus": 1244,
+        "preferences": 103,
+        "eventLoopWait": 7929,
+        "thumbnailView": 11
+      },
+      "mainThreadSampleFractions": {
+        "swiftUILayout": 0.13855107713690062,
+        "swiftUIViewGraph": 0.13151494093120222,
+        "lazyGrid": 0.024756775538568452,
+        "lazyStack": 0.0,
+        "swiftUIFocus": 0.10806115357887422,
+        "preferences": 0.008947185545517721,
+        "eventLoopWait": 0.6887595552466991,
+        "thumbnailView": 0.0009555246699096595
+      },
+      "framePresentationMeasured": false,
+      "cpuTimeMeasured": false
+    }
+  },
+  "excludedExploratoryRuns": [
+    "A later candidate package used build-app.sh without --release; all debug-package performance observations are excluded. The replacement app UUID was verified against the release executable.",
+    "Earlier 15/20-second captures lack a reliably complete matched input window, or use a different prototype/input method; no before/after percentage is inferred.",
+    "Inactive-window and stale-element input failures, and a trace with failed input, are not scrolling comparisons."
+  ],
+  "pending": [
+    "Complete a matched fixed-point release pair after macOS unlock.",
+    "Decide whether to retain the row prototype based on repeatable evidence; do not merge it as a proven fix.",
+    "Final release regression checks and restoration of original Sample Collection/Dawn/Contact Sheet/empty sidebar.",
+    "Presented frame times, physical trackpad, representative shoots and 40k/memory-pressure acceptance remain open."
+  ]
+}

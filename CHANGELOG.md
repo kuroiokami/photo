@@ -16,6 +16,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Add privacy-safe macOS sample analysis for scrolling investigations. A row-based contact-sheet prototype is under evaluation; performance acceptance remains incomplete.
+
 - Isolate header/progress, preview and saving-status view dependencies from the contact sheet. Extend read-only profiling to shoots distributed across subfolders.
 
 

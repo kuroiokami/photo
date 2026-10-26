@@ -461,11 +461,19 @@ public struct WorkspaceView: View {
                   }
                 }.padding(12)
               } else {
-                LazyVGrid(
-                  columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns),
-                  spacing: 16
-                ) {
-                  ForEach(workspace.photos) { photo in framedThumbnail(photo) }
+                let rows = ContactSheetRows(photoCount: workspace.photos.count, columns: columns)
+                let width = max(
+                  1, (geometry.size.width - 32 - Double(columns - 1) * 12) / Double(columns))
+                LazyVStack(alignment: .leading, spacing: 16) {
+                  ForEach(0..<rows.endIndex, id: \.self) { row in
+                    HStack(alignment: .top, spacing: 12) {
+                      ForEach(workspace.photos[rows[row]]) { photo in
+                        framedThumbnail(photo).frame(width: width)
+                      }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .id(ContactSheetRowTarget(index: row))
+                  }
                 }.padding(16)
               }
             }
@@ -511,12 +519,12 @@ public struct WorkspaceView: View {
               }
             }.clipped()
             .onAppear {
-              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+              revealSelection(using: proxy, columns: columns)
             }
             .onChange(of: SelectionReveal(id: workspace.selectedID, index: workspace.selectedIndex))
             {
               guard marquee == nil else { return }
-              if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+              revealSelection(using: proxy, columns: columns)
             }
             .task(
               id: GridLayout(
@@ -527,7 +535,7 @@ public struct WorkspaceView: View {
               do {
                 try await Task.sleep(for: .milliseconds(50))
                 try Task.checkCancellation()
-                if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+                revealSelection(using: proxy, columns: columns)
               } catch {}
             }
           }
@@ -584,6 +592,17 @@ public struct WorkspaceView: View {
         showPreview = false
         return .handled
       }
+    }
+  }
+
+  private func revealSelection(using proxy: ScrollViewProxy, columns: Int) {
+    if showPreview {
+      if let id = workspace.selectedID { proxy.scrollTo(id, anchor: .center) }
+    } else if let index = workspace.selectedIndex,
+      let row = ContactSheetRows(photoCount: workspace.photos.count, columns: columns).row(
+        containing: index)
+    {
+      proxy.scrollTo(ContactSheetRowTarget(index: row), anchor: .center)
     }
   }
 
