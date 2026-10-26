@@ -55,3 +55,33 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 Wait for xctrace to finish saving and exit successfully before exporting; an early export can report Document Missing Template Error. If Command Line Tools is selected, use the full Xcode developer directory or pass `--xctrace /path/to/xctrace` to the analyzer. Only attach to one Photo process. Keep raw traces/XML outside Git: they can include process environment, symbol and filesystem information. The analyzer emits fixed aggregate fields and discards temporary exports.
 
 Compare equal input counts and fully captured input windows, with warm/cold state and indexing recorded. Scripted accessibility input adds focus/inspection overhead; a native physical-trackpad run is separate acceptance. Reports contain potential main-thread stall counts, their union/maximum duration and sampled CPU weight. These are not displayed FPS, confirmed dropped frames or body-evaluation counts. Inclusive CPU categories overlap. Frame-lifetime/surface tables without reliable app attribution are deliberately excluded. Baseline findings and incomplete comparisons belong in [performance notes](PERFORMANCE.md), not fastest/smoothest claims.
+
+## File-backed 10k/40k profiling
+
+Generate only into **new disposable folders** on a filesystem supporting `clonefile` (normally APFS). This reuses the existing three project-created JPEG/PNG gradients with distinct inodes and mixed extension spellings. It saves physical storage; repeated pixels/no EXIF are not a representative camera shoot. Unsupported cloning or existing output folders fail rather than fall back to large physical copies. Hidden seed images stay outside the browsed inventory. No generated pixels belong in Git.
+
+```sh
+sh scripts/benchmark.sh --generate-scale /tmp/photo-scale-10000 10000
+sh scripts/benchmark.sh --generate-scale /tmp/photo-scale-40000 40000
+sh scripts/benchmark.sh --scale /tmp/photo-scale-10000 > /tmp/photo-scale-10000.json
+sh scripts/benchmark.sh --scale /tmp/photo-scale-40000 > /tmp/photo-scale-40000.json
+```
+
+Run fresh processes sequentially without overlapping builds, tests or native inputs. Repeat in reverse size order. The database is temporary and FULL durability remains enabled; no source-image/sidecar or shared thumbnail-cache writes occur. All image bytes are hashed before/after. That hashing warms the filesystem cache: process/database freshness is not physical cold storage.
+
+Reports separate folder inventory/model construction, first Fit and selected readiness during concurrent indexing, full indexing, forward/reverse/spread Fit requests, cached Fit and Select All/filter/sort costs. Updated reports include selection-only navigation time. Returned model identity checks are not displayed-image verification. The service pipeline omits the view's 35 ms cold debounce, grid thumbnails and native rendering. Revisited rows can decode again when the 64 MiB Fit working set is exceeded; source-decode counts are reported.
+
+Sampled process RSS includes preflight inventory/hash allocations and a retained input URL list alongside workspace inventory. Use the pre-workspace/phase checkpoints; do not call it native Photo memory or a peak bound. Capture the actual app separately with the same window/density, settled EXIF and all-selected readiness, then return to one selected photo and warm the same rows. Record scripted inputs and capture duration alongside native RSS samples and finalized Animation Hitches aggregates. Accessibility inspection and tracing add overhead; potential stalls/main-thread sample weight do not measure presented FPS or physical-trackpad feel. Raw traces/exports stay outside Git.
+
+See [ADR 0032](decisions/0032-workspace-scale-profile.md) and [performance results](PERFORMANCE.md) for the readiness traversal regression, correction and remaining large-group costs. Mixed-camera/EXIF, physical media, concurrent-copy pressure and real-shoot memory acceptance remain separate.
+
+### Short CPU-only native captures
+
+If Animation Hitches capture/finalization overhead is excessive, use a short Time Profiler recording to inspect work without inventing absent hang statistics:
+
+```sh
+xcrun xctrace record --template 'Time Profiler' --attach Photo --time-limit 15s --output /tmp/photo-index-cpu.trace
+python3 scripts/analyze-scroll-trace.py /tmp/photo-index-cpu.trace --cpu-only > /tmp/photo-index-cpu.json
+```
+
+Wait for successful recording/finalization exit before exporting. CPU-only schema 2 reports `stallDiagnosticsMeasured: false` and null stall values, with fixed anonymous CPU categories. It does not measure scrolling FPS, potential-hang counts or displayed images. If input inspection times out or indexing never settles, report that failed acceptance rather than treating the run as warm/complete. External RSS sampling around record/finalization must identify its full sampling window and profiler overhead.

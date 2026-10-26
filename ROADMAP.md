@@ -24,7 +24,7 @@ Finish native review → copy → resume checks, test interruption with physical
 
 ### Make the whole workflow faster
 
-Prioritize time to the first decision and first verified deliverable alongside total copy speed. The [research and ranked experiments](docs/WORKFLOW_PERFORMANCE_RESEARCH.md) propose interaction profiling, fewer unnecessary interface updates, bounded nearby previews, storage-aware scheduling and more efficient ingest bookkeeping. These remain planned; current measurements stay in the performance notes.
+Prioritize time to the first decision and first verified deliverable alongside total copy speed. The [research and ranked experiments](docs/WORKFLOW_PERFORMANCE_RESEARCH.md) propose interaction profiling, fewer unnecessary interface updates, bounded nearby previews, storage-aware scheduling and more efficient ingest bookkeeping. Profiling, selection bookkeeping and ingest-journal improvements have shipped. Large-folder desktop checks still fail during initial information loading, so UI update/layout work takes priority before nearby preview preparation. Current measurements and limits stay in the [performance notes](docs/PERFORMANCE.md#file-backed-workspace-scale-and-readiness-correction--2026-10-26).
 
 ### Make Photo easier to install
 

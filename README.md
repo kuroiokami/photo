@@ -62,7 +62,9 @@ The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**.
 
 Photo keeps original image bytes unchanged. Explicit **Move to Trash** removes selected working files and exclusive sidecars from their folder; Finder can restore them. Protected pre-copy sources cannot be trashed. Rotate, mirror and crop edits currently stay within Photo; they are not applied to delivery copies or transferred to Lightroom. Ratings, flags and descriptive metadata use a separate XMP workflow.
 
-Lightroom application-level round trips, real Canon CRW files, broader camera/platform coverage and representative 10–40k-photo workflows still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
+Large folders can become slow or unresponsive while Photo reads shooting information and saved decisions. The 10–40k-photo workflow has not passed desktop performance checks; see the [measured limits](docs/PERFORMANCE.md#file-backed-workspace-scale-and-readiness-correction--2026-10-26).
+
+Lightroom application-level round trips, real Canon CRW files and broader camera/platform coverage still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
 
 ## Contributing
 

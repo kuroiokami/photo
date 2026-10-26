@@ -11,14 +11,18 @@ public enum FolderLoadState: Hashable, Sendable {
 @Observable
 public final class WorkspaceState {
   public private(set) var photos: [PhotoItem] {
-    didSet { refreshSelectionPresentation() }
+    didSet {
+      if selectedIDs.isEmpty { refreshSelectionPresentation() }
+    }
   }
   public private(set) var selectedIDs: Set<String> = [] {
     didSet {
-      for id in oldValue.symmetricDifference(selectedIDs) {
-        thumbnailStates[id]?.selected = selectedIDs.contains(id)
+      if selectedIDs != oldValue {
+        for id in oldValue.symmetricDifference(selectedIDs) {
+          thumbnailStates[id]?.selected = selectedIDs.contains(id)
+        }
+        refreshSelectionPresentation()
       }
-      refreshSelectionPresentation()
       publishSelectedPending()
     }
   }
@@ -251,7 +255,8 @@ public final class WorkspaceState {
   @ObservationIgnored private var allPhotos: [PhotoItem] = []
   public private(set) var selectedIndex: Int? {
     didSet {
-      refreshSelectionPresentation()
+      // Focus/order cannot change represented membership for explicit IDs.
+      if selectedIDs.isEmpty { refreshSelectionPresentation() }
       publishSelectedPending()
     }
   }
