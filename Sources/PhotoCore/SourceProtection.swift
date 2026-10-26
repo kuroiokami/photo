@@ -2,9 +2,12 @@ import Darwin
 import Foundation
 
 public enum SourceReviewError: LocalizedError {
-  case protectedSource, sourceChanged, unavailable, copyNotReady, localData, identityUnavailable
+  case protectedSource, sourceChanged, unavailable, copyNotReady, localData, identityUnavailable,
+    mixedBrowse
   public var errorDescription: String? {
     switch self {
+    case .mixedBrowse:
+      "This view would mix a protected review source with other folders. Open the protected source folder itself to review its photos and subfolders."
     case .protectedSource:
       "This source is protected. Review decisions stay on this Mac; organize photos after copying."
     case .sourceChanged:
@@ -105,6 +108,20 @@ public final class SourceProtection: @unchecked Sendable {
     defer { Self.lock.unlock() }
     return try matching(url, records: records())
   }
+  /// A combined collection must have one review context, including moved sources.
+  public func validateCombinedBrowse(root: URL, folders: Set<URL>) throws -> SourceReviewSession? {
+    Self.lock.lock()
+    defer { Self.lock.unlock() }
+    let records = try records()
+    let context = try matching(root, records: records)
+    for folder in folders {
+      if try matching(folder, records: records)?.id != context?.id {
+        throw SourceReviewError.mixedBrowse
+      }
+    }
+    return context
+  }
+
   public func protect(_ folder: URL) throws -> SourceReviewSession {
     Self.lock.lock()
     defer { Self.lock.unlock() }

@@ -4,7 +4,7 @@ Last updated: 2026-10-26. This tracks the reviewed optimization suggestions agai
 
 | Suggestion | Status | Implementation or remaining work |
 | --- | --- | --- |
-| 1. Narrow selection readiness observation | Implemented; validation in tracker | Separate observable Boolean readiness and per-photo display records, with an Equatable tile boundary; see [ADR 0031](decisions/0031-thumbnail-observation.md). File-backed scale runs corrected ready-set traversal and redundant snapshot rebuilds in [ADR 0032](decisions/0032-workspace-scale-profile.md); native large-folder indexing/scroll acceptance failed and remains open. |
+| 1. Narrow selection readiness observation | Implemented; validation in tracker | Separate observable Boolean readiness and per-photo display records, with an Equatable tile boundary; see [ADR 0031](decisions/0031-thumbnail-observation.md). File-backed scale runs corrected ready-set traversal and redundant snapshot rebuilds in [ADR 0032](decisions/0032-workspace-scale-profile.md); the [ADR 0033](decisions/0033-combined-shoot-browsing.md) follow-up passes synthetic 2k/10k combined and 10k flat scripted input checks, with physical-frame/40k acceptance still open. |
 | 2. Ordinary-ingest manifest scaling | Implemented; local acceptance passed | Append records at both destinations, replay and checkpoint by journal generation/offset; see [ADR 0029](decisions/0029-ordinary-ingest-journal.md). |
 | 3. Reuse SQLite prepared statements | Implemented; local acceptance passed | Bounded actor-owned query leases and shared default record coders; reset/bind/error/rollback, nested use and connection lifetime regressions. See [ADR 0030](decisions/0030-sqlite-statement-reuse.md). |
 | 4. Disk-hit filesystem/property work | Open; proposal needs adjustment | Retain source revalidation across reads and pre-decode dimension bounds. A stamp captured before reading does not detect replacement during the read. Measure changes without removing these protections. |
@@ -16,7 +16,8 @@ Last updated: 2026-10-26. This tracks the reviewed optimization suggestions agai
 | 10. Image task/cache overhead | Partial | Typed Equatable task identity shipped. Immediate RAM lookup remains in display and loading paths to avoid a loading flash and retain session/cancellation checks. |
 | 11. Detail pan/zoom observation | Open | DetailPresentation remains one state value. Separate high-frequency navigation from image/loading/control state with linked-comparison tests. |
 | 12. Duplicate tile labels/identity | Partial; identity retained deliberately | EXIF labels format once. Explicit photo IDs remain ScrollViewReader targets for keyboard selection reveal. Removing them requires an equivalent verified target. |
-| Native measurement gap | Partial | One earlier matched 1k pair exists. New 10k/40k indexing CPU/RSS diagnostics expose native scaling problems; scrolling/inspection timed out, so no new matched or presented-frame result. Body-evaluation/physical-trackpad acceptance remains open. |
+| Workspace indexing view dependencies | Implemented; synthetic acceptance passed | Child-body regions isolate header/progress, preview and saving status. Rendering isolation and synthetic 2k/10k combined plus 10k flat native input checks pass; see ADR 0033. |
+| Native measurement gap | Partial | One earlier matched 1k pair exists. The new 2k Time Profiler export had no rows and was rejected; successful 2k/10k input/RSS checks are not CPU/frame comparisons. Usable matched captures, 40k/real shoots and physical-trackpad acceptance remain open. |
 
 ## Smaller suggestions
 
@@ -32,7 +33,7 @@ Last updated: 2026-10-26. This tracks the reviewed optimization suggestions agai
 1. Ordinary-ingest journaling and recovery/scaling evidence merged in [PR 29](https://github.com/kuroiokami/photo/pull/29).
 2. Actor-owned prepared statements and record JSON coders merged in [PR 30](https://github.com/kuroiokami/photo/pull/30).
 3. Narrow readiness/summary observation and selected tile dependencies implemented with observable invalidation/unknown-decision/group/filter/Undo tests and native interaction checks; final evidence in the tracker/delivery PR.
-4. File-backed scale profiling and selection corrections are implemented in ADR 0032. Native indexing/control/scroll acceptance failed: prioritize UI dependency/layout profiling and initial large-group selection before prefetch.
+4. File-backed scale profiling and selection corrections are implemented in ADR 0032. The failed native indexing/control/scroll checks drove ADR 0033: isolate UI regions and add distributed-shoot scope/profiling. Synthetic 2k/10k combined and 10k flat input checks now pass; matched frame/CPU and 40k acceptance plus large-group costs remain open.
 5. Then profile disk-cache locking, CR3 parsing, metadata reuse and detail navigation independently; representative shoot/memory/physical-trackpad acceptance remains open.
 
 User-decision save batching is separate from prepared-statement reuse and initial-index transactions. Natural filename ranks already reduce repeated sort collation; the first locale-aware sort still uses native collation. Physical-media interruption, memory pressure and representative 10k/40k mixed-camera shoots remain acceptance work, not completed by synthetic service scenarios.

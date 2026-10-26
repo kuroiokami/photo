@@ -22,6 +22,8 @@ private struct TrashFixture: Sendable {
   }
   func file(_ name: String) throws -> URL {
     let url = folder.appendingPathComponent(name)
+    try FileManager.default.createDirectory(
+      at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
     try Data(name.utf8).write(to: url)
     return url
   }
@@ -64,6 +66,73 @@ struct PhotoTrashTests {
     }
     #expect(try Data(contentsOf: keeper) == Data("Keeper.jpg".utf8))
     #expect(try Data(contentsOf: keeperSidecar) == Data("Keeper.jpg.xmp".utf8))
+  }
+
+  @Test func combinedTrashKeepsSameNamedPhotosAndSidecarOwnershipSeparateByFolder() async throws {
+    let f = try TrashFixture()
+    defer { try? FileManager.default.removeItem(at: f.root) }
+    let a = try f.file("Card A/A.ARW")
+    let b = try f.file("Card B/A.ARW")
+    let peer = try f.file("Card A/A.CR3")
+    let shared = try f.file("Card A/A.xmp")
+    let exclusive = try f.file("Card B/A.xmp")
+    let engine = PhotoTrash(store: f.store) { url in
+      let relative = PhotoPath.canonical(url).pathComponents.dropFirst(
+        PhotoPath.canonical(f.folder).pathComponents.count
+      ).joined(separator: "/")
+      let destination = f.trash.appendingPathComponent(relative)
+      try FileManager.default.createDirectory(
+        at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try FileManager.default.moveItem(at: url, to: destination)
+    }
+    let identities = try await f.identities([a, b])
+    let plan = try await engine.prepare(
+      images: identities, folder: f.folder, includingSubfolders: true)
+    #expect(
+      plan.images.count == 2
+        && plan.companions.map(PhotoPath.canonical) == [PhotoPath.canonical(exclusive)])
+    #expect(plan.retainedSharedCompanions == 1)
+    #expect(plan.displayName(for: a) == "Card A/A.ARW")
+    #expect(plan.displayName(for: b) == "Card B/A.ARW")
+    let result = await engine.execute(plan)
+    #expect(result.error == nil && result.moved.count == 3)
+    #expect(
+      try Data(contentsOf: f.trash.appendingPathComponent("Card A/A.ARW"))
+        == Data("Card A/A.ARW".utf8))
+    #expect(
+      try Data(contentsOf: f.trash.appendingPathComponent("Card B/A.ARW"))
+        == Data("Card B/A.ARW".utf8))
+    #expect(
+      FileManager.default.fileExists(atPath: peer.path)
+        && FileManager.default.fileExists(atPath: shared.path))
+    let outside = f.root.appendingPathComponent("outside.jpg")
+    try Data().write(to: outside)
+    await #expect(throws: (any Error).self) {
+      try await engine.prepare(
+        images: f.identities([outside]), folder: f.folder, includingSubfolders: true)
+    }
+  }
+
+  @Test func anyChangedOrNewlyProtectedFolderInvalidatesTheWholeCombinedTrashPlan() async throws {
+    for protect in [false, true] {
+      let f = try TrashFixture()
+      defer { try? FileManager.default.removeItem(at: f.root) }
+      let a = try f.file("Card A/A.jpg")
+      let b = try f.file("Card B/B.jpg")
+      let engine = f.engine()
+      let plan = try await engine.prepare(
+        images: f.identities([a, b]), folder: f.folder, includingSubfolders: true)
+      if protect {
+        _ = try await f.store.beginSourceReview(b.deletingLastPathComponent())
+      } else {
+        _ = try f.file("Card B/new.jpg")
+      }
+      let result = await engine.execute(plan)
+      #expect(result.error != nil && result.moved.isEmpty)
+      #expect(
+        FileManager.default.fileExists(atPath: a.path)
+          && FileManager.default.fileExists(atPath: b.path))
+    }
   }
 
   @Test func foreignFoldersAndSymbolicLinksCannotExpandTheTrashScope() async throws {

@@ -338,3 +338,29 @@ Shorter 15-second Time Profiler captures also show sustained main-thread work. F
 A separate three-photo built-in-sample native regression passes group stars/flags, two-step Undo, empty filtering and Clear Filters; original browsing context is restored afterward. This limited semantic check does not satisfy failed large-folder acceptance.
 
 CPU-only analyzer mode reports missing stall metrics as null, never perfect scrolling. Four Python analyzer regressions cover process/reference filtering, missing data, interval merging and CPU-only privacy/null semantics. **No native smoothness/FPS improvement or 10k/40k-shoot acceptance is claimed.** Next priority is isolating/profiled UI update/layout work during indexing and the remaining initial large-group selection cost, before speculative decoding or a framework replacement.
+
+## Combined shoot browsing and isolated UI regions — 2026-10-26
+
+[ADR 0033](decisions/0033-combined-shoot-browsing.md) adds optional parent-folder aggregation and isolates header/progress, preview and saving-status dependencies in separate SwiftUI bodies. Per-photo display records and collection observation remain active; legitimate selection, sort, filter, geometry and image changes still update. A rendering regression verifies that changing progress redraws its region without re-evaluating the neighboring grid, and that grid-owned changes still redraw it. Repeated identical source-review contexts no longer invalidate the workspace on every decision batch.
+
+[Anonymous evidence](benchmarks/2026-10-26-shoot-tree.json) contains two sequential release runs each for 2k photos in eight folders and 10k in twenty folders, plus a retained flat 10k stress control. The order is tree2k, tree10k, tree10k, tree2k, flat10k, with fresh processes/temporary FULL-durability databases and no overlapping builds, tests or native inputs during timing. Three project-created gradients are cloned with distinct inodes. Preflight hashing warms filesystem caches; repeated pixels/missing camera metadata are not a real shoot.
+
+| Service measurement | 2k distributed | 10k distributed |
+| --- | --- | --- |
+| Inventory/model opening | 125–130 ms | 602–610 ms |
+| First Fit after inventory, while indexing | 43–50 ms | 47–50 ms |
+| Selected decision ready after inventory | 8.8–9.0 ms | 8.4–8.8 ms |
+| Complete EXIF / decision indexing | 0.27–0.28 / 2.51–2.52 s | 1.31–1.33 / 12.69–13.03 s |
+| Forward/reverse/spread navigation-to-Fit p95 | 14.9–18.3 ms | 15.0–19.2 ms |
+| Select All | 3.5–4.1 ms | 15.0–20.7 ms |
+| Sampled service RSS maximum | 418–422 MiB | 574–578 MiB |
+
+These are pipeline/model timings, excluding the view debounce, thumbnail grid, rendering and presented frames. Service RSS includes retained preflight inventory and decoder/allocator memory, not native app memory or a peak bound. **Do not attribute differing tree/flat selection timings to the UI change.** The distributed corpus has ASCII frame names; the retained flat corpus has accented names and different path structure. The flat control still takes about 397 ms for Select All, consistent with the earlier slow operation. This is an added workload, not a matched before/after speedup trial.
+
+Native scripted checks now complete on the distributed 2k/10k collections **and the existing flat 10k stress corpus**. A 10k-tree reload/scroll witness advances EXIF progress from 131 to 575 of 10k while the scrollbar moves; the flat witness advances 156→581. Returning scrolls, keyboard next-photo, Z to JPEG 100%/Fit, Contact Sheet and Select All pass. In 2k, same-named photos from two cards receive group stars/flags without affecting other cards, two-step Undo restores them, the day/card views show 1000/250, direct mode retains focus, and relaunch resets the scope. Native Trash confirmation lists two photos and two sidecars with relative paths and is cancelled; actual cross-folder recoverable moves, stale snapshots and source protection use automated disposable tests. This does not claim a new native Finder Trash round trip.
+
+A short 2k Time Profiler recording finalized but exported **zero time-profile rows**. The analyzer correctly rejected it; no CPU/stall improvement is inferred. Its recording/finalization RSS sampling reached about 310 MiB. A separate 30-second 10k contact-sheet/indexing/input window reached about 447 MiB RSS. Different scenarios and profiler/automation overhead prevent a matched memory comparison. The process CPU statistic in the JSON is not main-thread sampling or frame time. Raw traces/XML and all images remain outside Git.
+
+All 12k distributed image hashes and distinct inodes match their pre-native manifests; the 10k flat images still match their original generator seeds. Two disposable 2k XMP files reflect the explicit native decisions and Undo. Service reports hash every original before/after and write no source sidecars. No personal decisions/file jobs were initiated; the original three-photo Preview/settings were restored and only test shortcuts removed.
+
+**Remaining:** physical-trackpad/presented-frame acceptance, usable matched native CPU captures, 40k desktop retesting, real mixed-camera/EXIF shoots, memory pressure, concurrent card I/O, large-group selection and save throughput. The prior 40k failure is not declared fixed by a successful 10k scripted check. Decoder/cache/durability settings are unchanged.

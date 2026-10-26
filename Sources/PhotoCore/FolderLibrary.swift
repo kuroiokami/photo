@@ -31,7 +31,7 @@ public struct FolderSidebarRow: Identifiable, Sendable {
 }
 
 /// Persistent shortcuts, not a catalog. Expanding a row reads only its immediate
-/// directories; browsing never recursively decodes or indexes descendants.
+/// directories; WorkspaceState owns the optional combined photo inventory.
 @MainActor
 @Observable
 public final class FolderLibrary {

@@ -165,6 +165,7 @@ public final class WorkspaceState {
     let fallback = Array(order.dropFirst(position)) + Array(order.prefix(position).reversed())
     let preferred = selectedID.flatMap { removed.contains($0) ? nil : $0 }
     allPhotos.removeAll { removed.contains($0.id) }
+    for id in removed { folderLabels.removeValue(forKey: id) }
     collectionRevision += 1
     metadataAttempted.subtract(removed)
     indexedCount = metadataAttempted.count
@@ -274,6 +275,9 @@ public final class WorkspaceState {
     if !ids.isEmpty { publishDecisions(ids: ids) }
   }
   @ObservationIgnored private var indicesByID: [PhotoItem.ID: Int]
+  public private(set) var includesSubfolders = false
+  @ObservationIgnored private var folderLabels: [String: String] = [:]
+  public func folderLabel(for id: String) -> String? { folderLabels[id] }
   public private(set) var directory: URL?
   public private(set) var loadState: FolderLoadState = .ready
   public private(set) var sessionID = UUID()
@@ -303,10 +307,16 @@ public final class WorkspaceState {
     buildFamilies(photos)
   }
 
-  public func openFolder(_ directory: URL, verifiedImages: [URL]? = nil) async {
+  public func openFolder(
+    _ directory: URL, verifiedImages: [URL]? = nil, verificationRoot: URL? = nil,
+    includingSubfolders: Bool? = nil
+  ) async {
     let trace = PhotoTrace.begin("OpenFolder")
     defer { PhotoTrace.end(trace) }
     let previousID = self.directory == directory ? selectedID : nil
+    if let includingSubfolders { includesSubfolders = includingSubfolders }
+    let recursive = includesSubfolders
+    let protection = decisionStore.sourceProtection
     folderTask?.cancel()
     resetDecisions()
     decisionsLoading = true
@@ -318,6 +328,7 @@ public final class WorkspaceState {
     selectedIndex = nil
     photos = []
     allPhotos = []
+    folderLabels = [:]
     metadata = [:]
     metadataAttempted = []
     pendingMetadata = [:]
@@ -327,6 +338,7 @@ public final class WorkspaceState {
     indicesByID = [:]
     loadState = .loading
     let fileAccess = fileAccess
+    let verificationPath = verificationRoot.map { PhotoPath.canonical($0).pathComponents }
     let verified = verifiedImages.map {
       Set($0.map(PhotoPath.canonical))
     }
@@ -334,18 +346,38 @@ public final class WorkspaceState {
     let task = Task.detached(priority: .userInitiated) {
       let trace = PhotoTrace.begin("FolderInventory")
       defer { PhotoTrace.end(trace) }
-      var urls = try await fileAccess.photos(in: directory)
+      var urls = try await fileAccess.photos(in: directory, includingSubfolders: recursive)
       if let verified {
-        urls = urls.map(PhotoPath.canonical).filter {
-          verified.contains($0)
+        urls = urls.map(PhotoPath.canonical).filter { url in
+          if let verificationPath, !url.pathComponents.starts(with: verificationPath) {
+            return true
+          }
+          return verified.contains(url)
         }
       }
       try Task.checkCancellation()
+      let folders: Set<URL> = recursive ? Set(urls.map { $0.deletingLastPathComponent() }) : []
+      let context =
+        recursive ? try protection.validateCombinedBrowse(root: directory, folders: folders) : nil
+      let root = PhotoPath.canonical(directory).pathComponents
+      let labels = Dictionary(
+        uniqueKeysWithValues: folders.compactMap { folder -> (URL, String)? in
+          let path = PhotoPath.canonical(folder).pathComponents
+          guard path.starts(with: root), path.count > root.count else { return nil }
+          return (folder, path.dropFirst(root.count).joined(separator: "/"))
+        })
       let photos = urls.map(PhotoItem.init(fileURL:))
       let indices = Self.makeIndex(photos)
       try Task.checkCancellation()
       return LoadedPhotos(
-        photos: photos, indices: indices, filenameRanks: PhotoSort.filenameRanks(for: photos),
+        photos: photos, context: context,
+        folderLabels: recursive
+          ? Dictionary(
+            uniqueKeysWithValues: photos.compactMap { photo in
+              photo.fileURL.flatMap { labels[$0.deletingLastPathComponent()] }.map {
+                (photo.id, $0)
+              }
+            }) : [:], indices: indices, filenameRanks: PhotoSort.filenameRanks(for: photos),
         families: Self.makeFamilies(photos),
         byID: Dictionary(photos.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }))
     }
@@ -358,6 +390,8 @@ public final class WorkspaceState {
       }
       guard sessionID == session else { return }
       try Task.checkCancellation()
+      folderLabels = loaded.folderLabels
+      if recursive { sourceReview = loaded.context }
       allPhotos = loaded.photos
       filenameRanks = loaded.filenameRanks
       filenameRankLocale = Locale.current.identifier
@@ -387,6 +421,26 @@ public final class WorkspaceState {
     }
   }
 
+  private func failCombinedBrowse(_ error: any Error) {
+    folderTask?.cancel()
+    folderTask = nil
+    loadState = .failed(error.localizedDescription)
+    sessionID = UUID()
+    resetDecisions()
+    selectedIndex = nil
+    selectedIDs = []
+    allPhotos = []
+    photos = []
+    allByID = [:]
+    indicesByID = [:]
+    folderLabels = [:]
+    filenameRanks = [:]
+    metadata = [:]
+    metadataAttempted = []
+    indexedCount = 0
+    indexing = false
+  }
+
   public func showSamples() {
     folderTask?.cancel()
     folderTask = nil
@@ -394,6 +448,7 @@ public final class WorkspaceState {
     decisionsLoading = true
     sessionID = UUID()
     directory = nil
+    folderLabels = [:]
     publicationMetrics = WorkspacePublicationMetrics()
     selectedIndex = nil
     allPhotos = SampleLibrary.photos
@@ -481,16 +536,20 @@ public final class WorkspaceState {
   /// selection, review set, decision history and image-cache identities.
   @discardableResult
   public func publishVerified(_ urls: [URL], in folder: URL, using reader: any PhotoMetadataReading)
-    -> Task<Void, Never>?
+    async -> Task<Void, Never>?
   {
     guard loadState == .ready,
       directory.map(PhotoPath.canonical) == PhotoPath.canonical(folder)
     else { return nil }
+    let session = sessionID
     let parent = PhotoPath.canonical(folder)
     var known = Set(allPhotos.map(\.id))
-    let added = urls.compactMap { url -> PhotoItem? in
+    var added = urls.compactMap { url -> PhotoItem? in
       let url = PhotoPath.canonical(url)
-      guard PhotoPath.canonical(url.deletingLastPathComponent()) == parent,
+      let container = PhotoPath.canonical(url.deletingLastPathComponent())
+      guard
+        includesSubfolders
+          ? container.pathComponents.starts(with: parent.pathComponents) : container == parent,
         PhotoFormats.supports(url)
       else {
         return nil
@@ -499,6 +558,30 @@ public final class WorkspaceState {
       return known.insert(photo.id).inserted ? photo : nil
     }
     guard !added.isEmpty else { return nil }
+    if includesSubfolders {
+      do {
+        let protection = decisionStore.sourceProtection
+        let folders = Set(added.compactMap { $0.fileURL?.deletingLastPathComponent() })
+        let context = try await Task.detached(priority: .utility) {
+          try protection.validateCombinedBrowse(root: folder, folders: folders)
+        }.value
+        guard sessionID == session else { return nil }
+        guard context?.id == sourceReview?.id else { throw SourceReviewError.mixedBrowse }
+        added.removeAll { allByID[$0.id] != nil }
+        guard !added.isEmpty else { return nil }
+      } catch {
+        if sessionID == session { failCombinedBrowse(error) }
+        return nil
+      }
+      let root = PhotoPath.canonical(folder).pathComponents
+      for photo in added {
+        guard let url = photo.fileURL else { continue }
+        let path = PhotoPath.canonical(url.deletingLastPathComponent()).pathComponents
+        if path.count > root.count {
+          folderLabels[photo.id] = path.dropFirst(root.count).joined(separator: "/")
+        }
+      }
+    }
     let focused = selectedID
     allPhotos += added
     refreshFilenameRanks()
@@ -510,7 +593,6 @@ public final class WorkspaceState {
     }
     buildFamilies(allPhotos)
     rebuildVisible(preferred: focused)
-    let session = sessionID
     return Task { [weak self] in
       guard let self else { return }
       await DecisionSaveQueue.shared.flush()
@@ -794,7 +876,15 @@ public final class WorkspaceState {
     let trace = PhotoTrace.begin("PublishDecisions")
     defer { PhotoTrace.end(trace) }
     for (id, value) in loaded { fileIdentities[id] = value.entry.identity }
-    if let review = loaded.values.compactMap({ $0.entry.sourceReview }).first {
+    if includesSubfolders,
+      loaded.values.contains(where: { $0.entry.sourceReview?.id != sourceReview?.id })
+    {
+      failCombinedBrowse(SourceReviewError.mixedBrowse)
+      return
+    }
+    if let review = loaded.values.compactMap({ $0.entry.sourceReview }).first,
+      sourceReview != review
+    {
       sourceReview = review
     }
     imageEdits.merge(loaded.mapValues(\.edit)) { _, new in new }
@@ -1118,6 +1208,8 @@ public final class WorkspaceState {
 
   private struct LoadedPhotos: Sendable {
     let photos: [PhotoItem]
+    let context: SourceReviewSession?
+    let folderLabels: [String: String]
     let indices: [PhotoItem.ID: Int]
     let filenameRanks: [String: Int]
     let families: [String: [PhotoItem]]

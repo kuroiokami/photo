@@ -75,8 +75,10 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
-    if arguments.first == "--scale", arguments.count == 2 {
-      let report = try await WorkspaceScaleBenchmark.run(folder: URL(fileURLWithPath: arguments[1]))
+    if ["--scale", "--scale-tree"].contains(arguments.first ?? ""), arguments.count == 2 {
+      let report = try await WorkspaceScaleBenchmark.run(
+        folder: URL(fileURLWithPath: arguments[1]),
+        includingSubfolders: arguments[0] == "--scale-tree")
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
@@ -163,6 +165,7 @@ private struct PhotoBench {
         "       PhotoBench --generate-scale /new/temp/folder count [1...40000; requires file cloning]"
       )
       print("       PhotoBench --scale /path/to/folder > scale-report.json")
+      print("       PhotoBench --scale-tree /path/to/shoot > tree-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }

@@ -140,9 +140,10 @@ public struct WorkspaceView: View {
       if !workspace.isSourceReview, let directory = workspace.directory {
         let session = workspace.sessionID
         Task {
-          if (try? await workspace.persistence.sourceReview(for: directory)) != nil,
-            workspace.sessionID == session
-          {
+          let needsReload =
+            workspace.includesSubfolders
+            ? true : (try? await workspace.persistence.sourceReview(for: directory)) != nil
+          if needsReload, workspace.sessionID == session {
             await workflowModel.openFolder(directory)
           }
         }
@@ -228,27 +229,28 @@ public struct WorkspaceView: View {
 
   private var browsingContent: some View {
     VStack(spacing: 0) {
-      collectionHeader
+      WorkspaceRegion { collectionHeader }
       if workspace.isSourceReview {
-        sourceReviewBanner
+        WorkspaceRegion { sourceReviewBanner }
       }
       filterBar
       imageEditControls
       Divider()
       VStack(spacing: 0) {
         if showPreview && !workspace.photos.isEmpty {
-          previewPane.frame(maxWidth: .infinity, maxHeight: .infinity)
+          WorkspaceRegion { previewPane }.frame(maxWidth: .infinity, maxHeight: .infinity)
           Divider()
         }
-        contactSheet
+        WorkspaceRegion { contactSheet }
           .frame(maxWidth: .infinity, maxHeight: .infinity)
           .frame(
             height: showPreview && !workspace.photos.isEmpty
               ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 120 : 100)
-                + Double(thumbnailLabels.count * 20) : nil)
+                + Double(thumbnailLabels.count * 20) + (workspace.includesSubfolders ? 20 : 0) : nil
+          )
       }
       Divider()
-      statusBar
+      WorkspaceRegion { statusBar }
     }
     .background(Color(nsColor: .underPageBackgroundColor))
   }
@@ -303,7 +305,8 @@ public struct WorkspaceView: View {
         Text(
           workspace.reviewingSelection
             ? "Reviewing \(workspace.reviewIDs?.count ?? 0) chosen files · Show All Photos to finish"
-            : "Browsing this folder"
+            : (workspace.includesSubfolders
+              ? "Browsing this folder and subfolders" : "Browsing this folder")
         )
         .font(.caption2).foregroundStyle(
           workspace.reviewingSelection ? Color.accentColor : Color.secondary
@@ -313,6 +316,21 @@ public struct WorkspaceView: View {
           "\(workspace.photos.count) of \(workspace.totalCount) photos"
         )
         .font(.caption).foregroundStyle(.secondary)
+        Toggle(
+          "Include Subfolders",
+          isOn: Binding(
+            get: { workspace.includesSubfolders },
+            set: { value in
+              guard let directory = workspace.directory else { return }
+              Task { await workflowModel.openFolder(directory, includingSubfolders: value) }
+            })
+        )
+        .disabled(
+          workspace.directory == nil || (workflowModel.busy && !workflowModel.backgroundable)
+        )
+        .help(
+          "Show photos in this folder and all its subfolders together. Files stay in their original folders."
+        ).font(.caption)
       }
       Spacer(minLength: 8)
       Picker("Browsing view", selection: $showPreview) {
@@ -428,7 +446,7 @@ public struct WorkspaceView: View {
             Label("No supported images", systemImage: "photo.on.rectangle")
           } description: {
             Text(
-              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Expand a sidebar folder and click a subfolder to browse its photos. Hidden files are not included."
+              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Turn on Include Subfolders above to see the whole shoot, or expand a sidebar folder and choose a subfolder. Hidden files are not included."
             )
           } actions: {
             Button("Open Folder…", action: openFolder)
@@ -576,6 +594,7 @@ public struct WorkspaceView: View {
         thumbnails: thumbnails, sessionID: workspace.sessionID,
         cacheGeneration: thumbnailCacheGeneration, thumbnailEdge: thumbnailEdge,
         thumbnailLabels: thumbnailLabels, groupPairs: workspace.groupPairs,
+        folderLabel: workspace.includesSubfolders ? workspace.folderLabel(for: photo.id) : nil,
         hasCopiedCrop: copiedCrop != nil,
         select: { selectThumbnail(photo) },
         action: { thumbnailAction($0, photo: photo) },
@@ -1106,7 +1125,7 @@ public struct WorkspaceView: View {
       guard session == workspace.sessionID else { return }
       do {
         let plan = try await PhotoTrash(store: workspace.persistence).prepare(
-          images: identities, folder: folder)
+          images: identities, folder: folder, includingSubfolders: workspace.includesSubfolders)
         guard session == workspace.sessionID else { return }
         trashPlan = plan
       } catch {

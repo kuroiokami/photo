@@ -4,11 +4,20 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Folder browsing
+
+- Add **Include Subfolders** for combined parent-folder review, relative folder labels and separate identities/pairing for repeated filenames. Keep ingest arrivals verified, including when browsing above the destination.
+- Extend confirmed Trash cleanup across included subfolders, with relative confirmation names and independent sidecar ownership/inventory safeguards.
+
+
 ### Documentation
 
 - Add a sourced, code-informed performance research plan covering responsive culling, focus checks, metadata, verified ingest and deadline/large-shoot workflows; distinguish proposals from implemented behavior.
 
 ### Performance
+
+- Isolate header/progress, preview and saving-status view dependencies from the contact sheet. Extend read-only profiling to shoots distributed across subfolders.
+
 
 - Fix selection readiness work growing with the whole loaded folder, and avoid rebuilding unchanged selection snapshots during sorting/focus changes. Add file-backed 10k/40k profiling; native large-folder indexing/scrolling remains an open performance issue.
 

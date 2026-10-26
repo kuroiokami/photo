@@ -401,3 +401,11 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Pass strict Swift checks, CLI smoke and CPU-only analyzer regressions; package the release app. Exact-head repository/CI/delivery evidence belongs in the PR.
 - [ ] Resolve the failed native large-folder indexing/scroll acceptance; profile UI update/layout dependencies and initial large-group selection before speculative prefetch.
 - [ ] Complete native presented-frame/body counts, physical-trackpad, mixed-camera/real-shoot memory and physical-media acceptance.
+
+## Combined shoot browsing and UI dependencies — 2026-10-26
+
+Add an explicit **Include Subfolders** option for a shoot spread across card/day folders. Direct browsing remains the initial mode; the window retains the chosen scope until relaunch. Preserve distinct file identities, deterministic filename ties, same-folder RAW+JPEG pairing, per-photo decisions and relative location labels. Keep verified ingest gates for destination parents and ancestors; protected review contexts cannot be mixed. Extend confirmed Trash plans through independent per-folder ownership snapshots and relative confirmation names. See [ADR 0033](decisions/0033-combined-shoot-browsing.md).
+
+Evaluate progress/header, preview and saving status in separate SwiftUI bodies so indexing does not register those dictionary/counter dependencies on the collection’s parent. Extend `PhotoBench --scale-tree` to exercise the same read-only pipeline across descendants. Treat 10k/40k single-folder cases as stress checks alongside more realistic distributed shoots.
+
+**Acceptance:** recursive/shallow inventory, hidden/package/link exclusion, duplicate names, same-folder pairing, group decisions/Undo, verification gates, source boundaries and cross-folder cleanup regressions; an Observation/rendering isolation regression; native combined-folder browsing, navigation, selection and confirmation checks. Report service timings, native CPU/RSS and photographer/physical-trackpad acceptance separately. Preserve original bytes and retain the existing large-shoot performance caveats until evidence supports narrowing them.

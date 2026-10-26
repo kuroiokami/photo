@@ -32,8 +32,9 @@ struct WorkspaceScaleBenchmark {
     let residentMiB: Double
   }
   struct Report: Encodable {
-    let schemaVersion = 1
+    let schemaVersion = 2
     let fileCount: Int
+    let includesSubfolders: Bool
     let originalsUnchanged: Bool
     let folderOpenMilliseconds: Double
     let firstFitDuringIndexingMilliseconds: Double
@@ -67,12 +68,12 @@ struct WorkspaceScaleBenchmark {
     var maximum = 0.0
     var samples = 0
   }
-  static func run(folder: URL) async throws -> Report {
+  static func run(folder: URL, includingSubfolders: Bool = false) async throws -> Report {
     let scratch = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
     defer { try? FileManager.default.removeItem(at: scratch) }
     let access = LocalPhotoFileAccess()
-    let urls = try await access.photos(in: folder)
+    let urls = try await access.photos(in: folder, includingSubfolders: includingSubfolders)
     guard !urls.isEmpty, urls.count <= 40_000 else { throw CocoaError(.fileReadUnknown) }
     let original = try await Task.detached { try hashes(urls) }.value
     let sampler = MemorySampler()
@@ -103,7 +104,7 @@ struct WorkspaceScaleBenchmark {
     let store = DecisionStore(databaseURL: scratch.appendingPathComponent("decisions.sqlite"))
     let state = WorkspaceState(photos: [], fileAccess: access, decisionStore: store)
     let opening = ContinuousClock.now
-    await state.openFolder(folder)
+    await state.openFolder(folder, includingSubfolders: includingSubfolders)
     let openTime = elapsed(opening)
     guard state.photos.count == urls.count else { throw CocoaError(.fileReadUnknown) }
     await checkpoint("folder-open")
@@ -200,7 +201,8 @@ struct WorkspaceScaleBenchmark {
     await sampling.value
     let after = try await Task.detached { try hashes(urls) }.value
     return Report(
-      fileCount: urls.count, originalsUnchanged: original == after,
+      fileCount: urls.count, includesSubfolders: includingSubfolders,
+      originalsUnchanged: original == after,
       folderOpenMilliseconds: openTime, firstFitDuringIndexingMilliseconds: firstTime,
       selectedReadyDuringIndexingMilliseconds: readyTime, metadataIndexMilliseconds: metadataTime,
       decisionIndexMilliseconds: decisionTime,
@@ -218,6 +220,7 @@ struct WorkspaceScaleBenchmark {
       notes: [
         "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
         "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+        "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
         "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
         "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
         "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",

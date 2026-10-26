@@ -15,6 +15,7 @@ struct WorkspaceThumbnail: View, Equatable {
   let thumbnailEdge: Double
   let thumbnailLabels: [ThumbnailInfoField]
   let groupPairs: Bool
+  let folderLabel: String?
   let hasCopiedCrop: Bool
   let select: () -> Void
   let action: (ThumbnailAction) -> Void
@@ -30,7 +31,7 @@ struct WorkspaceThumbnail: View, Equatable {
       && lhs.thumbnails === rhs.thumbnails && lhs.sessionID == rhs.sessionID
       && lhs.cacheGeneration == rhs.cacheGeneration && lhs.thumbnailEdge == rhs.thumbnailEdge
       && lhs.thumbnailLabels == rhs.thumbnailLabels && lhs.groupPairs == rhs.groupPairs
-      && lhs.hasCopiedCrop == rhs.hasCopiedCrop
+      && lhs.hasCopiedCrop == rhs.hasCopiedCrop && lhs.folderLabel == rhs.folderLabel
   }
   private var canEdit: Bool { state.ready && (!state.selected || selection.ready) }
   var body: some View {
@@ -40,7 +41,8 @@ struct WorkspaceThumbnail: View, Equatable {
       (field: $0, value: $0.label(state.metadata))
     }
     let spokenValue =
-      (["\(decision.flag.title), \(decision.rating) stars"] + information.map(\.value)).joined(
+      (["\(decision.flag.title), \(decision.rating) stars"] + [folderLabel].compactMap { $0 }
+      + information.map(\.value)).joined(
         separator: ", ")
     return VStack(alignment: .leading, spacing: 6) {
       ThumbnailQuickActions(
@@ -71,6 +73,9 @@ struct WorkspaceThumbnail: View, Equatable {
             Text("RAW + JPEG").font(.caption2)
           }
           Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
+          if let folderLabel {
+            Text(folderLabel).font(.caption2).lineLimit(1).truncationMode(.middle).help(folderLabel)
+          }
           thumbnailInformation(information)
         }.foregroundStyle(selected ? Color.white : Color.secondary).frame(
           maxWidth: .infinity, alignment: .leading

@@ -6,6 +6,8 @@ Protection stays active after copying; this release has no unprotect command. Ca
 
 The original detailed design below explains the intended safety boundaries. The implementation uses immutable local JSON plans plus synchronized append-only per-file provenance at both destinations and local verification acknowledgements, with SQLite destination receipts/intents (ADR 0019); the older all-SQLite journal wording is a design alternative. Source-wide counts are complete only after indexing; Current Selection deliberately leaves other source photos uncounted.
 
+To review a card’s folders together, turn on **Include Subfolders** beneath the folder name. Relative folder labels distinguish repeated filenames; RAW+JPEG pairs stay within their own folder. You can instead expand the sidebar and review one subfolder at a time. This display choice does not change the source-wide scopes used to prepare the reviewed copy list. Open the protected source itself; combined parents containing other working folders or separate protected sources are unavailable.
+
 ## Workflow and safety design
 
 Workflow starts with **Copy everything** or **Review before copying**. Direct folder browsing stays available.

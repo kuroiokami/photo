@@ -183,14 +183,24 @@ final class WorkflowModel {
   var verifiedArrivals: [URL: Set<URL>] = [:]
   @ObservationIgnored private var arrivalTask: Task<Void, Never>?
 
-  /// During ingest, opening/reloading a working subfolder excludes files whose
-  /// family has not yet been verified at both destinations.
-  func openFolder(_ folder: URL) async {
+  /// Gate the active destination subtree even when browsing a combined ancestor.
+  /// Existing photos outside that destination remain available.
+  func openFolder(_ folder: URL, includingSubfolders: Bool? = nil) async {
     let canonical = PhotoPath.canonical(folder)
+    let recursive = includingSubfolders ?? workspace.includesSubfolders
     let limited =
-      activeIngestRoot.map { canonical.pathComponents.starts(with: $0.pathComponents) } ?? false
+      activeIngestRoot.map {
+        canonical.pathComponents.starts(with: $0.pathComponents)
+          || (recursive && $0.pathComponents.starts(with: canonical.pathComponents))
+      } ?? false
+    let verified =
+      recursive
+      ? verifiedArrivals.filter { $0.key.pathComponents.starts(with: canonical.pathComponents) }
+        .values.reduce(into: Set<URL>()) { $0.formUnion($1) }
+      : verifiedArrivals[canonical] ?? []
     await workspace.openFolder(
-      folder, verifiedImages: limited ? Array(verifiedArrivals[canonical] ?? []) : nil)
+      folder, verifiedImages: limited ? Array(verified) : nil,
+      verificationRoot: limited ? activeIngestRoot : nil, includingSubfolders: recursive)
   }
   func ingestProgress(_ progress: IngestProgress) async {
     status = "Verified \(progress.completed)/\(progress.total): \(progress.filename)."
@@ -221,9 +231,13 @@ final class WorkflowModel {
   func flushArrivals() async {
     arrivalTask?.cancel()
     arrivalTask = nil
-    guard let folder = workspace.directory,
-      let images = verifiedArrivals[PhotoPath.canonical(folder)]
-    else { return }
+    guard let folder = workspace.directory else { return }
+    let root = PhotoPath.canonical(folder)
+    let images =
+      workspace.includesSubfolders
+      ? verifiedArrivals.filter { $0.key.pathComponents.starts(with: root.pathComponents) }.values
+        .reduce(into: Set<URL>()) { $0.formUnion($1) }
+      : verifiedArrivals[root] ?? []
     await workspace.publishVerified(Array(images), in: folder, using: ImageMetadataReader())?.value
   }
   func previewRename(scope: String, pattern: String, camera: String, sequence: String) {

@@ -2,6 +2,16 @@ import Foundation
 
 public protocol PhotoFileAccess: Sendable {
   func photos(in directory: URL) async throws -> [URL]
+  func photos(in directory: URL, includingSubfolders: Bool) async throws -> [URL]
+}
+
+extension PhotoFileAccess {
+  public func photos(in directory: URL, includingSubfolders: Bool) async throws -> [URL] {
+    guard !includingSubfolders else {
+      throw CocoaError(.featureUnsupported)
+    }
+    return try await photos(in: directory)
+  }
 }
 
 public protocol PhotoPreviewLoading: Sendable {

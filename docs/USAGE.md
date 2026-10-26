@@ -63,7 +63,13 @@ Workflow setup now occupies the main window’s content area rather than a pop-u
 
 ### Open and revisit folders
 
-Choose **File → Open Folder…** or **⌘O**. Photo lists visible, regular supported image files directly inside that folder. It does not recursively mix all descendants into one collection. Hidden items and symlinks are excluded.
+Choose **File → Open Folder…** or **⌘O**. Photo starts by showing supported photos directly inside that folder. Turn on **Include Subfolders** beneath the folder name to combine its photos and all descendant folders in one contact sheet or filmstrip. For example, open a wedding folder containing `Day 1/Card A`, `Day 1/Card B` and `Day 2`, then enable this option to cull the whole shoot together. Nothing is moved or copied.
+
+Each nested photo shows its relative folder beneath its filename. Repeated filenames on different cards stay separate. Choose **Capture time** sorting for shooting order when the camera clocks agree. RAW+JPEG grouping only pairs files within the same folder. Flags, stars, filters, sorting, group selection, metadata and confirmed Trash actions use the displayed collection; workflow **All files** includes its hidden-by-filter photos too.
+
+The option stays on as you click other folders in this window. Turning it off returns to direct files. Changing scope reloads the collection, keeps the focused photo when it still exists in that view, and ends selected-only review/decision Undo history like Reload. A new app session starts with it off. Hidden files/folders, packages and symbolic links are excluded; an unreadable subfolder reports an error rather than silently returning an incomplete shoot.
+
+A protected pre-copy source can include its own subfolders. A parent that would mix protected sources with other folders is unavailable: open the protected source itself. Source-wide copy choices remain independent of this display option.
 
 Choose **Photo Home** in the sidebar to set your usual photo folder, such as Pictures or a folder on a photo drive. It appears first with a house icon. This is a starting place, not a move/import operation. If no copy destination has been remembered, Ingest suggests Photo Home as the Photo folder. Other saved folders remain alongside it. Use **Change Photo Home…** or a folder’s **Use as Photo Home** context command to change it. Existing installations initially use their first saved folder. A new installation asks you to choose; it does not scan your home directory.
 
@@ -150,7 +156,7 @@ If a filter hides the decided photo, Photo selects the next surviving neighbor, 
 **X marks a reject; it does not delete anything.** In a working folder:
 
 1. Choose **Show All Photos** if reviewing a shortlist, then **Clear Filters** if you want every reject in the current folder included.
-2. Press **⇧⌘X** or open **Remove → Select Rejects** (also available in the Decisions menu). Check the selected count. This selects visible rejected thumbnails; it does not search subfolders.
+2. Press **⇧⌘X** or open **Remove → Select Rejects** (also available in the Decisions menu). Check the selected count. This selects rejected thumbnails in the visible collection. Enable **Include Subfolders** first to include nested photos; filters and selected-only review still limit the selection.
 3. Press **⌘Delete** or choose **Remove → Move Selected to Trash…**.
 4. Check the exact file list and any picked-photo warning, then click **Move to Trash** or press **Return**. Escape cancels.
 
@@ -282,7 +288,7 @@ The setup stays on one screen at a time: **Choose photos → Set up copies → R
 
 Both destinations receive `Shoot name/Originals/<source folders>`. Photo recurses for ingest, copies supported images and matching XMP/ACR companions, verifies SHA-256, and records durable manifests. It does not erase/eject/format the card.
 
-The first fully verified image family’s folder opens once. Subsequent approved arrivals merge into the currently browsed destination folder without Reload or resetting decisions/selection. Unique RAW+JPEG companions complete together. Other source subfolders remain separately browsable; browsing elsewhere is respected. This is a snapshot ingest, not tethered/continuous source watching.
+The first fully verified image family’s folder opens once. Subsequent approved arrivals merge into the currently browsed destination folder without Reload or resetting decisions/selection. Unique RAW+JPEG companions complete together. Use **Include Subfolders** to combine verified arrivals across destination subfolders, or browse one subfolder at a time. If you open a parent above the copy destination, unfinished photos within that destination stay hidden while existing photos elsewhere remain visible. Browsing elsewhere is respected. This is a snapshot ingest, not tethered/continuous source watching.
 
 Re-running verifies matching copies; differing targets are not overwritten. Cancellation retains verified copies and resumable copy records. Keep the hidden `.photo-ingest.json` and `.photo-ingest.events` files with interrupted destinations, and resume using the updated app. The second destination is an initial snapshot; later edits/renames are not continuously mirrored. Read the [workflow recovery details](WORKFLOW.md#ingest-behavior-and-recovery) before retrying interrupted operations.
 
@@ -291,7 +297,7 @@ Re-running verifies matching copies; differing targets are not overwritten. Canc
 1. In **Workflow → Ingest**, choose the card/source using **Card or folder → Choose…**.
 2. Choose **Choose keepers before copying**, then click **Start Culling**. Photo protects that source and opens it for browsing. If another file operation is running, finish it first.
 3. Check the **Reviewing source · Source unchanged** banner. P/X/U, 0–5, multi-selection, filtering, comparison, Fit/detail and Photo-local composition work as usual. An explicit decision marks the file reviewed; merely navigating does not. Clearing an already-clear flag also counts, and Undo restores the previous reviewed state.
-4. Expand the source in the sidebar and click child folders. Protection and local decisions restore after Reload or relaunch. A second window cannot write normal XMP/metadata into this source.
+4. Turn on **Include Subfolders** to review the card together, or expand the source in the sidebar and choose one child folder. Protection and local decisions restore after Reload or relaunch. A second window cannot write normal XMP/metadata into this source.
 5. Watch for **Review saved on this Mac** or **Review edits saved on this Mac**. Actual save failures expose review retry; they are not XMP errors.
 
 6. Choose **Copy Reviewed Photos…** in the source banner (or return to Workflow → Ingest). Set Photo folder, Backup folder and Shoot name. Picks Only is the default; change Photos to copy if you need another scope.
@@ -430,9 +436,9 @@ Implemented features and open acceptance are tracked in [PROJECT_STATUS](../PROJ
 
 - Photo-local rotation/mirror/crop has no Lightroom/XMP crop exchange or baked export yet; arbitrary-angle straightening, exposure/color adjustments and a full pixel editor are absent.
 - Color classes, GPS editing and external-editor launching are still planned after the requested rotate/crop priority.
-- No continuous source watcher, recursive combined photo collection, HEIC or additional RAW extensions beyond the supported list.
+- No continuous source watcher, HEIC or additional RAW extensions beyond the supported list.
 - No RAW histogram, focus peaking or sensor exposure adjustment. Rendered/embedded appearances are not sensor exposure measurements.
 - Crop ratio presets seed a rectangle; a locked-ratio resize and crop rotation are future work.
 - Native physical trackpad, broader camera/storage/platform, compact-window and full VoiceOver/keyboard-only coverage must be distinguished from automated gesture/model tests.
-- Large-folder browsing can become slow or unresponsive while initial shooting information and decisions load. The 10–40k-photo workflow has not passed desktop performance checks; see the [measured limits](PERFORMANCE.md#file-backed-workspace-scale-and-readiness-correction--2026-10-26).
+- Synthetic 2k/10k combined-folder and 10k single-folder scripted checks now respond during initial information loading. Real-shoot, physical-trackpad and 40k desktop performance acceptance remain open; see the [measured limits](PERFORMANCE.md#combined-shoot-browsing-and-isolated-ui-regions--2026-10-26).
 - No installable signed/notarized release or automatic updater yet.

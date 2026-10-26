@@ -106,7 +106,7 @@ struct VerifiedArrivalTests {
     let other = root.appendingPathComponent("other")
     try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
     await state.openFolder(other)
-    #expect(state.publishVerified([b], in: root, using: ArrivalMetadata()) == nil)
+    #expect(await state.publishVerified([b], in: root, using: ArrivalMetadata()) == nil)
     #expect(state.filePhotos.isEmpty)
   }
   @Test func publishingPreservesSelectionSessionReviewAndDecisionUndo() async throws {

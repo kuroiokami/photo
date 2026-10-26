@@ -21,7 +21,7 @@ struct TrashConfirmationView: View {
           ? "Move this photo to Trash?" : "Move \(plan.images.count) photos to Trash?"
       ).font(.title2.bold())
       Text(
-        "Only the listed files in this folder are affected. Copies in other folders and on backup drives stay where they are."
+        "Only the listed files are affected. Other photos and backup copies stay where they are."
       )
       if picks > 0 {
         Label(
@@ -37,7 +37,7 @@ struct TrashConfirmationView: View {
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 5) {
           ForEach(plan.images + plan.companions, id: \.self) { url in
-            Text(url.lastPathComponent).textSelection(.enabled)
+            Text(plan.displayName(for: url)).textSelection(.enabled)
           }
         }.frame(maxWidth: .infinity, alignment: .leading)
       }.frame(maxHeight: .infinity)
