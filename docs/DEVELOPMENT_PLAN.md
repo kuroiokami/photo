@@ -424,3 +424,14 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 - [ ] Evaluate reusable interactive cells and stable layout indices, then bounded viewport-first scheduling/UI publication, preserving keyboard/group/marquee/accessibility and source guarantees.
 - [ ] Measure foreground-first Fit read-ahead, validated cross-scope cache reuse and buffered preview parsing independently; keep a custom full RAW backend as a later evidence-driven decision.
 - [ ] Require usable warm/cold native frame/input/memory measurements on small and distributed shoots before claiming speed gains. No runtime optimization ships with the research document.
+
+
+## Native contact-sheet reuse prototype — 2026-10-26
+
+- [x] Build reusable native full-grid cells around existing culling controls; retain per-photo observation, image services and original-byte guarantees.
+- [x] Cover identity/index mapping, bounded binding, selection/readiness isolation, reflow, labels, filters/session replacement and clipped marquee targets in automated tests.
+- [ ] Verify corrected drag selection and all native controls after reuse, including rotation/mirror, filters, density and accessibility.
+- [ ] Complete a usable matched release scroll comparison at 115 JPEGs and settled 10k before accepting the default-grid switch; record differing card geometry and inspection/profiling overhead.
+- [ ] Extend acceptance to real RAW shoots, physical trackpad, distributed folders, 40k stress and memory pressure. Do not equate synthetic input/CPU samples with presented frames.
+
+See [ADR 0035](decisions/0035-native-contact-sheet.md). The experimental branch is not a delivered scrolling fix; native checks are currently waiting for the Mac to be unlocked.
