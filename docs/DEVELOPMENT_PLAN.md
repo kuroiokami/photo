@@ -434,4 +434,4 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 - [x] Complete controlled release CPU/stall comparisons at 115 JPEGs and settled 10k; record differing card geometry, sequential phases and inspection/profiling overhead before accepting the default-grid switch.
 - [ ] Extend acceptance to real RAW shoots, physical trackpad, distributed folders, 40k stress and memory pressure. Do not equate synthetic input/CPU samples with presented frames.
 
-See [ADR 0035](decisions/0035-native-contact-sheet.md) and the measured limits. Native controlled acceptance passes; final sidebar cleanup after restoring Sample Collection was interrupted by a second Mac lock.
+See [ADR 0035](decisions/0035-native-contact-sheet.md) and the measured limits. Native controlled acceptance and final sidebar cleanup pass. After unlock, both test shortcuts were removed and the original Sample Collection/Dawn/full grid settings verified.
