@@ -37,3 +37,5 @@ Last updated: 2026-10-26. This tracks the reviewed optimization suggestions agai
 5. Then profile disk-cache locking, CR3 parsing, metadata reuse and detail navigation independently; representative shoot/memory/physical-trackpad acceptance remains open.
 
 User-decision save batching is separate from prepared-statement reuse and initial-index transactions. Natural filename ranks already reduce repeated sort collation; the first locale-aware sort still uses native collation. Physical-media interruption, memory pressure and representative 10k/40k mixed-camera shoots remain acceptance work, not completed by synthetic service scenarios.
+
+The [rapid-scroll row experiment](decisions/0034-contact-sheet-row-experiment.md) was withdrawn: repeated release process-CPU results did not establish a reliable gain. Only diagnostic tooling and findings remain. Rapid full-grid scrolling is unresolved; evaluate a bounded native collection view with usable frame/hitch evidence before accepting a replacement.

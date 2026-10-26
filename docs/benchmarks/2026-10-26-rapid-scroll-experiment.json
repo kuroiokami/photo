@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-10-26",
-  "status": "experiment; no accepted scroll-speed improvement",
+  "status": "row prototype withdrawn; no accepted scroll-speed improvement",
   "baselineRevision": "f9d29ec52393177b434bd3cc9812a21ae31794e6",
   "candidate": "arithmetic lazy rows, explicit tile widths and row-based selection reveal",
   "corpus": {
@@ -74,9 +74,22 @@
     "Inactive-window and stale-element input failures, and a trace with failed input, are not scrolling comparisons."
   ],
   "pending": [
-    "Complete a matched fixed-point release pair after macOS unlock.",
-    "Decide whether to retain the row prototype based on repeatable evidence; do not merge it as a proven fix.",
-    "Final release regression checks and restoration of original Sample Collection/Dawn/Contact Sheet/empty sidebar.",
+    "Rapid full-contact-sheet lag is unresolved.",
+    "Evaluate native collection-view layout as a separate measured prototype; preserve culling controls, selection, accessibility and preview policies.",
     "Presented frame times, physical trackpad, representative shoots and 40k/memory-pressure acceptance remain open."
-  ]
+  ],
+  "candidateCodeRetained": false,
+  "resumedCaptureAttempts": {
+    "outcome": "excluded; fixed-point automation failed with noWindowsAvailable and windowNotFoundAtPosition, while Photo remained running and accessible",
+    "completeMatchedCandidateCapture": false,
+    "lastAttemptCompletedSteps": 0,
+    "interpretation": "automation failures are neither app crashes nor evidence of a speedup; resumed window geometry was not a controlled baseline repeat"
+  },
+  "restoration": {
+    "complete": true,
+    "view": "Sample Collection, Dawn selected, Contact Sheet, density 160, no extra labels, all flags/stars, grouping and auto-advance off",
+    "temporarySidebarShortcutsRemoved": 2,
+    "canonicalApp": "preserved release baseline; no runtime UI code change in final diff"
+  },
+  "decision": "Withdraw the added UI complexity because repeated unprofiled CPU results show no reliable improvement. Retain diagnostic tooling and findings only."
 }

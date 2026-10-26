@@ -413,7 +413,7 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 ## Rapid full-contact-sheet scrolling experiment — 2026-10-26
 
 - [x] Diagnose native layout/responder work and add a privacy-safe, tested macOS sample analyzer.
-- [x] Prototype arithmetic lazy rows with explicit tile widths, row-aware offscreen keyboard reveal and focused mapping tests; preserve filmstrip/controls/cache/source policies.
-- [x] Record inconclusive repeated unprofiled CPU results and exclude debug/mismatched/incomplete captures from speedup claims.
-- [ ] Complete matched release fixed-position captures, remaining release/native checks and original browsing-context restoration after macOS unlock.
-- [ ] Retain or withdraw the prototype based on evidence; physical-trackpad/frame/real-shoot/40k acceptance remains open. See [ADR 0034](decisions/0034-contact-sheet-row-experiment.md).
+- [x] Evaluate arithmetic lazy rows, record inconclusive repeated release CPU results, and exclude debug/mismatched/incomplete captures from speedup claims.
+- [x] Withdraw the unproven UI prototype and its dedicated tests; retain the existing grid and diagnostic tooling.
+- [x] Restore the release app, original sample view/settings/sidebar after unlock, preserve original bytes and the user's current window size.
+- [ ] Resolve rapid scrolling lag with a separately measured native collection-view experiment; require usable frame/hitch, physical-trackpad, real-shoot/40k acceptance. See [ADR 0034](decisions/0034-contact-sheet-row-experiment.md).
