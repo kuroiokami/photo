@@ -1,7 +1,7 @@
 # 0035 — Native reusable contact-sheet experiment
 
 - Date: 2026-10-26
-- Status: Experimental branch; native acceptance and performance comparison pending.
+- Status: Accepted for the full grid after controlled release acceptance; broader library/physical-input acceptance remains open.
 - Extends ADRs 0028, 0031, 0033 and 0034.
 
 ## Context
@@ -20,14 +20,16 @@ Use uniform card heights, reserving a composition-status line so applying an edi
 
 Hosted SwiftUI controls may retain layout/focus costs. Flow-layout preparation can still scale with inventory on reload/reflow. Native views/layout records/textures are outside image-cache budgets. Uniform card heights differ from unedited intrinsic SwiftUI cards: match window and density, record visible/newly exposed cell counts and geometry, and do not attribute reduced work solely to renderer efficiency.
 
-Do not merge this default-grid switch as a speed fix until native functional checks and a usable matched release comparison succeed. Require stars/flags, group selection/marquee, Undo, edits, filters, keyboard reveal, resizing, labels and accessibility to survive reuse. Compare warmed 115-JPEG and settled 10k controls using identical completed inputs and usable stall/layout evidence. CPU/sample totals and accessibility wall time are not presented FPS. Real RAW shoots, physical-trackpad response, distributed shoots, 40k stress and memory pressure remain separate acceptance.
+Accept the native full-grid replacement on the controlled keyboard/group/edit checks and repeated warm 115/10k CPU plus usable stall/layout evidence below. Do not infer equal work from equal density: differing card heights expose different photo counts. CPU/sample totals and accessibility wall time are not presented FPS. Real RAW shoots, physical-trackpad response, distributed shoots, 40k stress, broad VoiceOver and memory pressure remain separate acceptance.
 
-## Evidence so far
+## Evidence and outcome
 
-Strict checks pass with 201 registered Swift tests, 199 executed and two optional local RAW skips. Three new native-adapter tests exercise the real view factory, offscreen window/reveal, bounded binding at 1k, no inventory reload for selection/readiness, legacy scroller resizing, viewport-clipped marquee targets, same-count label replacement, filtering, same-photo session reset and native group/range mapping. These tests are not on-screen frame measurements.
+Strict checks pass with 201 registered Swift tests, 199 executed and two optional local RAW skips. Three native-adapter tests exercise the real view factory, offscreen window/reveal, bounded binding at 1k, no inventory reload for selection/readiness, legacy scroller resizing, clipped marquee targets, same-count label replacement, filtering, same-photo session reset and group/range mapping. They are not frame measurements.
 
-An initial release candidate passed native checks on 115 disposable JPEGs: End/Home reveal, Shift-arrow range selection, direct group stars, keyboard Pick, independent two-step Undo, Crop opening/cancellation and Space/Z entry into genuine 2,400 × 1,600 JPEG detail then return to Fit/Contact Sheet. Native drag selection regressed; the background-tracking correction passes automated checks but still needs on-screen verification. Rotation/mirror and remaining native regressions have not been accepted in this round.
+After unlock, native tests found and corrected background drag selection and lost culling-key focus. The retained implementation restores the outer SwiftUI focus state after native tracking. Release checks pass first/last-row marquee, post-drag stars/P/X and independent Undo, rotation/mirror/Undo, filters/Clear Filters, density/EXIF reflow, group IPTC access, offscreen keyboard navigation and genuine JPEG Fit/100% return. Synthetic 10k Select All reports ready targets. Original-byte guards remain intact.
 
-The Mac locked and automatic unlock failed before the corrected candidate could be inspected. Native comparison, corrected marquee acceptance and browsing-context restoration remain pending. The prior release is preserved outside Git. No speedup or Photo Mechanic parity is established.
+[Controlled evidence](../PERFORMANCE.md#native-reusable-contact-sheet--2026-10-26): process-CPU repeats improve from 2.57/2.55 to 1.57/1.55 seconds at 115 JPEGs and 5.56/5.38 to 2.34/2.21 at 10k. Matching 20-second stall captures reduce longest potential stalls from about 327/344 ms to 132/130 ms. Counts are not uniformly lower; geometry, sequential phases and automation overhead prevent an isolated renderer-efficiency percentage. No competitor, presented-frame or physical-trackpad claim.
 
-The exact final candidate packages successfully and passes strict signature verification: release-product/app UUID `528BFE49-8702-38B6-A284-9630A7888953`. The preserved baseline UUID is `D370475D-D534-3B2D-8BEF-22F6C49D5B30`; its runtime matches the accepted grid. The baseline bundle is restored to the normal development-app location while the candidate stays outside Git. No Photo process is running. All 10,115 disposable original hashes/inodes match; only three expected 115-folder XMPs remain from explicit decisions/Undo, with no 10k XMP. Restoring the initial on-screen context still requires unlock.
+Both baseline and native AX snapshots sometimes omit button labels after background scrolling. Replacing the host root with an observable content wrapper did not resolve that shared observation; withdraw that additional trial and retain the measured host implementation. Selected labels/actions remain available. Broad VoiceOver acceptance remains open rather than claim a resolved accessibility issue.
+
+The final rebuilt release UUID is `942E2146-BC8B-3537-BF74-4B2D68F8AB21`; the preserved baseline is `D370475D-D534-3B2D-8BEF-22F6C49D5B30`. Packaging and strict signature verification pass. All 10,115 disposable original hashes/inodes match; six expected 115-folder XMPs reflect explicit decisions/Undo and none exist at 10k. Raw traces/pixels stay outside Git. Sample Collection / Dawn / full grid is restored; final temporary-sidebar cleanup was interrupted by another Mac lock and still requires verification after unlock.

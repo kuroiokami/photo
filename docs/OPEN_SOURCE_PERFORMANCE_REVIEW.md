@@ -56,3 +56,8 @@ RawSpeed supplies sensor data and camera/CFA information. It does **not** demosa
 These are proposals, not completed checklist items. Photo already has embedded-only browsing, ImageIO downsampling, separate thumbnail/Fit/detail lanes, bounded RAM/disk caches, RAM-only immediate lookups, background optional cache writes and per-photo observation. Preserve them instead of reimplementing them from another project.
 
 Use a small deadline-oriented shoot and 115-JPEG warm/cold controls, then distributed 2k/10k collections, with 40k as a stress case. Separate first-open, same-session revisit, reload/scope change and memory-pressure results. Include real RAW/EXIF diversity and concurrent verified ingest. Record exact release binary, display/window/density, input sequence, cache state, original hashes, RSS and usable frame/hitch/input latency. Scripted accessibility overhead, decoder microbenchmarks and completed scroll commands do not establish physical-trackpad smoothness or parity with another app.
+
+
+## Implementation follow-up — 2026-10-26
+
+The first native-cell experiment is now implemented with controlled acceptance in [ADR 0035](decisions/0035-native-contact-sheet.md) and [performance evidence](PERFORMANCE.md#native-reusable-contact-sheet--2026-10-26). This does not mark the remaining ranked scheduling, cache, read-ahead or decoder proposals complete. Physical-input, representative RAW/40k, pressure and broad accessibility acceptance remain open.

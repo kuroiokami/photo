@@ -14,6 +14,7 @@ struct NativeContactSheet: NSViewRepresentable {
   let folderLabels: Bool
   let cacheGeneration: Int
   let hasCopiedCrop: Bool
+  var selectionFocus: (Bool) -> Void = { _ in }
   let content: (PhotoItem, Double) -> AnyView
   let navigate: (Int, Bool) -> Void
   let preview: (Bool) -> Void
@@ -51,6 +52,7 @@ struct NativeContactSheet: NSViewRepresentable {
     collection.keyAction = { [weak coordinator] in
       coordinator?.key($0) ?? false
     }
+    collection.selectionFocus = selectionFocus
     collection.selectionChanged = { [weak coordinator] paths in
       coordinator?.nativeSelection(paths, focus: nil)
     }
@@ -71,6 +73,7 @@ struct NativeContactSheet: NSViewRepresentable {
     (nsView as? ContactSheetScrollView)?.viewportChanged = nil
     coordinator.collection?.dataSource = nil
     coordinator.collection?.delegate = nil
+    coordinator.collection?.selectionFocus = nil
     coordinator.collection?.selectionChanged = nil
     coordinator.collection?.keyAction = nil
     coordinator.collection?.zoom = nil
@@ -239,6 +242,7 @@ struct NativeContactSheet: NSViewRepresentable {
   var keyAction: ((NSEvent) -> Bool)?
   var zoom: ((Double) -> Void)?
   var selectionChanged: ((Set<IndexPath>) -> Void)?
+  var selectionFocus: ((Bool) -> Void)?
 
   override func mouseDown(with event: NSEvent) {
     let start = convert(event.locationInWindow, from: nil)
@@ -246,6 +250,8 @@ struct NativeContactSheet: NSViewRepresentable {
       super.mouseDown(with: event)
       return
     }
+    selectionFocus?(false)
+    defer { selectionFocus?(true) }
     window.makeFirstResponder(self)
     let base =
       event.modifierFlags.intersection([.command, .shift]).isEmpty

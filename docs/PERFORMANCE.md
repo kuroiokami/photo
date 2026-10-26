@@ -380,10 +380,25 @@ The discarded prototype's functional checks on 115 disposable JPEGs covered End/
 The retained [sample analyzer](../scripts/analyze-scroll-sample.py) exports fixed aggregate fields, unions recursive/branched paths per category, accepts both observed main-thread header forms and refuses missing/invalid graphs. Raw samples, symbols, paths and photos stay outside Git. Next, evaluate a bounded native collection view and collect frame/hitch evidence before accepting another grid replacement. No physical-trackpad, real-shoot, 40k, memory-peak or Photo Mechanic parity claim.
 
 
-## Native reusable contact-sheet prototype — 2026-10-26
+## Native reusable contact sheet — 2026-10-26
 
-[ADR 0035](decisions/0035-native-contact-sheet.md) records the first reusable `NSCollectionView` experiment, retaining hosted SwiftUI culling controls and existing image services. Strict checks pass (201 registered Swift tests, 199 executed/two optional RAW skips), including offscreen native layout/reveal, bounded binding at 1k, selection/readiness without inventory reload, resizing, label/filter/session changes and clipped marquee hit targets. These are functional tests, not frame benchmarks.
+[ADR 0035](decisions/0035-native-contact-sheet.md) retains a reusable native full grid around existing culling controls/image services. [Anonymous reports](benchmarks/2026-10-26-native-contact-sheet.json) cover the reference 18-logical-CPU/128-GiB/macOS 27.0.1 Mac, the same 2560×1640 window screenshot, 160-point density, no extra labels, one selection, settled indexing and a warmed route. Each run completes 18 fixed-position inputs: three repetitions of three down/three up inputs, four pages each, with one final AX inspection. Captures are 20 seconds and all inputs complete within them; recording and saving finish before export. No builds/tests/export work overlap the timed controls.
 
-The initial release passes several 115-JPEG keyboard/decision/Preview checks but exposed drag-selection regression. The correction is automated-tested; on-screen validation and the matched warm 115/10k release comparison are pending because the Mac locked and automatic unlock failed. Uniform card heights reserve an edit-status line and differ from baseline geometry. Do not infer speed or equivalent per-scroll work from equal density, completed inputs or adapter test counts. No new hitch, CPU, RSS, frame-time, RAW or physical-trackpad claim.
+| Control | Previous grid | Native reusable grid |
+| --- | --- | --- |
+| 115 JPEG process CPU, two unprofiled repeats | 2.57 / 2.55 s | 1.57 / 1.55 s |
+| 10k JPEG/PNG process CPU, two unprofiled repeats | 5.56 / 5.38 s | 2.34 / 2.21 s |
+| 115 potential stalls / longest / union | 15 / 327 ms / 2,425 ms | 14 / 132 ms / 1,479 ms |
+| 10k potential stalls / longest / union | 20 / 344 ms / 5,218 ms | 21 / 130 ms / 2,227 ms |
+| 115 main-thread sampled CPU weight | 2,736 ms | 1,538 ms |
+| 10k main-thread sampled CPU weight | 5,627 ms | 2,309 ms |
 
-The exact candidate release packages and passes strict signature verification; the prior signed release bundle is restored and candidate preserved outside Git. All 10,115 disposable original hashes/inodes match, three expected 115-folder XMPs reflect explicit decisions/Undo, and no 10k XMP exists. The default-grid switch is not accepted or merged; native interaction, accessibility, usable comparative evidence and initial browsing-context restoration remain required.
+The main inclusive focus category falls from 1,265→73 ms and 3,147→72 ms; inclusive categories overlap and cannot be summed. The native implementation reduces process CPU and stall duration on this controlled task; stall count alone does not capture this result. These are potential-hang diagnostics, not confirmed dropped frames or presented FPS.
+
+Uniform native cards reserve an edit-status line. Equal density/wheel input therefore does not expose identical photos: at the verified far 10k endpoint, first visible ordinals are about 250 baseline and 225 native. Do not report an isolated renderer percentage. The 115 route reaches the final row in both implementations; both return to the first viewport. The synthetic files repeat three gradients and lack shooting EXIF/RAW diversity. Cache-route warmup is observed, not proof of all-RAM hits. Phases/repeats are sequential, not randomized. Scripted input and the final AX inspection contribute work; CPU intervals include tool-call idle time and use whole-process counters.
+
+Profiled RSS samples during recording/finalization are about 605 MiB baseline vs 314 MiB native at 115, and 680 vs 415 MiB at 10k. Histories differ (notably baseline 115 follows 10k); these are not settled matched memory runs, whole-session peaks, cache budgets or memory-pressure acceptance. See raw checkpoint aggregates in the anonymous report.
+
+Native checks pass offscreen keyboard reveal, range/marquee identity after scrolling, post-drag group stars/flags and independent Undo, rotation/mirror/Undo, filtering/Clear Filters, density/EXIF reflow, group IPTC target access and JPEG Fit/100% return. 10k Select All reports 10,000 ready targets. Three adapter tests plus existing suites pass: 201 registered Swift tests, 199 executed/two optional RAW skips. Exact release packaging/signature checks pass. All 10,115 original hashes/inodes match; six expected 115-folder XMPs reflect decisions/Undo, with no 10k XMP.
+
+AX snapshots sometimes omit labels in both baseline and native after background scrolling. An additional stable-host trial did not resolve that shared observation and is excluded/withdrawn; no resolved VoiceOver issue is claimed. Earlier locked/incomplete attempts are excluded. Broad VoiceOver, physical pinch/trackpad, real camera/ingest contention, distributed large shoots, 40k and pressure acceptance remain open. Return to Sample Collection/Dawn is complete; a second lock interrupted final test-shortcut cleanup.

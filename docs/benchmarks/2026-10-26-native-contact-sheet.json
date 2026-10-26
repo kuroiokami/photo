@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "reference": {
+    "logicalCPUs": 18,
+    "memoryGiB": 128,
+    "macOS": "27.0.1",
+    "windowScreenshotPixels": [
+      2560,
+      1640
+    ],
+    "thumbnailSize": 160,
+    "baselineExecutableUUID": "D370475D-D534-3B2D-8BEF-22F6C49D5B30",
+    "rebuiltNativeExecutableUUID": "942E2146-BC8B-3537-BF74-4B2D68F8AB21"
+  },
+  "workload": {
+    "smallJPEGs": 115,
+    "largeSyntheticJPEGPNG": 10000,
+    "inputsPerRun": 18,
+    "sequence": "Three repetitions of three down / three up inputs, four pages each, fixed viewport point; one final AX inspection.",
+    "captureSeconds": 20,
+    "indexing": "EXIF progress absent and decisions ready before measured controls; one selected photo.",
+    "cacheState": "Same route warmed before each measured phase; no assertion that every request is a RAM hit.",
+    "captureOrder": [
+      "native115",
+      "native10k",
+      "baseline10k",
+      "baseline115"
+    ],
+    "maximumFirstVisibleOrdinalAtFar10kEndpoint": {
+      "native": 225,
+      "baseline": 250
+    }
+  },
+  "unprofiledProcessCPUControls": [
+    {
+      "label": "native-reuse-115-r1",
+      "processCPUSeconds": 1.57,
+      "elapsedSeconds": 12.411
+    },
+    {
+      "label": "native-reuse-10k-r1",
+      "processCPUSeconds": 2.34,
+      "elapsedSeconds": 13.593
+    },
+    {
+      "label": "native-reuse-baseline10k-r1",
+      "processCPUSeconds": 5.56,
+      "elapsedSeconds": 17.52
+    },
+    {
+      "label": "native-reuse-baseline115-r1",
+      "processCPUSeconds": 2.57,
+      "elapsedSeconds": 12.638
+    },
+    {
+      "label": "native-reuse-baseline115-r2",
+      "processCPUSeconds": 2.55,
+      "elapsedSeconds": 15.895
+    },
+    {
+      "label": "native-reuse-baseline10k-r2",
+      "processCPUSeconds": 5.38,
+      "elapsedSeconds": 23.838
+    },
+    {
+      "label": "native-reuse-10k-r2",
+      "processCPUSeconds": 2.21,
+      "elapsedSeconds": 13.757
+    },
+    {
+      "label": "native-reuse-115-r2",
+      "processCPUSeconds": 1.55,
+      "elapsedSeconds": 12.175
+    }
+  ],
+  "nativeStallDiagnostics": {
+    "native115": {
+      "framePresentationMeasured": false,
+      "inclusiveMainThreadSampleMilliseconds": {
+        "swiftUIFocus": 73.0,
+        "swiftUIPreferences": 126.0,
+        "swiftUIViewGraph": 1103.0
+      },
+      "mainThreadSampleWeightMilliseconds": 1538.0,
+      "maximumPotentialStallMilliseconds": 131.584791,
+      "notes": [
+        "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+        "Inclusive CPU categories overlap; their values must not be added together.",
+        "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+      ],
+      "potentialMainThreadStalls": 14,
+      "potentialStallUnionMilliseconds": 1478.972041,
+      "potentialStallsByType": {
+        "Brief Unresponsiveness": 12,
+        "Potential Interaction Delay": 2
+      },
+      "schemaVersion": 2,
+      "stallDiagnosticsMeasured": true
+    },
+    "native10k": {
+      "framePresentationMeasured": false,
+      "inclusiveMainThreadSampleMilliseconds": {
+        "swiftUIFocus": 72.0,
+        "swiftUIPreferences": 191.0,
+        "swiftUIViewGraph": 1705.0
+      },
+      "mainThreadSampleWeightMilliseconds": 2309.0,
+      "maximumPotentialStallMilliseconds": 129.58525,
+      "notes": [
+        "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+        "Inclusive CPU categories overlap; their values must not be added together.",
+        "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+      ],
+      "potentialMainThreadStalls": 21,
+      "potentialStallUnionMilliseconds": 2227.121709,
+      "potentialStallsByType": {
+        "Brief Unresponsiveness": 16,
+        "Potential Interaction Delay": 5
+      },
+      "schemaVersion": 2,
+      "stallDiagnosticsMeasured": true
+    },
+    "baseline115": {
+      "framePresentationMeasured": false,
+      "inclusiveMainThreadSampleMilliseconds": {
+        "swiftUIFocus": 1265.0,
+        "swiftUILazyGrid": 63.0,
+        "swiftUIPreferences": 72.0,
+        "swiftUIViewGraph": 732.0
+      },
+      "mainThreadSampleWeightMilliseconds": 2736.0,
+      "maximumPotentialStallMilliseconds": 327.42475,
+      "notes": [
+        "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+        "Inclusive CPU categories overlap; their values must not be added together.",
+        "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+      ],
+      "potentialMainThreadStalls": 15,
+      "potentialStallUnionMilliseconds": 2424.666543,
+      "potentialStallsByType": {
+        "Brief Unresponsiveness": 2,
+        "Microhang": 6,
+        "Potential Interaction Delay": 7
+      },
+      "schemaVersion": 2,
+      "stallDiagnosticsMeasured": true
+    },
+    "baseline10k": {
+      "framePresentationMeasured": false,
+      "inclusiveMainThreadSampleMilliseconds": {
+        "swiftUIFocus": 3147.0,
+        "swiftUILazyGrid": 129.0,
+        "swiftUIPreferences": 158.0,
+        "swiftUIViewGraph": 1545.0
+      },
+      "mainThreadSampleWeightMilliseconds": 5627.0,
+      "maximumPotentialStallMilliseconds": 343.502375,
+      "notes": [
+        "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+        "Inclusive CPU categories overlap; their values must not be added together.",
+        "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+      ],
+      "potentialMainThreadStalls": 20,
+      "potentialStallUnionMilliseconds": 5218.373753,
+      "potentialStallsByType": {
+        "Brief Unresponsiveness": 4,
+        "Microhang": 15,
+        "Potential Interaction Delay": 1
+      },
+      "schemaVersion": 2,
+      "stallDiagnosticsMeasured": true
+    }
+  },
+  "profiledResidentMemoryCheckpoints": {
+    "native115": {
+      "samples": 92,
+      "firstResidentMiB": 296.953125,
+      "maximumSampledResidentMiB": 313.5,
+      "lastResidentMiB": 310.8125,
+      "notes": [
+        "Native Photo RSS sampled using ps about once per second during recording AND finalization; profiling/automation overhead included. This is not a whole-session peak or physical footprint."
+      ]
+    },
+    "native10k": {
+      "samples": 91,
+      "firstResidentMiB": 402.453125,
+      "maximumSampledResidentMiB": 415.0625,
+      "lastResidentMiB": 415.0,
+      "notes": [
+        "Native Photo RSS sampled using ps about once per second during recording AND finalization; profiling/automation overhead included. This is not a whole-session peak or physical footprint."
+      ]
+    },
+    "baseline115": {
+      "samples": 82,
+      "firstResidentMiB": 604.453125,
+      "maximumSampledResidentMiB": 604.921875,
+      "lastResidentMiB": 583.546875,
+      "notes": [
+        "Native Photo RSS sampled using ps about once per second during recording AND finalization; profiling/automation overhead included. This is not a whole-session peak or physical footprint."
+      ]
+    },
+    "baseline10k": {
+      "samples": 83,
+      "firstResidentMiB": 679.25,
+      "maximumSampledResidentMiB": 680.484375,
+      "lastResidentMiB": 679.90625,
+      "notes": [
+        "Native Photo RSS sampled using ps about once per second during recording AND finalization; profiling/automation overhead included. This is not a whole-session peak or physical footprint."
+      ]
+    }
+  },
+  "framePresentationMeasured": false,
+  "originalProtection": {
+    "unchangedImages": 10115,
+    "distinctOriginalInodes": 10115,
+    "smallFolderExpectedXMP": 6,
+    "largeFolderXMP": 0
+  },
+  "limits": [
+    "Synthetic repeated gradients lack representative shooting EXIF and RAW diversity.",
+    "Native cards reserve an edit-status line; equal density and wheel inputs expose different photo counts. Do not infer an isolated renderer percentage or equal work per input.",
+    "Sequential phases and process histories differ; memory samples during recording/finalization are not comparable whole-session peaks or cache budgets.",
+    "Scripted input and final accessibility inspection add work; stall diagnostics are potential hangs, not confirmed dropped frames or physical-trackpad latency.",
+    "Incomplete/locked attempts and the withdrawn stable-host variant are excluded; the measured root-host implementation plus focus restoration is retained.",
+    "AX snapshots can omit labels after background scrolling in both baseline and native implementations; broad VoiceOver acceptance remains open."
+  ]
+}

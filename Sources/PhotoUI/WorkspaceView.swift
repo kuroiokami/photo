@@ -458,6 +458,7 @@ public struct WorkspaceView: View {
               availableWidth: geometry.size.width, labels: thumbnailLabels,
               folderLabels: workspace.includesSubfolders,
               cacheGeneration: thumbnailCacheGeneration, hasCopiedCrop: copiedCrop != nil,
+              selectionFocus: { gridFocused = $0 },
               content: { photo, height in AnyView(thumbnail(photo, fixedContentHeight: height)) },
               navigate: { workspace.moveSelection(by: $0, extending: $1) },
               preview: { showPreview = $0 },

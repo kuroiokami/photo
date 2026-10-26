@@ -430,8 +430,8 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 
 - [x] Build reusable native full-grid cells around existing culling controls; retain per-photo observation, image services and original-byte guarantees.
 - [x] Cover identity/index mapping, bounded binding, selection/readiness isolation, reflow, labels, filters/session replacement and clipped marquee targets in automated tests.
-- [ ] Verify corrected drag selection and all native controls after reuse, including rotation/mirror, filters, density and accessibility.
-- [ ] Complete a usable matched release scroll comparison at 115 JPEGs and settled 10k before accepting the default-grid switch; record differing card geometry and inspection/profiling overhead.
+- [x] Verify corrected grid background drag, post-drag keyboard decisions, rotation/mirror/Undo, filters, density/EXIF reflow, group metadata access and selected accessibility controls after reuse. Broad VoiceOver remains separate.
+- [x] Complete controlled release CPU/stall comparisons at 115 JPEGs and settled 10k; record differing card geometry, sequential phases and inspection/profiling overhead before accepting the default-grid switch.
 - [ ] Extend acceptance to real RAW shoots, physical trackpad, distributed folders, 40k stress and memory pressure. Do not equate synthetic input/CPU samples with presented frames.
 
-See [ADR 0035](decisions/0035-native-contact-sheet.md). The experimental branch is not a delivered scrolling fix; native checks are currently waiting for the Mac to be unlocked.
+See [ADR 0035](decisions/0035-native-contact-sheet.md) and the measured limits. Native controlled acceptance passes; final sidebar cleanup after restoring Sample Collection was interrupted by a second Mac lock.
