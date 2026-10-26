@@ -39,3 +39,7 @@ Last updated: 2026-10-26. This tracks the reviewed optimization suggestions agai
 User-decision save batching is separate from prepared-statement reuse and initial-index transactions. Natural filename ranks already reduce repeated sort collation; the first locale-aware sort still uses native collation. Physical-media interruption, memory pressure and representative 10k/40k mixed-camera shoots remain acceptance work, not completed by synthetic service scenarios.
 
 The [rapid-scroll row experiment](decisions/0034-contact-sheet-row-experiment.md) was withdrawn: repeated release process-CPU results did not establish a reliable gain. Only diagnostic tooling and findings remain. Rapid full-grid scrolling is unresolved; evaluate a bounded native collection view with usable frame/hitch evidence before accepting a replacement.
+
+## Comparative source findings — 2026-10-26
+
+The [RAWviewer/RawSpeed/Geeqie review](OPEN_SOURCE_PERFORMANCE_REVIEW.md) adds evidence for reusable interactive cells, bounded viewport queues/UI publication, current-image-first read-ahead and safe working-set reuse. These are **unimplemented experiments**, ranked in that review. RawSpeed is a sensor-data decoder, not a complete preview renderer; no new backend/dependency is selected. Keep warm-grid layout, cold thumbnail population and genuine-detail latency as separate acceptance paths. Do not copy whole-file preview reads, unconstrained worker counts, unbounded visible-cache exemptions or platform-specific optimizations without measuring Photo's workload.

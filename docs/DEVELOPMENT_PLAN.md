@@ -417,3 +417,10 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 - [x] Withdraw the unproven UI prototype and its dedicated tests; retain the existing grid and diagnostic tooling.
 - [x] Restore the release app, original sample view/settings/sidebar after unlock, preserve original bytes and the user's current window size.
 - [ ] Resolve rapid scrolling lag with a separately measured native collection-view experiment; require usable frame/hitch, physical-trackpad, real-shoot/40k acceptance. See [ADR 0034](decisions/0034-contact-sheet-row-experiment.md).
+
+## Comparative performance research — 2026-10-26
+
+- [x] Inspect pinned RAWviewer, RawSpeed and Geeqie source; record source facts, existing Photo behavior, proposals and benchmark limits in the [comparative review](OPEN_SOURCE_PERFORMANCE_REVIEW.md).
+- [ ] Evaluate reusable interactive cells and stable layout indices, then bounded viewport-first scheduling/UI publication, preserving keyboard/group/marquee/accessibility and source guarantees.
+- [ ] Measure foreground-first Fit read-ahead, validated cross-scope cache reuse and buffered preview parsing independently; keep a custom full RAW backend as a later evidence-driven decision.
+- [ ] Require usable warm/cold native frame/input/memory measurements on small and distributed shoots before claiming speed gains. No runtime optimization ships with the research document.
