@@ -1591,5 +1591,7 @@
     "Baseline measures the same service workload without separate per-selection sub-timing; later phases add one elapsed-time read per selection.",
     "Final reports explicitly document retained preflight inventory/hash allocations in service RSS; earlier reports have the same allocations.",
     "The readiness-only phase retains redundant selection rebuilds; final phase also avoids rebuilding unchanged explicit membership on focus/order changes."
-  ]
+  ],
+  "nativeSmallSelectionRegressionPassed": true,
+  "nativeSmallSelectionScope": "Built-in three-photo samples: select all, group stars/flags, two-step Undo, Pick filter to no matches and Clear Filters; original folder/focus/Preview restored afterward. No personal decisions edited."
 }
