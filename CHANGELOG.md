@@ -12,6 +12,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Documentation
 
+- Add a pinned source review of RAWviewer, RawSpeed and Geeqie, with ranked Photo performance experiments and explicit decoder, cache and benchmark limits.
+
 - Add a sourced, code-informed performance research plan covering responsive culling, focus checks, metadata, verified ingest and deadline/large-shoot workflows; distinguish proposals from implemented behavior.
 
 ### Performance

@@ -2,6 +2,8 @@
 
 Research date: 2026-10-21. Code reviewed at `0cbe1b1`. This is a prioritized research and experiment plan, not implemented functionality or a new performance claim. Existing measurements remain in [PERFORMANCE.md](PERFORMANCE.md); the implemented cache design is [ADR 0025](decisions/0025-thumbnail-cache-tiers.md).
 
+Current follow-up: [RAWviewer, RawSpeed and Geeqie source review](OPEN_SOURCE_PERFORMANCE_REVIEW.md) (2026-10-26) records pinned sources and ranked unimplemented experiments. The dated baseline below is historical: bounded background thumbnail-cache writes, batched initial indexing and later observation/selection improvements have since shipped. Check [the tracker](../PROJECT_STATUS.md) and [implementation checklist](PERFORMANCE_BACKLOG.md) before treating an older proposal as open.
+
 ## Optimize the photographer's next useful action
 
 Measure opening a folder to the first visible, decision-ready photo; moving to the next useful preview; requesting to receiving genuine focus detail; applying a decision to seeing it acknowledged; and starting an ingest to the first verified, captioned deliverable. Total copy throughput matters alongside those interaction delays. A fast thumbnail microbenchmark alone does not establish a fast culling workflow.
@@ -50,7 +52,7 @@ Separate actors do not isolate physical I/O: thumbnails, EXIF, XMP and copying c
 
 ### 3. Remove cache writing from the time to display a cold thumbnail
 
-`ImagePipeline.preview` currently encodes/writes PNG before returning a cold result. The existing benchmark measured 28–31% additional initial population time with disk caching. Publish the decoded image first; evaluate a bounded, best-effort cache-writer queue that can drop obsolete writes under pressure. Recheck source stamps at actual write time and retain atomic records, corrupt-cache recovery and clear-generation behavior.
+At the `0cbe1b1` baseline, `ImagePipeline.preview` encoded/wrote PNG before returning a cold result. Bounded background writes have since shipped; the remaining codec/pressure experiments below are still proposals. The existing benchmark measured 28–31% additional initial population time with disk caching. Publish the decoded image first; evaluate a bounded, best-effort cache-writer queue that can drop obsolete writes under pressure. Recheck source stamps at actual write time and retain atomic records, corrupt-cache recovery and clear-generation behavior.
 
 Compare current lossless PNG with a measured generation-cost threshold and a faster lossless representation. Lossy JPEG/HEIF would need explicit quality/color/alpha tests and must never supply genuine focus detail. Do not change the codec purely because it saves disk space. Cache-writer backlog is decoded image memory and must be included in the budget. Pressure-driven eviction should release thumbnails/speculation before active inspection; avoid simply raising per-window limits again.
 
