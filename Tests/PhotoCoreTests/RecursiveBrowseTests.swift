@@ -162,6 +162,24 @@ struct RecursiveBrowseTests {
     #expect(await state.publishVerified([a], in: tree.shoot, using: TreeMetadata()) == nil)
   }
 
+  @Test func completedVerifiedDescendantsStillPublishWhenTheIngestCallerWasCancelled() async throws
+  {
+    let tree = try BrowseTree()
+    defer { try? FileManager.default.removeItem(at: tree.root) }
+    let image = try tree.file("Card A/completed.jpg")
+    let state = WorkspaceState(photos: [], decisionStore: tree.store)
+    await state.openFolder(tree.shoot, verifiedImages: [], includingSubfolders: true)
+    let cancelledIngest = Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      #expect(Task.isCancelled)
+      await state.publishVerified([image], in: tree.shoot, using: TreeMetadata())?.value
+    }
+    await cancelledIngest.value
+    #expect(state.filePhotos.map(\.filename) == ["completed.jpg"])
+    #expect(state.folderLabel(for: PhotoItem(fileURL: image).id) == "Card A")
+    #expect(state.decisionSelectionReady)
+  }
+
   @Test func aLateRecursiveInventoryCannotReplaceANewerDirectFolder() async throws {
     let tree = try BrowseTree()
     defer { try? FileManager.default.removeItem(at: tree.root) }

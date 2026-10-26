@@ -565,7 +565,7 @@ public final class WorkspaceState {
         let context = try await Task.detached(priority: .utility) {
           try protection.validateCombinedBrowse(root: folder, folders: folders)
         }.value
-        guard sessionID == session, !Task.isCancelled else { return nil }
+        guard sessionID == session else { return nil }
         guard context?.id == sourceReview?.id else { throw SourceReviewError.mixedBrowse }
         added.removeAll { allByID[$0.id] != nil }
         guard !added.isEmpty else { return nil }
