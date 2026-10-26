@@ -85,3 +85,16 @@ python3 scripts/analyze-scroll-trace.py /tmp/photo-index-cpu.trace --cpu-only > 
 ```
 
 Wait for successful recording/finalization exit before exporting. CPU-only schema 2 reports `stallDiagnosticsMeasured: false` and null stall values, with fixed anonymous CPU categories. It does not measure scrolling FPS, potential-hang counts or displayed images. If input inspection times out or indexing never settles, report that failed acceptance rather than treating the run as warm/complete. External RSS sampling around record/finalization must identify its full sampling window and profiler overhead.
+
+## Shoots spread across subfolders
+
+Prefer a parent shoot with card/day folders as the routine workload. Use the single-directory 10k/40k runs above as additional stress checks. Build only disposable synthetic trees; the generator refuses existing leaf folders:
+
+```sh
+sh scripts/benchmark.sh --generate-scale '/tmp/photo-shoot/Day 1/Card A' 500
+sh scripts/benchmark.sh --generate-scale '/tmp/photo-shoot/Day 1/Card B' 500
+sh scripts/benchmark.sh --generate-scale '/tmp/photo-shoot/Day 2/Card A' 500
+sh scripts/benchmark.sh --scale-tree /tmp/photo-shoot > /tmp/photo-shoot-report.json
+```
+
+Schema 2 reports `includesSubfolders`; the 40k file ceiling applies to the entire chosen tree. This command runs the real recursive workspace pipeline with distinct identities, relative labels, complete indexing, selection and navigation. It retains the same hashing/cache/database/RSS limitations as `--scale`. In the native app, select the parent and turn on **Include Subfolders**; record whether EXIF indexing is still active during input. Also test a normal individual card folder. Match scope, files, window/density, input count, cache and indexing state before interpreting before/after timings. Neither a successful scripted input nor CPU-only tracing measures presented FPS.

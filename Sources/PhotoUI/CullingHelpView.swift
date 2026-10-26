@@ -13,7 +13,7 @@ struct CullingHelpView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
           Text(
-            "Open a folder with ⌘O. It stays in the sidebar until you remove its shortcut. Expand the arrow to see subfolders; click a name to display that folder’s photos."
+            "Open a folder with ⌘O. Turn on Include Subfolders to review a whole shoot together, or expand a sidebar arrow and choose one subfolder. Opened folders stay in the sidebar until you remove their shortcuts."
           )
           Text(
             "To cull before copying: open Workflow → Ingest, choose your Card or folder, leave Choose keepers before copying selected, and click Start Culling. Mark keepers with P in the main window. Then use Copy Reviewed Photos in the source banner, choose destinations and a copy scope, review the setup, and copy both destinations."

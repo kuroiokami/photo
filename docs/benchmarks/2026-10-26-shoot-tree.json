@@ -1,0 +1,757 @@
+{
+  "corpora": {
+    "distinctFileInodesVerified": true,
+    "distributed10000": {
+      "files": 10000,
+      "filesPerLeaf": 500,
+      "leafFolders": 20
+    },
+    "distributed2000": {
+      "files": 2000,
+      "filesPerLeaf": 250,
+      "leafFolders": 8
+    },
+    "nativeSidecarWrites": "Two disposable 2k-tree images received stars/flags and two-step Undo; two matching XMP files remain. No 10k-tree or flat source decisions were edited.",
+    "originalHashesVerified": 22000,
+    "templates": 3
+  },
+  "date": "2026-10-26",
+  "implementation": "ADR 0033",
+  "instrumentation": {
+    "shortTimeProfilerAttempt": {
+      "durationSeconds": 15,
+      "exportedTimeProfileRows": 0,
+      "notes": [
+        "Recording finalized successfully, but export contained no time-profile rows. Analyzer rejected it. Do not interpret this as zero CPU work or stalls. No raw trace/XML is committed."
+      ],
+      "usableForCPUComparison": false
+    }
+  },
+  "nativeChecks": {
+    "distributed10000": {
+      "afterScrollEXIF": 575,
+      "beforeScrollEXIF": 131,
+      "checks": [
+        "Scrolls down and back during EXIF indexing",
+        "Keyboard next photo and Z to genuine JPEG 100%, then Fit/contact sheet",
+        "Select All reports 10000"
+      ],
+      "pass": true,
+      "total": 10000
+    },
+    "distributed2000": {
+      "checks": [
+        "Direct parent starts empty; Include Subfolders shows 2000",
+        "Relative labels distinguish same-named files",
+        "Two-card group stars and flags leave other cards unchanged; two-step Undo",
+        "Select All reports 2000",
+        "Day parent shows 1000; card child 250; scope follows sidebar navigation",
+        "Direct mode retains focused child photo",
+        "Two-image/two-sidecar Trash confirmation uses relative names; cancelled without native moves",
+        "Relaunch starts with subfolders off"
+      ],
+      "pass": true
+    },
+    "flat10000": {
+      "afterScrollEXIF": 581,
+      "beforeScrollEXIF": 156,
+      "checks": [
+        "Existing single-folder stress corpus responds to scrolling during EXIF indexing"
+      ],
+      "pass": true,
+      "total": 10000
+    },
+    "native40000Retested": false,
+    "nativeTrashExecuted": false,
+    "physicalTrackpadAcceptance": false,
+    "presentedFramesMeasured": false,
+    "workspaceRestored": true
+  },
+  "nativeMemory": {
+    "distributed10000": {
+      "durationSeconds": 30.274423625029158,
+      "firstResidentMiB": 333.234375,
+      "lastResidentMiB": 445.75,
+      "maximumReportedCPUPercent": 163.8,
+      "maximumSampledResidentMiB": 447.28125,
+      "notes": [
+        "One-second process RSS/ps CPU samples during scripted native indexing and input; automation overhead included. RSS is not a whole-session peak or physical footprint. ps CPU is a process statistic, not sampled main-thread work, frame time or instantaneous utilization."
+      ],
+      "samples": 30
+    },
+    "distributed2000": {
+      "firstResidentMiB": 208.65625,
+      "lastResidentMiB": 309.875,
+      "maximumSampledResidentMiB": 309.875,
+      "notes": [
+        "Native Photo RSS sampled using ps about once per second during recording AND finalization; profiling/automation overhead included. This is not a whole-session peak or physical footprint."
+      ],
+      "samples": 20
+    }
+  },
+  "notes": [
+    "Final service cases run sequentially tree2k, tree10k, tree10k, tree2k, flat10k in fresh processes with temporary FULL-durability SQLite. No overlapping build/test/native input during timing. Earlier exploratory runs remain private.",
+    "Byte hashing warms filesystem caches; repeated three-template gradients lack real RAW/EXIF diversity. The distributed tree uses ASCII frame names; the retained flat corpus has accented names. These differing inventories are not a matched before/after trial and selection timing differences are not credited to the UI-region change.",
+    "Native checks ran in a 1280x820-point Retina window, Contact Sheet size160/filmstrip120, Filename/All flags/All stars, grouping/auto-advance off and no EXIF labels. Native inputs are scripted; no FPS, physical-trackpad, real-card, concurrent-copy or 40k acceptance claim.",
+    "Native 2k memory covers a short attempted profile plus finalization with Preview initially visible. Native 10k memory covers a 30-second indexing/contact-sheet input window. Different scenarios/windows and profiling overhead prevent a matched memory comparison.",
+    "Personal decisions and file-operation jobs were not initiated. The original three-photo Preview/settings were restored and only the three temporary sidebar shortcuts removed. Corpus images and raw artifacts stay outside Git."
+  ],
+  "referenceHost": {
+    "logicalCPUCount": 18,
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "physicalMemoryGiB": 128.0
+  },
+  "schemaVersion": 1,
+  "serviceRuns": [
+    {
+      "iteration": 1,
+      "report": {
+        "cachedFit": {
+          "count": 100,
+          "maximumMilliseconds": 0.019625,
+          "p50Milliseconds": 0.00975,
+          "p95Milliseconds": 0.014167
+        },
+        "decisionErrors": 0,
+        "decisionIndexMilliseconds": 2521.541834,
+        "decisionPublications": 44,
+        "fileCount": 2000,
+        "firstFitDuringIndexingMilliseconds": 43.167334,
+        "fitCacheMiB": 57.7763671875,
+        "folderOpenMilliseconds": 130.050083,
+        "includesSubfolders": true,
+        "isoSortMilliseconds": 2.569666,
+        "mainActorSamples": 417,
+        "maximumMainActorGapMilliseconds": 13.101083,
+        "memory": [
+          {
+            "phase": "before-workspace",
+            "residentMiB": 27.984375
+          },
+          {
+            "phase": "folder-open",
+            "residentMiB": 37.453125
+          },
+          {
+            "phase": "first-fit",
+            "residentMiB": 60.5625
+          },
+          {
+            "phase": "indexed",
+            "residentMiB": 63.875
+          },
+          {
+            "phase": "navigated",
+            "residentMiB": 365.109375
+          },
+          {
+            "phase": "all-selected",
+            "residentMiB": 365.40625
+          },
+          {
+            "phase": "filtered-and-sorted",
+            "residentMiB": 365.421875
+          }
+        ],
+        "metadataFailures": 0,
+        "metadataIndexMilliseconds": 277.91125,
+        "metadataPublications": 34,
+        "navigation": [
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 18.398625,
+              "p50Milliseconds": 12.933291,
+              "p95Milliseconds": 15.620042
+            },
+            "pattern": "forward",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.070834,
+              "p50Milliseconds": 0.011166,
+              "p95Milliseconds": 0.018083
+            },
+            "sourceDecodes": 63
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 18.509208,
+              "p50Milliseconds": 14.451416,
+              "p95Milliseconds": 17.775125
+            },
+            "pattern": "reverse",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.026167,
+              "p50Milliseconds": 0.01025,
+              "p95Milliseconds": 0.019042
+            },
+            "sourceDecodes": 57
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 18.650791,
+              "p50Milliseconds": 13.217042,
+              "p95Milliseconds": 15.604625
+            },
+            "pattern": "spread",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.022333,
+              "p50Milliseconds": 0.011375,
+              "p95Milliseconds": 0.018291
+            },
+            "sourceDecodes": 64
+          }
+        ],
+        "notes": [
+          "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
+          "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+          "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
+          "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
+          "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
+          "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",
+          "No SwiftUI rendering, thumbnail-grid loading, 35ms view debounce, presented frames, full RAW detail or bulk save/XMP throughput in this service report.",
+          "Preflight inventory/byte hashing runs before the first RSS checkpoint; its retained input URLs coexist with the workspace inventory. Baseline/helper allocations are included, so service RSS is not native Photo RSS.",
+          "Process RSS sampled about every 10ms plus phase checkpoints; includes runtime/allocator/decoder/model memory, not a whole-app peak bound. The heartbeat is not frame time.",
+          "ISO/rating sorts have tied synthetic values when generated gradients have no EXIF/ratings. Pick filtering may remove all files; this is not diverse-metadata sorting acceptance."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "pickFilterMilliseconds": 1.067584,
+        "ratingSortMilliseconds": 2.4605,
+        "sampledPeakResidentMiB": 421.59375,
+        "schemaVersion": 2,
+        "selectAllMilliseconds": 3.475792,
+        "selectedFileCount": 2000,
+        "selectedReadyDuringIndexingMilliseconds": 8.825875
+      },
+      "scope": "tree"
+    },
+    {
+      "iteration": 1,
+      "report": {
+        "cachedFit": {
+          "count": 100,
+          "maximumMilliseconds": 0.026375,
+          "p50Milliseconds": 0.010333,
+          "p95Milliseconds": 0.018458
+        },
+        "decisionErrors": 0,
+        "decisionIndexMilliseconds": 12685.739042,
+        "decisionPublications": 210,
+        "fileCount": 10000,
+        "firstFitDuringIndexingMilliseconds": 47.290958,
+        "fitCacheMiB": 60.01611328125,
+        "folderOpenMilliseconds": 602.003083,
+        "includesSubfolders": true,
+        "isoSortMilliseconds": 11.133291,
+        "mainActorSamples": 1310,
+        "maximumMainActorGapMilliseconds": 22.435584,
+        "memory": [
+          {
+            "phase": "before-workspace",
+            "residentMiB": 78.515625
+          },
+          {
+            "phase": "folder-open",
+            "residentMiB": 116.609375
+          },
+          {
+            "phase": "first-fit",
+            "residentMiB": 139.46875
+          },
+          {
+            "phase": "indexed",
+            "residentMiB": 150.890625
+          },
+          {
+            "phase": "navigated",
+            "residentMiB": 454.671875
+          },
+          {
+            "phase": "all-selected",
+            "residentMiB": 454.9375
+          },
+          {
+            "phase": "filtered-and-sorted",
+            "residentMiB": 455.578125
+          }
+        ],
+        "metadataFailures": 0,
+        "metadataIndexMilliseconds": 1310.136875,
+        "metadataPublications": 159,
+        "navigation": [
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 15.369792,
+              "p50Milliseconds": 12.739333,
+              "p95Milliseconds": 15.04325
+            },
+            "pattern": "forward",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.044,
+              "p50Milliseconds": 0.013542,
+              "p95Milliseconds": 0.025583
+            },
+            "sourceDecodes": 63
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 17.811875,
+              "p50Milliseconds": 13.312666,
+              "p95Milliseconds": 15.725125
+            },
+            "pattern": "reverse",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.026875,
+              "p50Milliseconds": 0.012083,
+              "p95Milliseconds": 0.021625
+            },
+            "sourceDecodes": 60
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 17.31075,
+              "p50Milliseconds": 13.019125,
+              "p95Milliseconds": 15.395875
+            },
+            "pattern": "spread",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.022292,
+              "p50Milliseconds": 0.013084,
+              "p95Milliseconds": 0.018958
+            },
+            "sourceDecodes": 64
+          }
+        ],
+        "notes": [
+          "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
+          "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+          "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
+          "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
+          "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
+          "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",
+          "No SwiftUI rendering, thumbnail-grid loading, 35ms view debounce, presented frames, full RAW detail or bulk save/XMP throughput in this service report.",
+          "Preflight inventory/byte hashing runs before the first RSS checkpoint; its retained input URLs coexist with the workspace inventory. Baseline/helper allocations are included, so service RSS is not native Photo RSS.",
+          "Process RSS sampled about every 10ms plus phase checkpoints; includes runtime/allocator/decoder/model memory, not a whole-app peak bound. The heartbeat is not frame time.",
+          "ISO/rating sorts have tied synthetic values when generated gradients have no EXIF/ratings. Pick filtering may remove all files; this is not diverse-metadata sorting acceptance."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "pickFilterMilliseconds": 5.260708,
+        "ratingSortMilliseconds": 11.986709,
+        "sampledPeakResidentMiB": 573.5625,
+        "schemaVersion": 2,
+        "selectAllMilliseconds": 15.022917,
+        "selectedFileCount": 10000,
+        "selectedReadyDuringIndexingMilliseconds": 8.435
+      },
+      "scope": "tree"
+    },
+    {
+      "iteration": 2,
+      "report": {
+        "cachedFit": {
+          "count": 100,
+          "maximumMilliseconds": 0.073417,
+          "p50Milliseconds": 0.007417,
+          "p95Milliseconds": 0.024333
+        },
+        "decisionErrors": 0,
+        "decisionIndexMilliseconds": 13031.910417,
+        "decisionPublications": 210,
+        "fileCount": 10000,
+        "firstFitDuringIndexingMilliseconds": 50.3205,
+        "fitCacheMiB": 60.01611328125,
+        "folderOpenMilliseconds": 609.704292,
+        "includesSubfolders": true,
+        "isoSortMilliseconds": 11.417292,
+        "mainActorSamples": 1372,
+        "maximumMainActorGapMilliseconds": 26.201833,
+        "memory": [
+          {
+            "phase": "before-workspace",
+            "residentMiB": 80.515625
+          },
+          {
+            "phase": "folder-open",
+            "residentMiB": 118.640625
+          },
+          {
+            "phase": "first-fit",
+            "residentMiB": 141.328125
+          },
+          {
+            "phase": "indexed",
+            "residentMiB": 152.8125
+          },
+          {
+            "phase": "navigated",
+            "residentMiB": 456.609375
+          },
+          {
+            "phase": "all-selected",
+            "residentMiB": 457.390625
+          },
+          {
+            "phase": "filtered-and-sorted",
+            "residentMiB": 457.828125
+          }
+        ],
+        "metadataFailures": 0,
+        "metadataIndexMilliseconds": 1332.355958,
+        "metadataPublications": 159,
+        "navigation": [
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 20.348584,
+              "p50Milliseconds": 13.857375,
+              "p95Milliseconds": 19.218625
+            },
+            "pattern": "forward",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.043834,
+              "p50Milliseconds": 0.011291,
+              "p95Milliseconds": 0.022333
+            },
+            "sourceDecodes": 63
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 17.97,
+              "p50Milliseconds": 14.388041,
+              "p95Milliseconds": 17.702333
+            },
+            "pattern": "reverse",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.048,
+              "p50Milliseconds": 0.017417,
+              "p95Milliseconds": 0.022667
+            },
+            "sourceDecodes": 60
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 17.466208,
+              "p50Milliseconds": 13.587292,
+              "p95Milliseconds": 16.65975
+            },
+            "pattern": "spread",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.053,
+              "p50Milliseconds": 0.01825,
+              "p95Milliseconds": 0.022042
+            },
+            "sourceDecodes": 64
+          }
+        ],
+        "notes": [
+          "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
+          "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+          "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
+          "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
+          "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
+          "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",
+          "No SwiftUI rendering, thumbnail-grid loading, 35ms view debounce, presented frames, full RAW detail or bulk save/XMP throughput in this service report.",
+          "Preflight inventory/byte hashing runs before the first RSS checkpoint; its retained input URLs coexist with the workspace inventory. Baseline/helper allocations are included, so service RSS is not native Photo RSS.",
+          "Process RSS sampled about every 10ms plus phase checkpoints; includes runtime/allocator/decoder/model memory, not a whole-app peak bound. The heartbeat is not frame time.",
+          "ISO/rating sorts have tied synthetic values when generated gradients have no EXIF/ratings. Pick filtering may remove all files; this is not diverse-metadata sorting acceptance."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "pickFilterMilliseconds": 7.488667,
+        "ratingSortMilliseconds": 13.137166,
+        "sampledPeakResidentMiB": 578.4375,
+        "schemaVersion": 2,
+        "selectAllMilliseconds": 20.727209,
+        "selectedFileCount": 10000,
+        "selectedReadyDuringIndexingMilliseconds": 8.846334
+      },
+      "scope": "tree"
+    },
+    {
+      "iteration": 2,
+      "report": {
+        "cachedFit": {
+          "count": 100,
+          "maximumMilliseconds": 0.046875,
+          "p50Milliseconds": 0.014584,
+          "p95Milliseconds": 0.028292
+        },
+        "decisionErrors": 0,
+        "decisionIndexMilliseconds": 2505.570542,
+        "decisionPublications": 44,
+        "fileCount": 2000,
+        "firstFitDuringIndexingMilliseconds": 50.166,
+        "fitCacheMiB": 57.7763671875,
+        "folderOpenMilliseconds": 125.399708,
+        "includesSubfolders": true,
+        "isoSortMilliseconds": 2.158667,
+        "mainActorSamples": 419,
+        "maximumMainActorGapMilliseconds": 13.440958,
+        "memory": [
+          {
+            "phase": "before-workspace",
+            "residentMiB": 28.15625
+          },
+          {
+            "phase": "folder-open",
+            "residentMiB": 37.640625
+          },
+          {
+            "phase": "first-fit",
+            "residentMiB": 60.8125
+          },
+          {
+            "phase": "indexed",
+            "residentMiB": 64.046875
+          },
+          {
+            "phase": "navigated",
+            "residentMiB": 365.0625
+          },
+          {
+            "phase": "all-selected",
+            "residentMiB": 365.421875
+          },
+          {
+            "phase": "filtered-and-sorted",
+            "residentMiB": 365.625
+          }
+        ],
+        "metadataFailures": 0,
+        "metadataIndexMilliseconds": 273.253416,
+        "metadataPublications": 34,
+        "navigation": [
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 21.809125,
+              "p50Milliseconds": 13.800709,
+              "p95Milliseconds": 18.340625
+            },
+            "pattern": "forward",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.054042,
+              "p50Milliseconds": 0.012125,
+              "p95Milliseconds": 0.020125
+            },
+            "sourceDecodes": 63
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 19.879458,
+              "p50Milliseconds": 12.947958,
+              "p95Milliseconds": 15.676041
+            },
+            "pattern": "reverse",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.021,
+              "p50Milliseconds": 0.012542,
+              "p95Milliseconds": 0.017208
+            },
+            "sourceDecodes": 57
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 15.343708,
+              "p50Milliseconds": 13.217208,
+              "p95Milliseconds": 14.934333
+            },
+            "pattern": "spread",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.0325,
+              "p50Milliseconds": 0.0105,
+              "p95Milliseconds": 0.017208
+            },
+            "sourceDecodes": 64
+          }
+        ],
+        "notes": [
+          "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
+          "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+          "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
+          "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
+          "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
+          "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",
+          "No SwiftUI rendering, thumbnail-grid loading, 35ms view debounce, presented frames, full RAW detail or bulk save/XMP throughput in this service report.",
+          "Preflight inventory/byte hashing runs before the first RSS checkpoint; its retained input URLs coexist with the workspace inventory. Baseline/helper allocations are included, so service RSS is not native Photo RSS.",
+          "Process RSS sampled about every 10ms plus phase checkpoints; includes runtime/allocator/decoder/model memory, not a whole-app peak bound. The heartbeat is not frame time.",
+          "ISO/rating sorts have tied synthetic values when generated gradients have no EXIF/ratings. Pick filtering may remove all files; this is not diverse-metadata sorting acceptance."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "pickFilterMilliseconds": 1.103875,
+        "ratingSortMilliseconds": 2.870625,
+        "sampledPeakResidentMiB": 418.0625,
+        "schemaVersion": 2,
+        "selectAllMilliseconds": 4.1245,
+        "selectedFileCount": 2000,
+        "selectedReadyDuringIndexingMilliseconds": 9.040667
+      },
+      "scope": "tree"
+    },
+    {
+      "iteration": 1,
+      "report": {
+        "cachedFit": {
+          "count": 100,
+          "maximumMilliseconds": 0.092125,
+          "p50Milliseconds": 0.010416,
+          "p95Milliseconds": 0.049208
+        },
+        "decisionErrors": 0,
+        "decisionIndexMilliseconds": 10774.057041,
+        "decisionPublications": 162,
+        "fileCount": 10000,
+        "firstFitDuringIndexingMilliseconds": 48.254583,
+        "fitCacheMiB": 57.36767578125,
+        "folderOpenMilliseconds": 846.813916,
+        "includesSubfolders": false,
+        "isoSortMilliseconds": 218.587542,
+        "mainActorSamples": 1165,
+        "maximumMainActorGapMilliseconds": 408.020333,
+        "memory": [
+          {
+            "phase": "before-workspace",
+            "residentMiB": 100.90625
+          },
+          {
+            "phase": "folder-open",
+            "residentMiB": 141.3125
+          },
+          {
+            "phase": "first-fit",
+            "residentMiB": 163.984375
+          },
+          {
+            "phase": "indexed",
+            "residentMiB": 176.390625
+          },
+          {
+            "phase": "navigated",
+            "residentMiB": 462.265625
+          },
+          {
+            "phase": "all-selected",
+            "residentMiB": 463
+          },
+          {
+            "phase": "filtered-and-sorted",
+            "residentMiB": 464.03125
+          }
+        ],
+        "metadataFailures": 0,
+        "metadataIndexMilliseconds": 2406.804584,
+        "metadataPublications": 159,
+        "navigation": [
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 18.403917,
+              "p50Milliseconds": 12.12825,
+              "p95Milliseconds": 15.124292
+            },
+            "pattern": "forward",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.085417,
+              "p50Milliseconds": 0.0605,
+              "p95Milliseconds": 0.070958
+            },
+            "sourceDecodes": 63
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 20.596,
+              "p50Milliseconds": 12.501792,
+              "p95Milliseconds": 16.942208
+            },
+            "pattern": "reverse",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.075625,
+              "p50Milliseconds": 0.056958,
+              "p95Milliseconds": 0.069625
+            },
+            "sourceDecodes": 58
+          },
+          {
+            "latency": {
+              "count": 64,
+              "maximumMilliseconds": 15.658375,
+              "p50Milliseconds": 12.225334,
+              "p95Milliseconds": 15.145625
+            },
+            "pattern": "spread",
+            "selectedIdentityMatches": true,
+            "selectionLatency": {
+              "count": 64,
+              "maximumMilliseconds": 0.103875,
+              "p50Milliseconds": 0.064959,
+              "p95Milliseconds": 0.090291
+            },
+            "sourceDecodes": 64
+          }
+        ],
+        "notes": [
+          "Fresh process recommended per run; temporary SQLite database, unchanged FULL durability, no image/sidecar writes or shared thumbnail disk cache.",
+          "All input image bytes hashed before/after outside timing/sampling. OS caches are warmed by hashing; cold means new process/database, not cold physical storage.",
+          "IncludesSubfolders identifies combined parent-folder scope; distinct same-named files retain their folder identities. File-count ceiling includes all descendants.",
+          "Folder-open repeats inventory after validation/hashing. Timings include actual workspace model and per-photo display records.",
+          "First Fit and selected readiness overlap full EXIF/decision indexing; readiness polls at 1ms, not native keyboard-to-display time.",
+          "Navigation uses model selection and the Fit pipeline at 2560px, with a 64MiB RAM cache. Forward/reverse/spread do not guarantee cache hits; decode counts are reported.",
+          "No SwiftUI rendering, thumbnail-grid loading, 35ms view debounce, presented frames, full RAW detail or bulk save/XMP throughput in this service report.",
+          "Preflight inventory/byte hashing runs before the first RSS checkpoint; its retained input URLs coexist with the workspace inventory. Baseline/helper allocations are included, so service RSS is not native Photo RSS.",
+          "Process RSS sampled about every 10ms plus phase checkpoints; includes runtime/allocator/decoder/model memory, not a whole-app peak bound. The heartbeat is not frame time.",
+          "ISO/rating sorts have tied synthetic values when generated gradients have no EXIF/ratings. Pick filtering may remove all files; this is not diverse-metadata sorting acceptance."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "pickFilterMilliseconds": 94.289125,
+        "ratingSortMilliseconds": 284.0115,
+        "sampledPeakResidentMiB": 517.53125,
+        "schemaVersion": 2,
+        "selectAllMilliseconds": 397.256583,
+        "selectedFileCount": 10000,
+        "selectedReadyDuringIndexingMilliseconds": 8.556292
+      },
+      "scope": "flat"
+    }
+  ]
+}

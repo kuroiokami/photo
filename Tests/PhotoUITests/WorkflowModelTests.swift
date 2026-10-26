@@ -38,6 +38,44 @@ struct WorkflowModelTests {
     #expect(model.reviewMetadataPending == 0 && model.reviewMetadataPendingImages.isEmpty)
     #expect(model.handoffFolder != nil && model.handoffFolder != previousCopy)
   }
+  @Test func recursiveIngestBrowserOnlyShowsVerifiedFamiliesWithinTheChosenParent() async throws {
+    let root = PhotoPath.canonical(
+      FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+    defer { try? FileManager.default.removeItem(at: root) }
+    let working = root.appendingPathComponent("Working")
+    let a = working.appendingPathComponent("Card A/a.png")
+    let b = working.appendingPathComponent("Card B/b.png")
+    let pending = working.appendingPathComponent("Card B/unfinished.png")
+    let outside = root.appendingPathComponent("Other/other.png")
+    let sample = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
+    for file in [a, b, pending, outside] {
+      try FileManager.default.createDirectory(
+        at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+      try FileManager.default.copyItem(at: sample, to: file)
+    }
+    let store = DecisionStore(databaseURL: root.appendingPathComponent("Local/db"))
+    let workspace = WorkspaceState(photos: [], decisionStore: store)
+    let model = WorkflowModel(workspace: workspace)
+    model.activeIngestRoot = PhotoPath.canonical(working)
+    model.verifiedArrivals = [
+      PhotoPath.canonical(a.deletingLastPathComponent()): [a],
+      PhotoPath.canonical(outside.deletingLastPathComponent()): [outside],
+    ]
+    await model.openFolder(root, includingSubfolders: true)
+    #expect(Set(workspace.filePhotos.map(\.filename)) == ["a.png", "other.png"])
+    await model.openFolder(working, includingSubfolders: true)
+    #expect(workspace.filePhotos.map(\.filename) == ["a.png"])
+    model.verifiedArrivals[PhotoPath.canonical(b.deletingLastPathComponent())] = [b]
+    await model.flushArrivals()
+    #expect(Set(workspace.filePhotos.map(\.filename)) == ["a.png", "b.png"])
+    #expect(workspace.folderLabel(for: PhotoItem(fileURL: b).id) == "Card B")
+    #expect(model.targets("All files").count == 2)
+    await model.openFolder(root, includingSubfolders: true)
+    #expect(Set(workspace.filePhotos.map(\.filename)) == ["a.png", "b.png", "other.png"])
+    await model.openFolder(b.deletingLastPathComponent(), includingSubfolders: false)
+    #expect(workspace.filePhotos.map(\.filename) == ["b.png"])
+  }
+
   @Test func oneFieldCanBeCopiedToFiftyPhotosWithoutChangingOtherFieldsOrSelection() async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

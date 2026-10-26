@@ -5,8 +5,9 @@ public struct PhotoTrashPlan: Identifiable, Sendable {
   public let images: [URL]
   public let companions: [URL]
   public let retainedSharedCompanions: Int
-  fileprivate let folder: URL
-  fileprivate let inventory: Set<URL>
+  fileprivate let inventories: [URL: Set<URL>]
+  fileprivate let names: [URL: String]
+  public func displayName(for url: URL) -> String { names[url] ?? url.lastPathComponent }
   fileprivate let files: [(url: URL, fingerprint: FileFingerprint)]
 }
 
@@ -29,11 +30,43 @@ public actor PhotoTrash {
     self.move = move
   }
 
-  public func prepare(images: [URL: String], folder: URL) async throws -> PhotoTrashPlan {
+  public func prepare(images: [URL: String], folder: URL, includingSubfolders: Bool = false)
+    async throws -> PhotoTrashPlan
+  {
     guard !images.isEmpty else {
       throw MediaOperationError.invalid("Select photos to move to Trash.")
     }
     let folder = PhotoPath.canonical(folder)
+    if includingSubfolders {
+      let groups = Dictionary(
+        grouping: images, by: { PhotoPath.canonical($0.key.deletingLastPathComponent()) })
+      var plans: [PhotoTrashPlan] = []
+      for parent in groups.keys.sorted(by: { $0.path < $1.path }) {
+        guard parent.pathComponents.starts(with: folder.pathComponents) else {
+          throw DecisionStoreError.fileChanged
+        }
+        let entries = Dictionary(
+          uniqueKeysWithValues: groups[parent, default: []].map { ($0.key, $0.value) })
+        plans.append(try await prepare(images: entries, folder: parent))
+      }
+      // Validate every image before moving any; sidecars stay after all images.
+      let files =
+        plans.flatMap { Array($0.files.prefix($0.images.count)) }
+        + plans.flatMap { Array($0.files.dropFirst($0.images.count)) }
+      return PhotoTrashPlan(
+        images: plans.flatMap(\.images), companions: plans.flatMap(\.companions),
+        retainedSharedCompanions: plans.reduce(0) { $0 + $1.retainedSharedCompanions },
+        inventories: Dictionary(
+          uniqueKeysWithValues: plans.flatMap { $0.inventories.map { ($0.key, $0.value) } }),
+        names: Dictionary(
+          uniqueKeysWithValues: files.map {
+            (
+              $0.url,
+              PhotoPath.canonical($0.url).pathComponents.dropFirst(folder.pathComponents.count)
+                .joined(separator: "/")
+            )
+          }), files: files)
+    }
     let selected = Set(images.keys.map(PhotoPath.canonical))
     let contents = try FileManager.default.contentsOfDirectory(
       at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
@@ -87,7 +120,9 @@ public actor PhotoTrash {
     return PhotoTrashPlan(
       images: files.prefix(images.count).map(\.url),
       companions: companions.sorted { $0.path < $1.path }, retainedSharedCompanions: shared.count,
-      folder: folder, inventory: Set(photos.map(PhotoPath.canonical)), files: files)
+      inventories: [folder: Set(photos.map(PhotoPath.canonical))],
+      names: Dictionary(uniqueKeysWithValues: files.map { ($0.url, $0.url.lastPathComponent) }),
+      files: files)
   }
 
   private func inventory(in folder: URL) throws -> Set<URL> {
@@ -101,9 +136,11 @@ public actor PhotoTrash {
   public func execute(_ plan: PhotoTrashPlan) -> PhotoTrashResult {
     var moved: [URL] = []
     do {
-      guard try inventory(in: plan.folder) == plan.inventory else {
-        throw MediaOperationError.invalid(
-          "Photos in this folder changed. Review the Trash list again.")
+      for (folder, expected) in plan.inventories {
+        guard try inventory(in: folder) == expected else {
+          throw MediaOperationError.invalid(
+            "Photos in these folders changed. Review the Trash list again.")
+        }
       }
       // Validate the complete snapshot before the first move, then each file
       // again inside the source-protection boundary immediately before moving.
@@ -118,12 +155,12 @@ public actor PhotoTrash {
       for (index, file) in plan.files.enumerated() {
         try Task.checkCancellation()
         if index == plan.images.count {
-          guard
-            try inventory(in: plan.folder)
-              == plan.inventory.subtracting(plan.images.map(PhotoPath.canonical))
-          else {
-            throw MediaOperationError.invalid(
-              "Photos arrived while moving files. Their sidecars were left untouched.")
+          let removed = Set(plan.images.map(PhotoPath.canonical))
+          for (folder, expected) in plan.inventories {
+            guard try inventory(in: folder) == expected.subtracting(removed) else {
+              throw MediaOperationError.invalid(
+                "Photos arrived while moving files. Their sidecars were left untouched.")
+            }
           }
         }
         try store.sourceProtection.withWritable([file.url]) {
