@@ -434,4 +434,5 @@ Implemented features and open acceptance are tracked in [PROJECT_STATUS](../PROJ
 - No RAW histogram, focus peaking or sensor exposure adjustment. Rendered/embedded appearances are not sensor exposure measurements.
 - Crop ratio presets seed a rectangle; a locked-ratio resize and crop rotation are future work.
 - Native physical trackpad, broader camera/storage/platform, compact-window and full VoiceOver/keyboard-only coverage must be distinguished from automated gesture/model tests.
+- Large-folder browsing can become slow or unresponsive while initial shooting information and decisions load. The 10–40k-photo workflow has not passed desktop performance checks; see the [measured limits](PERFORMANCE.md#file-backed-workspace-scale-and-readiness-correction--2026-10-26).
 - No installable signed/notarized release or automatic updater yet.
