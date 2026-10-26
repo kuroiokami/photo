@@ -130,6 +130,46 @@ struct WorkspacePresentationTests {
     #expect(!selection.ready && selection.summary.fileCount == 1)
   }
 
+  @Test func selectionReadinessWithManyUnrelatedLoadedFilesPreservesUnknownAndMixedDecisions() {
+    let selected = [
+      PhotoItem(id: "one", filename: "é1.jpg", resourceName: ""),
+      PhotoItem(id: "two", filename: "é2.jpg", resourceName: ""),
+    ]
+    var ready = Set((0..<40_000).map { "unrelated-\($0)" })
+    ready.insert("one")
+    let decisions = ["one": CullingDecision(rating: 4, flag: .pick)]
+    let selection = WorkspaceSelectionState()
+    selection.replace(selected, decisions: decisions, ready: ready)
+    #expect(!selection.ready && selection.summary.fileCount == 2)
+    #expect(selection.summary.rating == nil && selection.summary.flag == nil)
+    ready.insert("two")
+    selection.replace(selected, decisions: decisions, ready: ready)
+    #expect(selection.ready && selection.summary.fileCount == 2)
+    selection.replace([selected[0]], decisions: decisions, ready: ready)
+    #expect(selection.ready && selection.summary.rating == 4 && selection.summary.flag == .pick)
+    selection.replace([], decisions: decisions, ready: ready)
+    #expect(!selection.ready && selection.summary.fileCount == 0)
+  }
+
+  @Test func orderingAndFocusRetainSelectionSnapshotUntilMembershipActuallyChanges() async {
+    let items = (0..<2000).map {
+      PhotoItem(id: "folder/é-\($0)", filename: "Frame\($0).jpg", resourceName: "")
+    }
+    let state = WorkspaceState(photos: items)
+    await state.loadDecisions()
+    state.selectAllVisible()
+    let original = state.selectionSummary
+    let evaluations = state.selectionReadinessEvaluations
+    await state.setSort(.rating)
+    state.selectGroup(state.selectedIDs, focus: items.last!.id)
+    #expect(state.selectionReadinessEvaluations == evaluations)
+    #expect(state.selectionSummary == original && state.decisionSelectionReady)
+    state.setFilter(.pick, minimumRating: 0)
+    #expect(state.selectionSummary.fileCount == 0 && !state.decisionSelectionReady)
+    state.setFilter(.all, minimumRating: 0)
+    #expect(state.selectionSummary.fileCount == 1 && state.decisionSelectionReady)
+  }
+
   @Test func groupingArrivalsRemovalAndSessionResetKeepDisplayIdentityCorrect() async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

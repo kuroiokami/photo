@@ -10,6 +10,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Fix selection readiness work growing with the whole loaded folder, and avoid rebuilding unchanged selection snapshots during sorting/focus changes. Add file-backed 10k/40k profiling; native large-folder indexing/scrolling remains an open performance issue.
+
 - Isolate thumbnail display and selection-readiness updates, and reuse mixed-selection summaries. Preserve group decisions, unknown-file gating, filters and Undo; model timing evidence is separate from native frame smoothness.
 
 - Reuse bounded actor-owned SQLite record-query statements and JSON coders while preserving durable saves, recovery and source protection.

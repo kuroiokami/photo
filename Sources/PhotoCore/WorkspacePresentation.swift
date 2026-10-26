@@ -36,7 +36,9 @@ public final class WorkspaceSelectionState {
     let records = Dictionary(
       targets.map { ($0.id, decisions[$0.id] ?? CullingDecision()) },
       uniquingKeysWith: { first, _ in first })
-    let unknown = Set(records.keys).subtracting(ready)
+    // Walk the selected records. Set.subtracting can scan the large ready
+    // set even for a one-photo selection.
+    let unknown = Set(records.keys.filter { !ready.contains($0) })
     let changedSummary = records != self.records
     guard changedSummary || unknown != self.unknown else { return }
     self.records = records

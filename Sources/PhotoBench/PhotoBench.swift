@@ -27,7 +27,7 @@ private func milliseconds(_ duration: Duration) -> Double {
   Double(duration.components.seconds) * 1000 + Double(duration.components.attoseconds) / 1e15
 }
 
-private func residentBytes() -> UInt64 {
+func residentBytes() -> UInt64 {
   var info = mach_task_basic_info()
   var count = mach_msg_type_number_t(
     MemoryLayout<mach_task_basic_info>.size / MemoryLayout<integer_t>.size)
@@ -75,6 +75,19 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments.first == "--scale", arguments.count == 2 {
+      let report = try await WorkspaceScaleBenchmark.run(folder: URL(fileURLWithPath: arguments[1]))
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
+    if arguments.first == "--generate-scale", arguments.count == 3 {
+      guard let count = Int(arguments[2]), (1...40_000).contains(count) else { exit(2) }
+      try generate(at: URL(fileURLWithPath: arguments[1]), count: count, cloned: true)
+      print("Generated synthetic JPEG/PNG clones with separate file identities.")
+      return
+    }
     if arguments == ["--selection-summary"] {
       let report = await SelectionSummaryBenchmark.run()
       let encoder = JSONEncoder()
@@ -146,6 +159,10 @@ private struct PhotoBench {
       print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
       print("       PhotoBench --selection-summary > selection-summary-report.json")
+      print(
+        "       PhotoBench --generate-scale /new/temp/folder count [1...40000; requires file cloning]"
+      )
+      print("       PhotoBench --scale /path/to/folder > scale-report.json")
       if arguments != ["--help"] { exit(2) }
       return
     }
@@ -290,7 +307,7 @@ private struct PhotoBench {
     }
   }
 
-  private static func generate(at directory: URL, count: Int) throws {
+  private static func generate(at directory: URL, count: Int, cloned: Bool = false) throws {
     // Never add benchmark data to an existing directory or a user's library.
     guard !FileManager.default.fileExists(atPath: directory.path) else {
       throw CocoaError(.fileWriteFileExists)
@@ -326,13 +343,31 @@ private struct PhotoBench {
       guard CGImageDestinationFinalize(destination) else { throw PreviewError.unreadable }
       templates.append(data as Data)
     }
+    let seeds = directory.appendingPathComponent(".seeds")
+    if cloned {
+      try FileManager.default.createDirectory(at: seeds, withIntermediateDirectories: false)
+      for (index, data) in templates.enumerated() {
+        try data.write(
+          to: seeds.appendingPathComponent(String(index)), options: .withoutOverwriting)
+      }
+    }
     let extensions = ["jpg", "JPG", "jpeg", "JPEG", "JpEg", "jPeG"]
     for index in 0..<count {
       let slot = index % 3
       let ext = slot == 2 ? (index % 2 == 0 ? "PNG" : "png") : extensions[index % extensions.count]
       let name = String(format: "café-Photo%05d.%@", index, ext)
-      try templates[slot].write(
-        to: directory.appendingPathComponent(name), options: .withoutOverwriting)
+      if cloned {
+        guard
+          clonefile(
+            seeds.appendingPathComponent(String(slot)).path,
+            directory.appendingPathComponent(name).path, 0) == 0
+        else {
+          throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+      } else {
+        try templates[slot].write(
+          to: directory.appendingPathComponent(name), options: .withoutOverwriting)
+      }
     }
   }
 }

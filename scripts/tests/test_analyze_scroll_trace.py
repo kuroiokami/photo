@@ -46,6 +46,22 @@ class ScrollTraceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 REPORT.analyze(Path("trace"), "unused", "Photo")
 
+    def test_cpu_only_does_not_invent_zero_stalls_or_export_private_symbols(self):
+        stack = ET.Element("stack")
+        ET.SubElement(stack, "frame", name="WorkspaceState.publishMetadata private /user/image.jpg")
+        cpu = {"process": cell("process", fmt="Photo (123)"),
+               "thread": cell("thread", fmt="Main Thread (123)"), "weight": cell("weight", 2_000_000), "stack": stack}
+        with patch.object(REPORT, "table", return_value=([cpu], lambda x: x)) as export:
+            result = REPORT.analyze(Path("trace"), "unused", "Photo", cpu_only=True)
+        self.assertEqual(export.call_count, 1)
+        self.assertEqual(export.call_args.args[1], "time-profile")
+        self.assertFalse(result["stallDiagnosticsMeasured"])
+        self.assertIsNone(result["potentialMainThreadStalls"])
+        self.assertIsNone(result["potentialStallUnionMilliseconds"])
+        self.assertEqual(result["inclusiveMainThreadSampleMilliseconds"]["workspacePublication"], 2)
+        self.assertNotIn("private", json.dumps(result))
+        self.assertNotIn("image.jpg", json.dumps(result))
+
     def test_table_resolves_references_and_rejects_missing_schema(self):
         xml = '<result><schema><col><mnemonic>duration</mnemonic></col></schema><row><duration id="1">33</duration></row><row><duration ref="1"/></row></result>'
         with tempfile.TemporaryDirectory() as scratch:

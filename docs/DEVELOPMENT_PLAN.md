@@ -392,3 +392,12 @@ Ship separately measured chunks. Preserve stable selection, explicit preview sou
 - [x] Verify extracted contact-sheet/filmstrip controls, scrolling, density/label changes and disposable edits natively.
 - [x] Complete final strict/repository checks, repeated release model measurements and context restoration; exact-head CI/delivery evidence belongs in the PR. See ADR 0031.
 - [ ] Obtain native frame/body-evaluation, physical-trackpad and representative large-shoot RSS evidence; keep other optimization suggestions separate.
+
+## File-backed scale profiling — 2026-10-26
+
+- [x] Add disposable 10k/40k real-file generation with separate identities, process/RSS/navigation/index/sort measurements and original-byte checks.
+- [x] Correct readiness traversal and redundant snapshot invalidation exposed by the scale runs; retain unknown/group/filter/Undo/session behavior.
+- [x] Repeat baseline/intermediate/final release service runs and collect native indexing diagnostics with explicit tool/capture limits and recovery.
+- [x] Pass strict Swift checks, CLI smoke and CPU-only analyzer regressions; package the release app. Exact-head repository/CI/delivery evidence belongs in the PR.
+- [ ] Resolve the failed native large-folder indexing/scroll acceptance; profile UI update/layout dependencies and initial large-group selection before speculative prefetch.
+- [ ] Complete native presented-frame/body counts, physical-trackpad, mixed-camera/real-shoot memory and physical-media acceptance.
