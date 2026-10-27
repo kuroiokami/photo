@@ -191,3 +191,17 @@ Protected source reviews use both `decisions.sqlite` and `source-protection.json
 Quit Photo before backing up its local data or moving the app. Deleting an app copy does not delete source photos, XMP sidecars or local application data. Removing local data would discard Photo-only edits/history and possibly unsynchronized intent, so it is not a routine troubleshooting step. Keep recovery journals until their operations are resolved.
 
 Continue with the [complete usage guide](USAGE.md).
+
+### Photo closes unexpectedly
+
+Note approximately when it happened, whether Photo was idle or being used, and whether you chose Quit or had to force it to close. A closed window and a terminated app are different; check whether Photo still has a running indicator in the Dock.
+
+Photo records local diagnostic events with build identification, run duration, memory counts and app lifecycle state. They contain no photo filenames, folders, EXIF, captions or pixels and are not sent anywhere. To inspect recent events in Terminal:
+
+```sh
+/usr/bin/log show --last 2h --style compact --predicate 'subsystem == "org.photo.lifecycle"'
+```
+
+Look for `quitRequested` and `willTerminate` near the time Photo disappeared. Heartbeats may be delayed while the Mac sleeps or macOS pauses background work, so a gap alone does not prove a crash. macOS manages log retention. If macOS offers a Photo crash report, retain it with the time and build information; PhotoBench reports concern the separate benchmark tool. Review system reports for private information before sharing them.
+
+The currently reported intermittent idle exit has not yet been reproduced or tied to a matching crash report. Diagnostic logging helps investigate another occurrence; it is not a claim that every cause of unexpected termination has been fixed. See the [current tracker](../PROJECT_STATUS.md).

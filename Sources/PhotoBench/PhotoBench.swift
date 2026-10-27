@@ -111,6 +111,19 @@ private struct PhotoBench {
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
+    if arguments == ["--cache-contention"] {
+      do {
+        let report = try await CacheContentionBenchmark.run()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      } catch {
+        FileHandle.standardError.write(
+          Data("Cache-contention benchmark could not run: \(error.localizedDescription)\n".utf8))
+        exit(2)
+      }
+      return
+    }
     if ["--nearby-fit", "--nearby-fit-tree"].contains(arguments.first ?? ""), arguments.count == 2 {
       do {
         let report = try await NearbyFitBenchmark.run(
@@ -190,6 +203,7 @@ private struct PhotoBench {
       print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
+      print("       PhotoBench --cache-contention > cache-contention-report.json")
       print("       PhotoBench --nearby-fit /path/to/folder > nearby-fit-report.json")
       print("       PhotoBench --nearby-fit-tree /path/to/shoot > nearby-fit-report.json")
       print("       PhotoBench --thumbnail-loads /path/to/folder > thumbnail-loads-report.json")

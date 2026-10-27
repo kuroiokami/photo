@@ -6,8 +6,8 @@ import ImageIO
 import PhotoCore
 import UniformTypeIdentifiers
 
-/// Best-effort derived data. Separate locks protect admission, encoder reuse and
-/// index/publication across windows. Disk work runs only off the main actor.
+/// Best-effort derived data. Publication may block on filesystem work, but
+/// reads only take the short admission lock to record bounded recency hints.
 public final class ThumbnailDiskCache: @unchecked Sendable {
   public static let standard = ThumbnailDiskCache(
     directory:
@@ -39,6 +39,8 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   private var generation = 0
   private var pending: Set<String> = []
   private var pendingBytes = 0
+  private var recentReads: [String: Date] = [:]
+  private let recentReadLimit = 512
   private let pendingLimit: Int
   private let encoding = NSLock()
   private var indexed = false
@@ -132,9 +134,16 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
         source, 0,
         [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
     else { return nil }
-    return lock.withLock {
-      guard admission.withLock({ generation == epoch }) else { return nil }
-      entries[key]?.accessed = .now
+    return admission.withLock {
+      guard generation == epoch else { return nil }
+      if recentReads.count >= recentReadLimit, recentReads[key] == nil,
+        let dropped = recentReads.keys.first
+      {
+        // Hints are approximate, but a full buffer must still admit new reads
+        // rather than permanently favoring the first folder visited.
+        recentReads.removeValue(forKey: dropped)
+      }
+      recentReads[key] = .now
       return PhotoPreview(
         image: image, sourceKind: kind,
         originalWidth: record.width, originalHeight: record.height)
@@ -197,6 +206,18 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
         if let old = entries[key] { bytes -= old.size }
         entries[key] = Entry(url: url, size: data.count, accessed: .now)
         bytes += data.count
+        // Merge bounded read hints before choosing eviction victims. No reader
+        // waits for directory enumeration, atomic publication or deletion.
+        let touched = admission.withLock {
+          let values = recentReads
+          recentReads.removeAll(keepingCapacity: true)
+          return values
+        }
+        for (id, accessed) in touched {
+          if let previous = entries[id]?.accessed, accessed > previous {
+            entries[id]?.accessed = accessed
+          }
+        }
         if bytes > limit {
           // Hysteresis avoids rescanning/sorting the entire disk cache per image.
           for (id, entry) in entries.sorted(by: { $0.value.accessed < $1.value.accessed }) {
@@ -215,7 +236,10 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   }
   public func clear() {
     lock.withLock {
-      admission.withLock { generation &+= 1 }
+      admission.withLock {
+        generation &+= 1
+        recentReads.removeAll(keepingCapacity: true)
+      }
       let files = FileManager.default
       for url in (try? files.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil))
         ?? [] where owns(url)
@@ -227,6 +251,8 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
       indexed = false
     }
   }
+  var pendingReadTouchCount: Int { admission.withLock { recentReads.count } }
+
   private func owns(_ url: URL) -> Bool {
     let name = url.deletingPathExtension().lastPathComponent
     return url.pathExtension == "thumb" && name.count == 64 && name.allSatisfy { $0.isHexDigit }

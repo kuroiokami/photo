@@ -1,0 +1,692 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "reportedIdleExit": "Unresolved: no matching recent Photo crash report, latest normal Quit confirmed by user",
+  "originalSyntheticImagesUnchanged": 10000,
+  "distinctOriginalInodes": 10000,
+  "sidecarsCreated": 0,
+  "soaks": {
+    "baseline": {
+      "schemaVersion": 1,
+      "kind": "isolated idle baseline, generated 10k photos",
+      "releaseUUID": "2665CC6F-A7E6-335B-84C9-0059E21761D9",
+      "samples": [
+        {
+          "elapsedSeconds": 0.003537874959874898,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 30.013166666962206,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 60.02284824999515,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 90.03677595895715,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 120.05023950000759,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 150.06025924999267,
+          "alive": true,
+          "residentKiB": 423856,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 180.0699344589957,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 210.08444858400617,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 240.11698537500342,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 270.13149237498874,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 300.145998708962,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 330.1606139589567,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 360.17520599998534,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 390.18750970897963,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 420.20026891696034,
+          "alive": true,
+          "residentKiB": 423760,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 450.2118736669654,
+          "alive": true,
+          "residentKiB": 423840,
+          "cpuTime": "0:37.66"
+        },
+        {
+          "elapsedSeconds": 480.2215952089755,
+          "alive": true,
+          "residentKiB": 423824,
+          "cpuTime": "0:37.68"
+        },
+        {
+          "elapsedSeconds": 510.23008700000355,
+          "alive": true,
+          "residentKiB": 423824,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 540.2394651669892,
+          "alive": true,
+          "residentKiB": 423824,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 570.2469857090036,
+          "alive": true,
+          "residentKiB": 423808,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 600.2567257919582,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 630.2690209589782,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 660.2760451670038,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 690.2874146669637,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 720.3129683749867,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 750.3274151249789,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 780.3396236249828,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 810.350510166958,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 840.3618773340131,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 870.3739834169974,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 900.3868008339778,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 930.3989022499882,
+          "alive": true,
+          "residentKiB": 423776,
+          "cpuTime": "0:37.71"
+        },
+        {
+          "elapsedSeconds": 960.412748541974,
+          "alive": true,
+          "residentKiB": 423824,
+          "cpuTime": "0:37.72"
+        },
+        {
+          "elapsedSeconds": 990.4267742919619,
+          "alive": true,
+          "residentKiB": 419200,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1020.4358255839907,
+          "alive": true,
+          "residentKiB": 419232,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1050.446814416966,
+          "alive": true,
+          "residentKiB": 419200,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1080.460566166963,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1110.474740249978,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1140.4869565839763,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1170.4972410419723,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1200.5065876669833,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1230.5144387499895,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1260.5272212919663,
+          "alive": true,
+          "residentKiB": 419184,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1290.5338687920012,
+          "alive": true,
+          "residentKiB": 419168,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1320.5472235839698,
+          "alive": true,
+          "residentKiB": 419168,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1350.5562689169892,
+          "alive": true,
+          "residentKiB": 419200,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1380.5618923750008,
+          "alive": true,
+          "residentKiB": 419152,
+          "cpuTime": "0:37.90"
+        },
+        {
+          "elapsedSeconds": 1410.5756578340079,
+          "alive": true,
+          "residentKiB": 406464,
+          "cpuTime": "0:38.16"
+        },
+        {
+          "elapsedSeconds": 1440.5896528339945,
+          "alive": true,
+          "residentKiB": 406496,
+          "cpuTime": "0:38.17"
+        },
+        {
+          "elapsedSeconds": 1470.6030809169752,
+          "alive": true,
+          "residentKiB": 406496,
+          "cpuTime": "0:38.17"
+        },
+        {
+          "elapsedSeconds": 1500.612733041984,
+          "alive": true,
+          "residentKiB": 406448,
+          "cpuTime": "0:38.17"
+        },
+        {
+          "elapsedSeconds": 1530.6235004999908,
+          "alive": true,
+          "residentKiB": 406448,
+          "cpuTime": "0:38.17"
+        },
+        {
+          "elapsedSeconds": 1560.634326291969,
+          "alive": true,
+          "residentKiB": 406432,
+          "cpuTime": "0:38.19"
+        },
+        {
+          "elapsedSeconds": 1590.644790499995,
+          "alive": true,
+          "residentKiB": 406432,
+          "cpuTime": "0:38.22"
+        },
+        {
+          "elapsedSeconds": 1620.6546474999632,
+          "alive": true,
+          "residentKiB": 406448,
+          "cpuTime": "0:38.22"
+        },
+        {
+          "elapsedSeconds": 1650.6633487499785,
+          "alive": true,
+          "residentKiB": 406400,
+          "cpuTime": "0:38.22"
+        },
+        {
+          "elapsedSeconds": 1680.6746318750083,
+          "alive": true,
+          "residentKiB": 406400,
+          "cpuTime": "0:38.22"
+        },
+        {
+          "elapsedSeconds": 1710.6807769169682,
+          "alive": true,
+          "residentKiB": 407504,
+          "cpuTime": "0:38.24"
+        },
+        {
+          "elapsedSeconds": 1740.6910456249607,
+          "alive": true,
+          "residentKiB": 407504,
+          "cpuTime": "0:38.24"
+        },
+        {
+          "elapsedSeconds": 1770.7032317919657,
+          "alive": true,
+          "residentKiB": 407520,
+          "cpuTime": "0:38.24"
+        },
+        {
+          "elapsedSeconds": 1800.7144958749996,
+          "alive": true,
+          "residentKiB": 407488,
+          "cpuTime": "0:38.24"
+        }
+      ],
+      "condition": "Idle 10k collection after Hide attempts; continuous hidden/background state not verified"
+    },
+    "candidate": {
+      "schemaVersion": 1,
+      "kind": "isolated idle candidate, generated 10k photos",
+      "releaseUUID": "BC1922B4-0609-3E94-87AF-B843699B5A5B",
+      "samples": [
+        {
+          "elapsedSeconds": 0.0038209580234251916,
+          "alive": true,
+          "residentKiB": 432384,
+          "cpuTime": "0:31.88"
+        },
+        {
+          "elapsedSeconds": 30.012205333041493,
+          "alive": true,
+          "residentKiB": 449456,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 60.02243200002704,
+          "alive": true,
+          "residentKiB": 449456,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 90.03639925003517,
+          "alive": true,
+          "residentKiB": 449456,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 120.04454875004012,
+          "alive": true,
+          "residentKiB": 449456,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 150.05272941704607,
+          "alive": true,
+          "residentKiB": 449456,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 180.06529850000516,
+          "alive": true,
+          "residentKiB": 449408,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 210.07892991701374,
+          "alive": true,
+          "residentKiB": 449408,
+          "cpuTime": "0:35.37"
+        },
+        {
+          "elapsedSeconds": 240.08723470801488,
+          "alive": true,
+          "residentKiB": 449424,
+          "cpuTime": "0:35.38"
+        },
+        {
+          "elapsedSeconds": 270.1010234580026,
+          "alive": true,
+          "residentKiB": 449408,
+          "cpuTime": "0:35.38"
+        },
+        {
+          "elapsedSeconds": 300.1131770419888,
+          "alive": true,
+          "residentKiB": 449360,
+          "cpuTime": "0:35.38"
+        },
+        {
+          "elapsedSeconds": 330.1267160830321,
+          "alive": true,
+          "residentKiB": 449296,
+          "cpuTime": "0:35.38"
+        },
+        {
+          "elapsedSeconds": 360.1387050829944,
+          "alive": true,
+          "residentKiB": 432672,
+          "cpuTime": "0:35.63"
+        },
+        {
+          "elapsedSeconds": 390.15319491701666,
+          "alive": true,
+          "residentKiB": 432640,
+          "cpuTime": "0:35.63"
+        },
+        {
+          "elapsedSeconds": 420.16679083299823,
+          "alive": true,
+          "residentKiB": 432640,
+          "cpuTime": "0:35.63"
+        },
+        {
+          "elapsedSeconds": 450.180862542009,
+          "alive": true,
+          "residentKiB": 432672,
+          "cpuTime": "0:35.63"
+        },
+        {
+          "elapsedSeconds": 480.1900882080081,
+          "alive": true,
+          "residentKiB": 432672,
+          "cpuTime": "0:35.63"
+        },
+        {
+          "elapsedSeconds": 510.1994838330429,
+          "alive": true,
+          "residentKiB": 432640,
+          "cpuTime": "0:35.66"
+        },
+        {
+          "elapsedSeconds": 540.2104691670393,
+          "alive": true,
+          "residentKiB": 432640,
+          "cpuTime": "0:35.69"
+        },
+        {
+          "elapsedSeconds": 570.2236830000184,
+          "alive": true,
+          "residentKiB": 432656,
+          "cpuTime": "0:35.69"
+        },
+        {
+          "elapsedSeconds": 600.2368417080143,
+          "alive": true,
+          "residentKiB": 432624,
+          "cpuTime": "0:35.69"
+        },
+        {
+          "elapsedSeconds": 630.2500970830442,
+          "alive": true,
+          "residentKiB": 432624,
+          "cpuTime": "0:35.69"
+        },
+        {
+          "elapsedSeconds": 660.2649053329951,
+          "alive": true,
+          "residentKiB": 433120,
+          "cpuTime": "0:35.71"
+        },
+        {
+          "elapsedSeconds": 690.275302916998,
+          "alive": true,
+          "residentKiB": 433120,
+          "cpuTime": "0:35.71"
+        },
+        {
+          "elapsedSeconds": 720.2860958329984,
+          "alive": true,
+          "residentKiB": 433136,
+          "cpuTime": "0:35.71"
+        },
+        {
+          "elapsedSeconds": 750.2959769170266,
+          "alive": true,
+          "residentKiB": 433104,
+          "cpuTime": "0:35.71"
+        },
+        {
+          "elapsedSeconds": 780.303575500031,
+          "alive": true,
+          "residentKiB": 433120,
+          "cpuTime": "0:35.71"
+        },
+        {
+          "elapsedSeconds": 810.309938749997,
+          "alive": true,
+          "residentKiB": 433120,
+          "cpuTime": "0:35.74"
+        },
+        {
+          "elapsedSeconds": 840.322515625041,
+          "alive": true,
+          "residentKiB": 433120,
+          "cpuTime": "0:35.74"
+        },
+        {
+          "elapsedSeconds": 870.3340598749928,
+          "alive": true,
+          "residentKiB": 433504,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 900.3469724580063,
+          "alive": true,
+          "residentKiB": 433520,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 930.3572162920027,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 960.3682694580057,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 990.3764664170449,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 1020.3867226250004,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.24"
+        },
+        {
+          "elapsedSeconds": 1050.3967544170446,
+          "alive": true,
+          "residentKiB": 433552,
+          "cpuTime": "0:36.77"
+        },
+        {
+          "elapsedSeconds": 1080.4064089580206,
+          "alive": true,
+          "residentKiB": 433504,
+          "cpuTime": "0:36.77"
+        },
+        {
+          "elapsedSeconds": 1110.4137885830132,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.79"
+        },
+        {
+          "elapsedSeconds": 1140.4252717079944,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.80"
+        },
+        {
+          "elapsedSeconds": 1170.4353661250207,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.80"
+        },
+        {
+          "elapsedSeconds": 1200.445867292001,
+          "alive": true,
+          "residentKiB": 433472,
+          "cpuTime": "0:36.80"
+        }
+      ],
+      "condition": "Idle 10k collection after Hide attempts; continuous hidden/background state not verified"
+    }
+  },
+  "limitations": [
+    "Short idle runs do not establish overnight, sleep/wake, pressure or real-camera stability.",
+    "Sampled RSS is not peak memory or cache-budget accounting. Runs have different histories and overlap code builds; no matched memory/CPU speedup claim.",
+    "Candidate activity flags remained true after automation Hide actions; do not claim verified hidden/background coverage.",
+    "Candidate soak used BC1922B4-0609-3E94-87AF-B843699B5A5B, before the final saturated-hint admission adjustment; final executable receives separate native checks."
+  ],
+  "lifecycleWitnesses": [
+    {
+      "buildUUID": "BC1922B4-0609-3E94-87AF-B843699B5A5B",
+      "eventCounts": {
+        "launch": 1,
+        "ready": 1,
+        "active": 1,
+        "heartbeat": 22,
+        "quitRequested": 1,
+        "willTerminate": 1
+      },
+      "automaticTerminationSupportValues": [
+        false
+      ],
+      "activeValues": [
+        false,
+        true
+      ]
+    },
+    {
+      "buildUUID": "60BD8320-01FA-3162-BFC0-8B833B447675",
+      "eventCounts": {
+        "launch": 1,
+        "ready": 1,
+        "heartbeat": 1,
+        "active": 1,
+        "quitRequested": 1,
+        "willTerminate": 1
+      },
+      "automaticTerminationSupportValues": [
+        false
+      ],
+      "activeValues": [
+        false,
+        true
+      ]
+    }
+  ],
+  "finalNativeChecks": {
+    "releaseUUID": "60BD8320-01FA-3162-BFC0-8B833B447675",
+    "strictSignatureVerified": true,
+    "sampleForwardReverse": true,
+    "genuineJPEG100Percent": true,
+    "contactSheet": true,
+    "clearThumbnailCacheThenFit": true,
+    "normalQuit": true,
+    "personalBrowsingPreferencesUntouched": true
+  }
+}
