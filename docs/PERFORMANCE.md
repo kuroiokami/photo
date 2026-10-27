@@ -503,8 +503,8 @@ The [anonymous release report](benchmarks/2026-10-27-metadata-read-reuse.json) u
 | --- | ---: | ---: | ---: |
 | Cold EXIF, 24 files | 24 → 24 | 0.747–0.761 ms | 0.752–0.757 ms |
 | Paired EXIF/XMP, 24 files | 48 → 24 | 1.467–1.469 ms | 0.864–0.967 ms |
-| Repeated panel visits, 32 visits/four files | 64 → 4 | 1.457–1.468 ms | 0.031 ms |
-| Cold EXIF beyond capacity, 512 files | 512 → 512 | 0.746–0.747 ms | 0.750 ms |
+| Repeated panel visits, 32 visits/four files | 64 → 4 | 1.457–1.468 ms | 0.031–0.032 ms |
+| Cold EXIF beyond capacity, 512 files | 512 → 512 | 0.746–0.747 ms | 0.758–0.760 ms |
 
 Cold EXIF performs **zero XMP reads** in both modes. The 512-file route retains exactly 128 entries with reuse enabled and none in the control; it establishes no cold-scan speedup. Repeated visits perform four property reads/four XMP extractions instead of 32 each, with 56 result hits. Paired queries retain about 27 KiB of accounted results at the phase endpoint; this is not RSS. No metadata values/paths or pixels are included in output. Run `sh scripts/benchmark.sh --metadata-reads` to reproduce; generated inputs are removed after the run.
 
