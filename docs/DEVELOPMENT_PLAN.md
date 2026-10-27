@@ -475,6 +475,17 @@ See [ADR 0038](decisions/0038-cache-read-bookkeeping.md), [ADR 0039](decisions/0
 - [x] Keep scene restoration on the main actor, track windows weakly, coalesce new-window requests and retain normal close/Quit/save barriers.
 - [x] Replace per-header Canon reads with one 4 KiB window and a 1 MiB speculative-byte cap; preserve bounds, cancellation, orientation and embedded-only fallback.
 - [x] Validate dense, sparse, extended/zero-size and malformed layouts; add a repeatable licensed-reference release control and retain its measurement limits.
-- [ ] Profile shared EXIF/XMP parsing with source-change invalidation before adding a result cache. Physical media, broader cameras, frame/trackpad, pressure and long-session acceptance remain separate.
+- [x] Profile and implement bounded workspace EXIF/embedded-XMP reuse with source-change invalidation in ADR 0042. Sidecar XML parsing, cross-window sharing, cold RAW startup and broader acceptance remain separate.
 
 See [ADR 0040](decisions/0040-workspace-window-recovery.md), [ADR 0041](decisions/0041-buffered-cr3-container.md) and the tracker for validation and delivery evidence.
+
+## Validated metadata read reuse — 2026-10-27
+
+- [x] Retain a workspace reader and reuse EXIF/embedded-XMP independently without eager XMP indexing.
+- [x] Bound result count/bytes and one actor-owned source, with weak idle cleanup, cancellation and Reload invalidation.
+- [x] Verify device/inode/size/nanosecond stamps before/after work; cover exact-time replacements/in-place edits, races, failures and symbolic aliases.
+- [x] Keep sidecar merges/conflicts fresh; test workflow refresh and native sidecar addition/removal with original hashes preserved.
+- [x] Add generated off/on/on/off release controls for cold, paired and repeated reads, with explicit service/RAW/frame/memory limits.
+- [ ] Profile cold RAW initialization, cross-window reuse and downstream XML separately; broaden media, real-shoot, pressure and concurrent-workflow acceptance.
+
+See [ADR 0042](decisions/0042-metadata-read-reuse.md), [performance evidence](PERFORMANCE.md#validated-metadata-read-reuse--2026-10-27) and the tracker for exact checks and delivery.

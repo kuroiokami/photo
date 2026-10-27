@@ -351,6 +351,8 @@ Rename one folder at a time. **Undo Last Rename** and **Recover Original Names**
 
 ## 11. IPTC, keywords and Lightroom
 
+Photo reuses recent, unchanged shooting information and embedded metadata while you work. Sidecars are read separately, so a changed or removed sidecar appears when you reopen the workflow. **Reload Folder (⌘R)** also clears metadata reuse.
+
 ### Apply one shared field without flattening a batch
 
 For 50 photos needing the same copyright but different captions:
