@@ -45,12 +45,24 @@ final class PreviewMemoryCache: @unchecked Sendable {
       return entry.preview
     }
   }
-  func insert(_ preview: PhotoPreview, file: URL, size: Int) {
+  func insert(_ preview: PhotoPreview, file: URL, size: Int, protecting protectedFiles: [URL] = [])
+  {
     lock.withLock {
       guard preview.byteCost <= limit else { return }
       let key = Key(file: file, size: size)
+      let protected = Set(protectedFiles.map { Key(file: $0, size: size) })
+      let retained = protected.reduce(0) { total, value in
+        total + (value == key ? 0 : (cache[value]?.preview.byteCost ?? 0))
+      }
+      guard preview.byteCost <= limit - retained else { return }
       if cache[key] != nil { remove(key) }
-      while bytes + preview.byteCost > limit, let oldest { remove(oldest) }
+      while bytes + preview.byteCost > limit, var victim = oldest {
+        while protected.contains(victim) {
+          guard let next = cache[victim]?.next else { return }
+          victim = next
+        }
+        remove(victim)
+      }
       cache[key] = Entry(preview: preview, previous: newest)
       if let newest { cache[newest]?.next = key } else { oldest = key }
       newest = key

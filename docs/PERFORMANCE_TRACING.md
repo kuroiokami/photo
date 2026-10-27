@@ -124,3 +124,14 @@ sh scripts/benchmark.sh --thumbnail-loads-tree /path/to/reference-raw-shoot
 ```
 
 Read-only original hashing surrounds at most 48 supported photos; the tree option includes subfolders. Derived disk records are temporary. The report compares the current scheduler with one/two workers, source order 1/2/2/1 and disk order 2/1/1/2, using 16-request bursts and a concurrent independent Fit request. Source passes use fresh RAM/no disk; disk passes force record reads. Failures, Fit success, active bounds, source/disk counts and retained cache bytes are explicit. Empty/unreadable input returns an error. Run quiet release processes sequentially; hashing warms OS caches, initialization and phase order matter, and these are service timings, not physical cold-card, UI/FPS or RSS measurements. See [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md) and [evidence](PERFORMANCE.md#visible-demand-thumbnail-scheduling--2026-10-26).
+
+## Nearby Fit preparation controls
+
+```sh
+sh scripts/benchmark.sh --nearby-fit /path/to/disposable-jpegs
+sh scripts/benchmark.sh --nearby-fit-tree /path/to/reference-raw-shoot
+```
+
+At most eight images, 17 forward/reverse/jump selections, fresh 64 MiB Fit caches and preparation off/on/on/off per 250 ms/zero-dwell group. Reports separate first Fit, subsequent service times, RAM-ready hits, selected failures, source decodes including optional work, active bounds and sampled retained cache bytes. Original hashing warms OS caches; disk thumbnails, view debounce/rendering, physical input and ingest are excluded. Eligibility can suppress optional work on cards/networks/ejectable/unknown volumes. Run sequential quiet release processes; wait for cancelled workers to finish before the next phase. Empty/one-photo input returns an exit-2 error.
+
+In native captures, fixed `NearbyFitPreparation`/`NearbyFitLoad` intervals distinguish optional work from foreground Fit. Confirm the target process and matched event types before exporting anonymous counts; raw traces can contain private data and stay outside Git. See [ADR 0037](decisions/0037-nearby-fit-preparation.md) and [actual evidence](PERFORMANCE.md#foreground-first-nearby-fit-preparation--2026-10-26). Integration counts do not measure presented frames or physical input.

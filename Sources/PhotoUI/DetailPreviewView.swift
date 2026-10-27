@@ -3,6 +3,11 @@ import PhotoCore
 import PhotoImaging
 import SwiftUI
 
+private struct NearbyFitRequest: Equatable {
+  let ready: Bool
+  let files: [URL]
+}
+
 private struct DetailPresentation {
   var zoom = false
   var magnification = 1.0
@@ -40,6 +45,8 @@ struct DetailPreviewView: View {
   var comparison: ComparisonSession? = nil
   var pane: ComparisonPane = .active
   var edit = PhotoEdit()
+  var nearbyFiles: [URL] = []
+  @Environment(\.scenePhase) private var scenePhase
   @DetailStorage private var state = DetailPresentation()
 
   var body: some View {
@@ -191,6 +198,16 @@ struct DetailPreviewView: View {
         state.region = nil
         comparison?.zoom(false, center: state.focal, from: pane)
       }
+    }
+    .task(
+      id: NearbyFitRequest(
+        ready: scenePhase == .active && !state.zoom && state.fitPreview != nil, files: nearbyFiles),
+      priority: .background
+    ) {
+      guard scenePhase == .active, !state.zoom, state.fitPreview != nil, !nearbyFiles.isEmpty,
+        let file = photo.fileURL ?? SampleResources.url(for: photo)
+      else { return }
+      await pipeline.prepareNearby(after: file, candidates: nearbyFiles, sessionID: sessionID)
     }
     .onDisappear { fit() }
   }

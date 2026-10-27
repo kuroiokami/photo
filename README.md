@@ -20,7 +20,7 @@ Photo is open source and in active development. You can build it from source tod
 | **Browse without importing** | Open a folder or memory card. Explore the sidebar tree or turn on **Include Subfolders** to review a whole shoot together. |
 | **Revisit photos quickly** | Reuse thumbnails from bounded memory and disk caches; load new thumbnails with a small worker pool, save disk thumbnails in the background and clear them from the View menu when needed. |
 | **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. Review selected rejects and move them to macOS Trash. |
-| **Check the details** | Zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; full RAW rendering happens when you request detail. |
+| **Check the details** | Prepare nearby Fit previews while you pause, zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; full RAW rendering happens when you request detail. |
 | **Review before copying** | Make culling decisions locally while Photo keeps the source protected. Choose which photos to copy, verify both destinations, and carry your decisions to the working copies. |
 | **Organize a shoot** | Rename batches, add shared IPTC fields without replacing unrelated metadata, and apply captions, copyright and hierarchical keywords. |
 | **Prepare the next step** | Create delivery copies with metadata for publication, Lightroom Classic or another editor. Rotate, mirror and crop within Photo for review. |

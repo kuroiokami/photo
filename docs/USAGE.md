@@ -93,6 +93,8 @@ Background shooting information and saved decisions appear in small updates whil
 
 Photo remembers generated thumbnails in memory and on this Mac's disk so returning to photos does not repeatedly decode the originals. The memory allowance adapts to your Mac within a fixed limit; the disk cache is also limited. New or changed files still need an initial thumbnail. Photo loads these with a small worker pool, drops obsolete queued work as you browse, and gives selected photos priority. The large preview has its own loading lane.
 
+While you pause in single-photo **Fit** view, Photo can prepare the next and previous visible previews for quicker navigation. It follows your current sort and filters, stays within the preview cache limit, and gives the selected photo priority. Preparation pauses during 100% inspection, comparison, protected source review and copying or other file workflows. It also stays off for cards, ejectable/network drives and storage it cannot identify; ordinary viewing still works there. RAW preparation uses embedded previews. It starts automatically on eligible working folders.
+
 Choose **View → Clear Thumbnail Cache** if you need thumbnails recreated. This removes temporary thumbnails from the current window's memory and the shared disk cache; it does not delete photos or change flags, ratings, captions or crops. Other open windows may retain their loaded thumbnails. Reload the folder after external image changes. Photo saves reusable thumbnails in the background. If you quit immediately, some thumbnails may need to be generated again next time; saved stars, flags and metadata have their own durable storage.
 
 ## 3. Select individual photos and groups
