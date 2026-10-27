@@ -14,6 +14,7 @@ struct MetadataPreset: Codable, Identifiable {
 @Observable
 final class WorkflowModel {
   let workspace: WorkspaceState
+  let metadataReader: ImageMetadataReader
   let mediaOperations: MediaOperations
   var requestedTab = 0
   var opensReviewedCopySetup = false
@@ -44,7 +45,11 @@ final class WorkflowModel {
   var handoffFolder: URL?
   @ObservationIgnored var worker: Task<Void, Never>?
 
-  init(workspace: WorkspaceState, mediaOperations: MediaOperations = .shared) {
+  init(
+    workspace: WorkspaceState, mediaOperations: MediaOperations = .shared,
+    metadataReader: ImageMetadataReader = ImageMetadataReader()
+  ) {
+    self.metadataReader = metadataReader
     self.workspace = workspace
     self.mediaOperations = mediaOperations
     presets =
@@ -100,7 +105,7 @@ final class WorkflowModel {
     currentMetadata = DescriptiveMetadata()
     if let image = workspace.firstSelectedPhoto?.fileURL {
       do {
-        let embedded = try await ImageMetadataReader().embeddedXMP(for: image)
+        let embedded = try await metadataReader.embeddedXMP(for: image)
         currentMetadata = try await workspace.persistence.loadMetadata(
           for: image, embedded: embedded
         ).value
@@ -238,7 +243,7 @@ final class WorkflowModel {
       ? verifiedArrivals.filter { $0.key.pathComponents.starts(with: root.pathComponents) }.values
         .reduce(into: Set<URL>()) { $0.formUnion($1) }
       : verifiedArrivals[root] ?? []
-    await workspace.publishVerified(Array(images), in: folder, using: ImageMetadataReader())?.value
+    await workspace.publishVerified(Array(images), in: folder, using: metadataReader)?.value
   }
   func previewRename(scope: String, pattern: String, camera: String, sequence: String) {
     run { [self] in
@@ -247,7 +252,7 @@ final class WorkflowModel {
       }
       renamePlan = try await mediaOperations.planRename(
         images: targets(scope), pattern: pattern, camera: camera, start: start,
-        reader: ImageMetadataReader())
+        reader: metadataReader)
       status =
         "Review all \(renamePlan?.entries.count ?? 0) file changes, including companions. No files have been renamed."
     }
@@ -303,7 +308,7 @@ final class WorkflowModel {
       guard !images.isEmpty else {
         throw MediaOperationError.invalid("Select photos from a real folder first.")
       }
-      let reader = ImageMetadataReader()
+      let reader = metadataReader
       var embedded: [String: Data] = [:]
       for image in images { embedded[image.path] = try await reader.embeddedXMP(for: image) }
       metadataPlan = try await workspace.persistence.prepareMetadata(

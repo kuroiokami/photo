@@ -68,7 +68,7 @@ public struct WorkspaceView: View {
   @BoolStorage private var showingTrashError = false
   @BoolStorage private var pendingInspection = false
   @MessageStorage private var trashNotice = ""
-  private let metadataReader = ImageMetadataReader()
+  private var metadataReader: ImageMetadataReader { workflowModel.metadataReader }
 
   public init(workspace: WorkspaceState = WorkspaceState()) {
     _workspace = State(initialValue: workspace)
@@ -1242,6 +1242,7 @@ public struct WorkspaceView: View {
   private func reload() {
     guard let directory = workspace.directory else { return }
     Task {
+      await metadataReader.clear()
       await workflowModel.openFolder(directory)
       if folderLibrary.expanded.contains(directory.path) { await folderLibrary.refresh(directory) }
       gridFocused = true

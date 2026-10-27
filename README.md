@@ -66,7 +66,7 @@ Photo keeps original image bytes unchanged. Explicit **Move to Trash** removes s
 
 Large-shoot performance is still being tuned. The reusable full Contact Sheet grid reduces process CPU and potential-stall duration in controlled 115-photo and synthetic 10k scrolling checks. Those scripted results do not establish physical-trackpad smoothness, competitor parity or representative RAW/40k performance. See the [measurements and remaining limits](docs/PERFORMANCE.md#native-reusable-contact-sheet--2026-10-26).
 
-An intermittent idle/background exit report is being investigated; see [local diagnostic instructions](docs/INSTALLATION.md#photo-closes-unexpectedly).
+The earlier running-icon/no-window report now has explicit [window recovery](docs/INSTALLATION.md#photo-is-running-but-no-window-appears). Local diagnostics remain available if it recurs.
 
 Lightroom application-level round trips, real Canon CRW files and broader camera/platform coverage still need testing. See the [current boundaries](docs/USAGE.md#14-current-boundaries) and [project tracker](PROJECT_STATUS.md) for details. Source protection covers operations inside Photo.
 

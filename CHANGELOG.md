@@ -24,6 +24,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Reuse validated EXIF and embedded XMP per workspace with bounded results and one short-lived ImageIO source. Keep XMP lazy, invalidate changed/replaced files and Reload, and reread sidecars so external edits remain visible. Add synthetic metadata-read controls and source-preservation regressions.
+
 - Buffer small Canon CR3 container reads within 4 KiB and a capped read-ahead budget; skip large sensor payloads and remove temporary integer arrays. Add malformed/sparse/cancellation regressions and a matched CC0-reference benchmark. Warm preview latency remains dominated by JPEG decoding; no new UI-speed claim.
 
 - Keep disk-hit thumbnails independent of cache directory scanning/publication/eviction locks, with bounded recency hints and generation checks. Add matched contention controls and concurrency/sanitizer regressions.

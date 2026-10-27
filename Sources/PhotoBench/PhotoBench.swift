@@ -111,6 +111,19 @@ private struct PhotoBench {
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
+    if arguments == ["--metadata-reads"] {
+      do {
+        let report = try await MetadataReadBenchmark.run()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      } catch {
+        FileHandle.standardError.write(
+          Data("Metadata benchmark could not run: \(error.localizedDescription)\n".utf8))
+        exit(2)
+      }
+      return
+    }
     if arguments == ["--cache-contention"] {
       do {
         let report = try await CacheContentionBenchmark.run()
@@ -202,6 +215,7 @@ private struct PhotoBench {
       print("       PhotoBench --workspace /path/to/folder > workspace-report.json")
       print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
+      print("       PhotoBench --metadata-reads > metadata-read-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
       print("       PhotoBench --cache-contention > cache-contention-report.json")
       print("       PhotoBench --nearby-fit /path/to/folder > nearby-fit-report.json")
