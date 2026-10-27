@@ -111,6 +111,23 @@ private struct PhotoBench {
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
+    if ["--thumbnail-loads", "--thumbnail-loads-tree"].contains(arguments.first ?? ""),
+      arguments.count == 2
+    {
+      do {
+        let report = try await ThumbnailLoadBenchmark.run(
+          folder: URL(fileURLWithPath: arguments[1]),
+          includingSubfolders: arguments[0] == "--thumbnail-loads-tree")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      } catch {
+        FileHandle.standardError.write(
+          Data("Thumbnail-load benchmark could not run: \(error.localizedDescription)\n".utf8))
+        exit(2)
+      }
+      return
+    }
     if arguments == ["--thumbnail-cache"] {
       let report = try await ThumbnailCacheBenchmark.run()
       let encoder = JSONEncoder()
@@ -158,6 +175,8 @@ private struct PhotoBench {
       print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
+      print("       PhotoBench --thumbnail-loads /path/to/folder > thumbnail-loads-report.json")
+      print("       PhotoBench --thumbnail-loads-tree /path/to/shoot > thumbnail-loads-report.json")
       print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
       print("       PhotoBench --selection-summary > selection-summary-report.json")

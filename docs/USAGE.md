@@ -91,7 +91,7 @@ Background shooting information and saved decisions appear in small updates whil
 
 ### Thumbnail caching
 
-Photo remembers generated thumbnails in memory and on this Mac's disk so returning to photos does not repeatedly decode the originals. The memory allowance adapts to your Mac within a fixed limit; the disk cache is also limited. New or changed files still need an initial thumbnail.
+Photo remembers generated thumbnails in memory and on this Mac's disk so returning to photos does not repeatedly decode the originals. The memory allowance adapts to your Mac within a fixed limit; the disk cache is also limited. New or changed files still need an initial thumbnail. Photo loads these with a small worker pool, drops obsolete queued work as you browse, and gives selected photos priority. The large preview has its own loading lane.
 
 Choose **View → Clear Thumbnail Cache** if you need thumbnails recreated. This removes temporary thumbnails from the current window's memory and the shared disk cache; it does not delete photos or change flags, ratings, captions or crops. Other open windows may retain their loaded thumbnails. Reload the folder after external image changes. Photo saves reusable thumbnails in the background. If you quit immediately, some thumbnails may need to be generated again next time; saved stars, flags and metadata have their own durable storage.
 

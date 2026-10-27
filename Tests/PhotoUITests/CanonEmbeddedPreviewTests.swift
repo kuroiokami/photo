@@ -81,6 +81,13 @@ struct CanonEmbeddedPreviewTests {
       previewUUID + Data(repeating: 0, count: 8) + big(UInt32(jpeg.length + 24)) + Data("PRVW".utf8)
       + Data(repeating: 0, count: 12) + big(UInt32(jpeg.length)) + (jpeg as Data)
     try (header + box("uuid", preview)).write(to: image)
+    #expect(throws: CancellationError.self) {
+      try CanonEmbeddedPreview.decode(
+        image, maximumPixelSize: 160,
+        checkCancellation: {
+          throw CancellationError()
+        })
+    }
     let decoded = try #require(try CanonEmbeddedPreview.decode(image, maximumPixelSize: 160))
     #expect(decoded.sourceKind == .embedded)
     #expect(decoded.decodedWidth == 100 && decoded.decodedHeight == 160)

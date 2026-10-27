@@ -115,3 +115,12 @@ python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 The build script defaults to debug when `--release` is omitted. Verify the actual packaged binary for every comparison; discard mixed-configuration runs. Only sample one Photo process. Keep raw sample files outside Git. The analyzer emits no raw symbols, paths, captions, addresses, identifiers or filenames. It checks sample-weight consistency and unions stack branches/recursion within each category; categories overlap and must not be added together.
 
 These are **stack sample counts including waits**, not CPU milliseconds, frame/body counts, hitches or FPS. Sampling and accessibility inspection can substantially change the workload. Finish indexing, warm the same rows, hold the window/density/selection/labels fixed and ensure all input ends before capture stops. Record activation and inspection steps too. Use fixed-position input with a final inspection to reduce repeated accessibility serialization; confirm scrolling actually occurred and returned. Retain unprofiled controls and report an inconclusive result honestly. [The row-layout experiment](PERFORMANCE.md#rapid-full-contact-sheet-experiment--2026-10-26) was withdrawn because no reliable overall improvement was established.
+
+## Cold application-cache viewport scheduling
+
+```sh
+sh scripts/benchmark.sh --thumbnail-loads /path/to/disposable-jpegs
+sh scripts/benchmark.sh --thumbnail-loads-tree /path/to/reference-raw-shoot
+```
+
+Read-only original hashing surrounds at most 48 supported photos; the tree option includes subfolders. Derived disk records are temporary. The report compares the current scheduler with one/two workers, source order 1/2/2/1 and disk order 2/1/1/2, using 16-request bursts and a concurrent independent Fit request. Source passes use fresh RAM/no disk; disk passes force record reads. Failures, Fit success, active bounds, source/disk counts and retained cache bytes are explicit. Empty/unreadable input returns an error. Run quiet release processes sequentially; hashing warms OS caches, initialization and phase order matter, and these are service timings, not physical cold-card, UI/FPS or RSS measurements. See [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md) and [evidence](PERFORMANCE.md#visible-demand-thumbnail-scheduling--2026-10-26).

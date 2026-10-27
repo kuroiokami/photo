@@ -61,3 +61,5 @@ Use a small deadline-oriented shoot and 115-JPEG warm/cold controls, then distri
 ## Implementation follow-up — 2026-10-26
 
 The first native-cell experiment is now implemented with controlled acceptance in [ADR 0035](decisions/0035-native-contact-sheet.md) and [performance evidence](PERFORMANCE.md#native-reusable-contact-sheet--2026-10-26). This does not mark the remaining ranked scheduling, cache, read-ahead or decoder proposals complete. Physical-input, representative RAW/40k, pressure and broad accessibility acceptance remain open.
+
+The bounded scheduling portion of experiment 2 is now implemented in [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md): two thumbnail workers outside actor admission, shared requests, selected promotion, cancellation and stale-session guards. Limited source/disk service controls and native cold JPEG checks pass. Time-budgeted UI completion publication and representative-camera/media/frame acceptance remain open; this does not complete all of experiment 2. Nearby Fit read-ahead remains separate.

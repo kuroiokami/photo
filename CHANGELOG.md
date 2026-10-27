@@ -18,6 +18,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Load uncached thumbnails on two bounded workers while keeping scheduling/cancellation available. Share duplicate requests, prioritize selected photos and reject obsolete folder work; Fit remains independent. Small JPEG/Sony RAW service controls improve; broader media/frame acceptance remains open.
+
 - Reuse native Contact Sheet cells and stable layout while preserving interactive thumbnail controls and image services. Keep rows steady when adding edits and restore culling-key focus after group drags. Controlled 115/10k scrolling uses less process CPU and shorter potential stalls; physical-trackpad/real-shoot acceptance remains open.
 
 - Add privacy-safe macOS sample analysis and parser tests for scrolling investigations. Record and withdraw a row-layout experiment that did not establish a reliable speedup; rapid grid lag remains open.

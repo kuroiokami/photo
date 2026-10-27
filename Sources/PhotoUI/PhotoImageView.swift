@@ -22,6 +22,7 @@ struct PhotoImageView: View {
   let maximumPixelSize: Int
   var edit = PhotoEdit()
   var detailed = false
+  var prioritize = false
   var sessionID: UUID?
   var cacheGeneration = 0
   var onLoaded: ((PhotoPreview) -> Void)?
@@ -70,8 +71,15 @@ struct PhotoImageView: View {
       id: ImageRequestIdentity(
         photoID: photo.id, pipeline: ObjectIdentifier(pipeline), session: sessionID,
         maximumPixelSize: maximumPixelSize, cacheGeneration: cacheGeneration, retry: retry),
-      priority: detailed ? .userInitiated : .utility
+      priority: detailed || prioritize ? .userInitiated : .utility
     ) { await load() }
+    .onChange(of: prioritize) {
+      guard prioritize, let url = photo.fileURL ?? SampleResources.url(for: photo) else { return }
+      Task {
+        await pipeline.prioritizePreview(
+          for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
+      }
+    }
     .onDisappear { preview = nil }
   }
 
@@ -113,7 +121,8 @@ struct PhotoImageView: View {
       // Only cold previews need the arrow-repeat debounce. Cached images are immediate.
       if detailed { try await Task.sleep(for: .milliseconds(35)) }
       let result = try await pipeline.preview(
-        for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
+        for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID,
+        priority: detailed || prioritize ? .selected : .visible)
       try Task.checkCancellation()
       preview = result
       PhotoTrace.event("ImageResultPublished", in: trace)
