@@ -12,11 +12,15 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Documentation
 
+- Add local fixed-field lifecycle/resource diagnostics and instructions for unexplained exits. The reported intermittent idle/background disappearance remains under investigation; normal Quit and sleep behavior are unchanged.
+
 - Add a pinned source review of RAWviewer, RawSpeed and Geeqie, with ranked Photo performance experiments and explicit decoder, cache and benchmark limits.
 
 - Add a sourced, code-informed performance research plan covering responsive culling, focus checks, metadata, verified ingest and deadline/large-shoot workflows; distinguish proposals from implemented behavior.
 
 ### Performance
+
+- Keep disk-hit thumbnails independent of cache directory scanning/publication/eviction locks, with bounded recency hints and generation checks. Add matched contention controls and concurrency/sanitizer regressions.
 
 - Prepare the next/previous Fit previews after a short pause, with reserved selected-photo capacity and the existing cache budget. Pause optional reads during file workflows/detail/comparison and on cards or network/ejectable/unknown storage. Add measured settled/rapid navigation controls and native integration checks.
 

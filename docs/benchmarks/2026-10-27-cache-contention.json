@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "order": [
+    "baseline",
+    "candidate",
+    "candidate",
+    "baseline"
+  ],
+  "linkedHarnessAndCoreSourcesMatched": true,
+  "runs": [
+    {
+      "implementation": "baseline",
+      "report": {
+        "contendedReads": {
+          "count": 64,
+          "maximumMilliseconds": 124.633417,
+          "medianMilliseconds": 0.978084,
+          "p95Milliseconds": 2.173917
+        },
+        "firstViewportMilliseconds": 2.235583,
+        "foregroundDiskHits": 72,
+        "foregroundSourceDecodes": 0,
+        "logicalCPUCount": 18,
+        "maintenanceDrainMilliseconds": 139.75675,
+        "notes": [
+          "Nine synthetic JPEG copies; eight disk-hit foreground photos and one cold writer. 4000 APFS-cloned synthetic derived records force a lazy directory index on the first new write.",
+          "Eight bursts of eight requests, two foreground workers and a one-byte RAM budget. First viewport and individual reads include queueing; maintenance drain includes the foreground route before its final writer barrier.",
+          "The writer is admitted before reads; scheduling overlap is uncontrolled. Compare quiet fresh processes in baseline/candidate/candidate/baseline order, with identical benchmark code and only cache implementation changed.",
+          "Application RAM/index state is fresh; OS caches are warmed by population/cloning and otherwise uncontrolled. This is not physical cold-media, UI/FPS, eviction-throughput or real-shoot timing.",
+          "Original bytes are hashed before/after. Source paths, names, metadata, pixels, hashes and raw traces are omitted; no source sidecar writes."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "physicalMemoryGiB": 128,
+        "schemaVersion": 1,
+        "seededRecords": 4008,
+        "settledReads": {
+          "count": 8,
+          "maximumMilliseconds": 0.357542,
+          "medianMilliseconds": 0.279917,
+          "p95Milliseconds": 0.357542
+        }
+      }
+    },
+    {
+      "implementation": "candidate",
+      "report": {
+        "contendedReads": {
+          "count": 64,
+          "maximumMilliseconds": 2.45525,
+          "medianMilliseconds": 0.974167,
+          "p95Milliseconds": 2.017916
+        },
+        "firstViewportMilliseconds": 2.508459,
+        "foregroundDiskHits": 72,
+        "foregroundSourceDecodes": 0,
+        "logicalCPUCount": 18,
+        "maintenanceDrainMilliseconds": 133.390333,
+        "notes": [
+          "Nine synthetic JPEG copies; eight disk-hit foreground photos and one cold writer. 4000 APFS-cloned synthetic derived records force a lazy directory index on the first new write.",
+          "Eight bursts of eight requests, two foreground workers and a one-byte RAM budget. First viewport and individual reads include queueing; maintenance drain includes the foreground route before its final writer barrier.",
+          "The writer is admitted before reads; scheduling overlap is uncontrolled. Compare quiet fresh processes in baseline/candidate/candidate/baseline order, with identical benchmark code and only cache implementation changed.",
+          "Application RAM/index state is fresh; OS caches are warmed by population/cloning and otherwise uncontrolled. This is not physical cold-media, UI/FPS, eviction-throughput or real-shoot timing.",
+          "Original bytes are hashed before/after. Source paths, names, metadata, pixels, hashes and raw traces are omitted; no source sidecar writes."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "physicalMemoryGiB": 128,
+        "schemaVersion": 1,
+        "seededRecords": 4008,
+        "settledReads": {
+          "count": 8,
+          "maximumMilliseconds": 0.569958,
+          "medianMilliseconds": 0.32525,
+          "p95Milliseconds": 0.569958
+        }
+      }
+    },
+    {
+      "implementation": "candidate",
+      "report": {
+        "contendedReads": {
+          "count": 64,
+          "maximumMilliseconds": 2.420791,
+          "medianMilliseconds": 1.041792,
+          "p95Milliseconds": 1.879916
+        },
+        "firstViewportMilliseconds": 2.47325,
+        "foregroundDiskHits": 72,
+        "foregroundSourceDecodes": 0,
+        "logicalCPUCount": 18,
+        "maintenanceDrainMilliseconds": 134.557,
+        "notes": [
+          "Nine synthetic JPEG copies; eight disk-hit foreground photos and one cold writer. 4000 APFS-cloned synthetic derived records force a lazy directory index on the first new write.",
+          "Eight bursts of eight requests, two foreground workers and a one-byte RAM budget. First viewport and individual reads include queueing; maintenance drain includes the foreground route before its final writer barrier.",
+          "The writer is admitted before reads; scheduling overlap is uncontrolled. Compare quiet fresh processes in baseline/candidate/candidate/baseline order, with identical benchmark code and only cache implementation changed.",
+          "Application RAM/index state is fresh; OS caches are warmed by population/cloning and otherwise uncontrolled. This is not physical cold-media, UI/FPS, eviction-throughput or real-shoot timing.",
+          "Original bytes are hashed before/after. Source paths, names, metadata, pixels, hashes and raw traces are omitted; no source sidecar writes."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "physicalMemoryGiB": 128,
+        "schemaVersion": 1,
+        "seededRecords": 4008,
+        "settledReads": {
+          "count": 8,
+          "maximumMilliseconds": 0.577792,
+          "medianMilliseconds": 0.337417,
+          "p95Milliseconds": 0.577792
+        }
+      }
+    },
+    {
+      "implementation": "baseline",
+      "report": {
+        "contendedReads": {
+          "count": 64,
+          "maximumMilliseconds": 129.839292,
+          "medianMilliseconds": 0.986333,
+          "p95Milliseconds": 129.342375
+        },
+        "firstViewportMilliseconds": 1.756167,
+        "foregroundDiskHits": 72,
+        "foregroundSourceDecodes": 0,
+        "logicalCPUCount": 18,
+        "maintenanceDrainMilliseconds": 144.444292,
+        "notes": [
+          "Nine synthetic JPEG copies; eight disk-hit foreground photos and one cold writer. 4000 APFS-cloned synthetic derived records force a lazy directory index on the first new write.",
+          "Eight bursts of eight requests, two foreground workers and a one-byte RAM budget. First viewport and individual reads include queueing; maintenance drain includes the foreground route before its final writer barrier.",
+          "The writer is admitted before reads; scheduling overlap is uncontrolled. Compare quiet fresh processes in baseline/candidate/candidate/baseline order, with identical benchmark code and only cache implementation changed.",
+          "Application RAM/index state is fresh; OS caches are warmed by population/cloning and otherwise uncontrolled. This is not physical cold-media, UI/FPS, eviction-throughput or real-shoot timing.",
+          "Original bytes are hashed before/after. Source paths, names, metadata, pixels, hashes and raw traces are omitted; no source sidecar writes."
+        ],
+        "operatingSystem": "Version 27.0.1 (Build 26A434)",
+        "originalsUnchanged": true,
+        "physicalMemoryGiB": 128,
+        "schemaVersion": 1,
+        "seededRecords": 4008,
+        "settledReads": {
+          "count": 8,
+          "maximumMilliseconds": 0.418208,
+          "medianMilliseconds": 0.287625,
+          "p95Milliseconds": 0.418208
+        }
+      }
+    }
+  ],
+  "negativeControl": {
+    "oldPublicationLockBlocksRead": true,
+    "targetedRegressionFailsAfterSeconds": 5,
+    "candidateRegressionPasses": true
+  }
+}

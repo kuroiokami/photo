@@ -457,3 +457,14 @@ See [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md) and [service evid
 - [ ] Broaden physical-input/frame, camera/media, pressure, multi-window and concurrent-ingest acceptance; profile cache locks and EXIF/CR3 work separately.
 
 See [ADR 0037](decisions/0037-nearby-fit-preparation.md) and [measured limits](PERFORMANCE.md#foreground-first-nearby-fit-preparation--2026-10-26).
+
+## Cache contention and idle-exit diagnostics — 2026-10-27
+
+- [x] Remove the filesystem publication lock from disk-hit completion; bound/coalesce recency hints and preserve source/generation/eviction protections.
+- [x] Add blocked-writer, bounded recency, clear/concurrency and sanitizer coverage, including an old-implementation negative control.
+- [x] Compare matched release index-maintenance workloads and retain anonymous metrics/original checks.
+- [x] Inspect Photo-specific OS reports; distinguish the user's confirmed normal Quit from an unexplained idle exit.
+- [x] Add local fixed-field lifecycle/resource/build diagnostics without changing termination policy or collecting photo information.
+- [ ] Reproduce or capture a matching unexpected idle exit; short synthetic soaks do not establish overnight/sleep/wake/pressure stability.
+
+See [ADR 0038](decisions/0038-cache-read-bookkeeping.md), [ADR 0039](decisions/0039-local-lifecycle-diagnostics.md) and the tracker for actual native/soak/delivery evidence.

@@ -135,3 +135,13 @@ sh scripts/benchmark.sh --nearby-fit-tree /path/to/reference-raw-shoot
 At most eight images, 17 forward/reverse/jump selections, fresh 64 MiB Fit caches and preparation off/on/on/off per 250 ms/zero-dwell group. Reports separate first Fit, subsequent service times, RAM-ready hits, selected failures, source decodes including optional work, active bounds and sampled retained cache bytes. Original hashing warms OS caches; disk thumbnails, view debounce/rendering, physical input and ingest are excluded. Eligibility can suppress optional work on cards/networks/ejectable/unknown volumes. Run sequential quiet release processes; wait for cancelled workers to finish before the next phase. Empty/one-photo input returns an exit-2 error.
 
 In native captures, fixed `NearbyFitPreparation`/`NearbyFitLoad` intervals distinguish optional work from foreground Fit. Confirm the target process and matched event types before exporting anonymous counts; raw traces can contain private data and stay outside Git. See [ADR 0037](decisions/0037-nearby-fit-preparation.md) and [actual evidence](PERFORMANCE.md#foreground-first-nearby-fit-preparation--2026-10-26). Integration counts do not measure presented frames or physical input.
+
+## Disk-cache maintenance contention
+
+```sh
+sh scripts/benchmark.sh --cache-contention > cache-contention.json
+```
+
+Requires APFS cloning for 4,000 synthetic derived records. Eight hot photos/readers overlap one new writer's lazy index; one-byte RAM caching forces disk hits. Report first viewport, queued readiness distributions, settled reads, source/disk counts and original hashes separately. Run quiet baseline/candidate/candidate/baseline processes with identical harness/core code and only the cache implementation changed. Scheduling overlap is uncontrolled; maintenance drain includes the foreground route. No UI/FPS or physical cold-media claim. See [ADR 0038](decisions/0038-cache-read-bookkeeping.md).
+
+For local idle-exit diagnosis, use the [installation troubleshooting instructions](INSTALLATION.md#photo-closes-unexpectedly) and [ADR 0039](decisions/0039-local-lifecycle-diagnostics.md). Distinguish orderly Quit from abrupt process loss, and check liveness alongside fixed resource samples. Raw OS reports/logs stay outside Git. Missing minute heartbeats can reflect sleep/App Nap/scheduling, not necessarily a crash.
