@@ -1,0 +1,549 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "experiment": "Current bounded scheduler, one versus two workers; not a historical app comparison",
+  "reports": {
+    "syntheticJPEG": {
+      "fileCount": 48,
+      "includesSubfolders": false,
+      "logicalCPUCount": 18,
+      "notes": [
+        "At most 48 naturally ordered files, consecutive 16-request viewport bursts; no UI/frame/physical-trackpad timing.",
+        "Compare current scheduler with one/two workers, not a historical executable. Source passes use fresh RAM caches and no disk cache; OS caches are warmed by hashing and otherwise uncontrolled.",
+        "Source order 1/2/2/1; disk order 2/1/1/2 in one process. New one-byte RAM caches force disk reuse. Failed previews remain counted, including unsupported RAW embedded previews.",
+        "One selected 2560-pixel Fit request runs concurrently on its independent serial lane. No full RAW rendering or speculative read-ahead.",
+        "Source stamps, post-read validation and bounded optional cache writes remain. Disk population/drain is excluded from timed passes; input names, metadata, pixels and hashes are omitted.",
+        "Memory figures are retained thumbnail-cache bytes, not RSS or transient decoder bounds. Original image hashes are verified after all passes."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "passes": [
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 6.60525,
+            "p50Milliseconds": 3.51025,
+            "p95Milliseconds": 6.60525
+          },
+          "memoryMiB": 28.125,
+          "mode": "source",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 59.2885,
+            "p50Milliseconds": 30.163166,
+            "p95Milliseconds": 53.35075
+          },
+          "selectedFitMilliseconds": 54.78875,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 48,
+          "totalMilliseconds": 164.951375,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 59.301334,
+            "p50Milliseconds": 53.357291,
+            "p95Milliseconds": 59.301334
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 3.500667,
+            "p50Milliseconds": 3.311959,
+            "p95Milliseconds": 3.500667
+          },
+          "memoryMiB": 28.125,
+          "mode": "source",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 26.958042,
+            "p50Milliseconds": 16.491917,
+            "p95Milliseconds": 26.679333
+          },
+          "selectedFitMilliseconds": 19.590417,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 48,
+          "totalMilliseconds": 79.983042,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 26.963833,
+            "p50Milliseconds": 26.806459,
+            "p95Milliseconds": 26.963833
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 3.373541,
+            "p50Milliseconds": 3.308791,
+            "p95Milliseconds": 3.373541
+          },
+          "memoryMiB": 28.125,
+          "mode": "source",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 26.124583,
+            "p50Milliseconds": 16.162208,
+            "p95Milliseconds": 25.98075
+          },
+          "selectedFitMilliseconds": 13.736292,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 48,
+          "totalMilliseconds": 78.071375,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 26.130542,
+            "p50Milliseconds": 25.986,
+            "p95Milliseconds": 26.130542
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 3.554958,
+            "p50Milliseconds": 3.386416,
+            "p95Milliseconds": 3.554958
+          },
+          "memoryMiB": 28.125,
+          "mode": "source",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 52.794625,
+            "p50Milliseconds": 29.283875,
+            "p95Milliseconds": 52.145709
+          },
+          "selectedFitMilliseconds": 12.806334,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 48,
+          "totalMilliseconds": 157.132375,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 52.7995,
+            "p50Milliseconds": 52.1755,
+            "p95Milliseconds": 52.7995
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 48,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 0.975875,
+            "p50Milliseconds": 0.389,
+            "p95Milliseconds": 0.975875
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 3.42525,
+            "p50Milliseconds": 1.759375,
+            "p95Milliseconds": 3.157416
+          },
+          "selectedFitMilliseconds": 19.415125,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 19.431208,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 3.431166,
+            "p50Milliseconds": 2.642208,
+            "p95Milliseconds": 3.431166
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 48,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 0.465209,
+            "p50Milliseconds": 0.308208,
+            "p95Milliseconds": 0.465209
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 4.528834,
+            "p50Milliseconds": 2.406042,
+            "p95Milliseconds": 4.262667
+          },
+          "selectedFitMilliseconds": 16.125458,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 16.143208,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 4.533959,
+            "p50Milliseconds": 4.267083,
+            "p95Milliseconds": 4.533959
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 48,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 0.400875,
+            "p50Milliseconds": 0.331791,
+            "p95Milliseconds": 0.400875
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 4.272,
+            "p50Milliseconds": 2.344791,
+            "p95Milliseconds": 4.157666
+          },
+          "selectedFitMilliseconds": 16.066875,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 16.07975,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 4.279917,
+            "p50Milliseconds": 4.2485,
+            "p95Milliseconds": 4.279917
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 48,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 3,
+            "maximumMilliseconds": 0.487458,
+            "p50Milliseconds": 0.341375,
+            "p95Milliseconds": 0.487458
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 48,
+            "maximumMilliseconds": 3.192333,
+            "p50Milliseconds": 1.454083,
+            "p95Milliseconds": 2.940417
+          },
+          "selectedFitMilliseconds": 17.027417,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 17.041292,
+          "viewportReady": {
+            "count": 3,
+            "maximumMilliseconds": 3.196958,
+            "p50Milliseconds": 2.457167,
+            "p95Milliseconds": 3.196958
+          },
+          "workers": 2
+        }
+      ],
+      "physicalMemoryGiB": 128,
+      "schemaVersion": 1,
+      "thumbnailLongEdge": 480,
+      "viewportSize": 16
+    },
+    "sonyARW": {
+      "fileCount": 9,
+      "includesSubfolders": true,
+      "logicalCPUCount": 18,
+      "notes": [
+        "At most 48 naturally ordered files, consecutive 16-request viewport bursts; no UI/frame/physical-trackpad timing.",
+        "Compare current scheduler with one/two workers, not a historical executable. Source passes use fresh RAM caches and no disk cache; OS caches are warmed by hashing and otherwise uncontrolled.",
+        "Source order 1/2/2/1; disk order 2/1/1/2 in one process. New one-byte RAM caches force disk reuse. Failed previews remain counted, including unsupported RAW embedded previews.",
+        "One selected 2560-pixel Fit request runs concurrently on its independent serial lane. No full RAW rendering or speculative read-ahead.",
+        "Source stamps, post-read validation and bounded optional cache writes remain. Disk population/drain is excluded from timed passes; input names, metadata, pixels and hashes are omitted.",
+        "Memory figures are retained thumbnail-cache bytes, not RSS or transient decoder bounds. Original image hashes are verified after all passes."
+      ],
+      "operatingSystem": "Version 27.0.1 (Build 26A434)",
+      "originalsUnchanged": true,
+      "passes": [
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 196.97975,
+            "p50Milliseconds": 196.97975,
+            "p95Milliseconds": 196.97975
+          },
+          "memoryMiB": 5.29541015625,
+          "mode": "source",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 329.778083,
+            "p50Milliseconds": 259.500292,
+            "p95Milliseconds": 329.778083
+          },
+          "selectedFitMilliseconds": 197.265833,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 9,
+          "totalMilliseconds": 329.802333,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 329.788917,
+            "p50Milliseconds": 329.788917,
+            "p95Milliseconds": 329.788917
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 17.187125,
+            "p50Milliseconds": 17.187125,
+            "p95Milliseconds": 17.187125
+          },
+          "memoryMiB": 5.29541015625,
+          "mode": "source",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 80.013958,
+            "p50Milliseconds": 45.243125,
+            "p95Milliseconds": 80.013958
+          },
+          "selectedFitMilliseconds": 18.21575,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 9,
+          "totalMilliseconds": 80.028166,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 80.023416,
+            "p50Milliseconds": 80.023416,
+            "p95Milliseconds": 80.023416
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 16.1205,
+            "p50Milliseconds": 16.1205,
+            "p95Milliseconds": 16.1205
+          },
+          "memoryMiB": 5.29541015625,
+          "mode": "source",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 82.850333,
+            "p50Milliseconds": 49.247375,
+            "p95Milliseconds": 82.850333
+          },
+          "selectedFitMilliseconds": 16.94525,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 9,
+          "totalMilliseconds": 82.86375,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 82.860125,
+            "p50Milliseconds": 82.860125,
+            "p95Milliseconds": 82.860125
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 0,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 16.496083,
+            "p50Milliseconds": 16.496083,
+            "p95Milliseconds": 16.496083
+          },
+          "memoryMiB": 5.29541015625,
+          "mode": "source",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 149.179083,
+            "p50Milliseconds": 82.191375,
+            "p95Milliseconds": 149.179083
+          },
+          "selectedFitMilliseconds": 16.479167,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 9,
+          "totalMilliseconds": 149.191792,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 149.187625,
+            "p50Milliseconds": 149.187625,
+            "p95Milliseconds": 149.187625
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 9,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 0.977125,
+            "p50Milliseconds": 0.977125,
+            "p95Milliseconds": 0.977125
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 2.259708,
+            "p50Milliseconds": 1.70075,
+            "p95Milliseconds": 2.259708
+          },
+          "selectedFitMilliseconds": 14.638542,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 14.651834,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 2.26575,
+            "p50Milliseconds": 2.26575,
+            "p95Milliseconds": 2.26575
+          },
+          "workers": 2
+        },
+        {
+          "diskHits": 9,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 0.555916,
+            "p50Milliseconds": 0.555916,
+            "p95Milliseconds": 0.555916
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 2.875208,
+            "p50Milliseconds": 1.807791,
+            "p95Milliseconds": 2.875208
+          },
+          "selectedFitMilliseconds": 14.514958,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 14.528875,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 2.879916,
+            "p50Milliseconds": 2.879916,
+            "p95Milliseconds": 2.879916
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 9,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 0.4655,
+            "p50Milliseconds": 0.4655,
+            "p95Milliseconds": 0.4655
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 1,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 2.855333,
+            "p50Milliseconds": 1.711792,
+            "p95Milliseconds": 2.855333
+          },
+          "selectedFitMilliseconds": 14.972583,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 14.986917,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 2.860667,
+            "p50Milliseconds": 2.860667,
+            "p95Milliseconds": 2.860667
+          },
+          "workers": 1
+        },
+        {
+          "diskHits": 9,
+          "failures": 0,
+          "firstPerViewport": {
+            "count": 1,
+            "maximumMilliseconds": 0.731833,
+            "p50Milliseconds": 0.731833,
+            "p95Milliseconds": 0.731833
+          },
+          "memoryMiB": 0,
+          "mode": "disk",
+          "peakActiveLoads": 2,
+          "requestCompletion": {
+            "count": 9,
+            "maximumMilliseconds": 2.06925,
+            "p50Milliseconds": 1.381292,
+            "p95Milliseconds": 2.06925
+          },
+          "selectedFitMilliseconds": 15.249208,
+          "selectedFitSucceeded": true,
+          "sourceDecodes": 0,
+          "totalMilliseconds": 15.262458,
+          "viewportReady": {
+            "count": 1,
+            "maximumMilliseconds": 2.075208,
+            "p50Milliseconds": 2.075208,
+            "p95Milliseconds": 2.075208
+          },
+          "workers": 2
+        }
+      ],
+      "physicalMemoryGiB": 128,
+      "schemaVersion": 1,
+      "thumbnailLongEdge": 480,
+      "viewportSize": 16
+    }
+  },
+  "nativeValidation": {
+    "isolatedBundle": true,
+    "coldSyntheticJPEGCount": 115,
+    "originalImagesUnchanged": true,
+    "originalUserSessionPreserved": true,
+    "checks": [
+      "cold viewport populated",
+      "rapid forward/reverse scroll",
+      "End/Home and keyboard navigation",
+      "three-photo stars/Pick and independent Undo",
+      "Fit and genuine JPEG 100%",
+      "switch to Sample Collection without stale image"
+    ]
+  },
+  "limitations": [
+    "No UI/FPS or physical-input timings",
+    "Only three JPEG and one Sony RAW viewport per pass; p95 is effectively the maximum",
+    "OS caches warmed by original hashing; first decoder initialization and sequential ordering affect comparisons",
+    "Cache bytes are not RSS; no broad-camera, card-media, concurrent-ingest or pressure acceptance"
+  ]
+}

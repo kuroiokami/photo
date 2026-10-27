@@ -435,3 +435,14 @@ Evaluate progress/header, preview and saving status in separate SwiftUI bodies s
 - [ ] Extend acceptance to real RAW shoots, physical trackpad, distributed folders, 40k stress and memory pressure. Do not equate synthetic input/CPU samples with presented frames.
 
 See [ADR 0035](decisions/0035-native-contact-sheet.md) and the measured limits. Native controlled acceptance and final sidebar cleanup pass. After unlock, both test shortcuts were removed and the original Sample Collection/Dawn/full grid settings verified.
+
+## Visible-demand thumbnail scheduling — 2026-10-26
+
+- [x] Keep blocking source/disk reads and ImageIO outside the scheduling actor, with two thumbnail workers and a separate serial Fit lane.
+- [x] Coalesce duplicate requests, promote selected queued photos, cancel obsolete demand, and retain active slots until uninterruptible work returns.
+- [x] Reject stale clear/session completions and late requests/resets from retired folder sessions; preserve cache budgets, source validation and embedded-only RAW browsing.
+- [x] Add deterministic scheduler races and a release one/two-worker source/disk viewport control with original-hash verification.
+- [x] Verify cold disposable JPEG browsing, reverse scrolling, decisions/Undo, genuine 100% and source switching in an isolated native app without disturbing the user's shoot.
+- [ ] Evaluate foreground-first nearby Fit preparation, time-budgeted UI completion publication and broader camera/card/concurrent-ingest/memory-pressure acceptance separately.
+
+See [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md) and [service evidence](PERFORMANCE.md#visible-demand-thumbnail-scheduling--2026-10-26). This does not establish presented FPS or physical-trackpad/40k acceptance.

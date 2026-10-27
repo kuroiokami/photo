@@ -49,7 +49,8 @@ public struct WorkspaceView: View {
   @SizeStorage private var thumbnailSize = 160
   @SizeStorage private var filmstripSize = 120
   @PipelineStorage private var thumbnails = ImagePipeline(
-    byteLimit: ThumbnailCachePolicy.memoryByteLimit(), thumbnailDiskCache: .standard)
+    byteLimit: ThumbnailCachePolicy.memoryByteLimit(), thumbnailDiskCache: .standard,
+    maximumConcurrentLoads: 2)
   @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
@@ -212,7 +213,7 @@ public struct WorkspaceView: View {
       )
     )
     .task(id: workspace.sessionID) {
-      // Retain one worker per lane across folders, while invalidating caches.
+      // Retain the bounded thumbnail pool and separate Fit lane across folders.
       let session = workspace.sessionID
       await thumbnails.startSession(session)
       await previews.startSession(session)

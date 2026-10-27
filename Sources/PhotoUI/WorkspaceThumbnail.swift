@@ -56,7 +56,7 @@ struct WorkspaceThumbnail: View, Equatable {
         } label: {
           PhotoImageView(
             photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
-            edit: state.edit, sessionID: sessionID,
+            edit: state.edit, prioritize: selected, sessionID: sessionID,
             cacheGeneration: cacheGeneration
           )
           .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))

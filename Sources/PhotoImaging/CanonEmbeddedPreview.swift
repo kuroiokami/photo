@@ -11,14 +11,17 @@ enum CanonEmbeddedPreview {
     let payload: UInt64
     let end: UInt64
   }
-  static func decode(_ url: URL, maximumPixelSize: Int) throws -> PhotoPreview? {
+  static func decode(
+    _ url: URL, maximumPixelSize: Int,
+    checkCancellation: @Sendable () throws -> Void = { try Task.checkCancellation() }
+  ) throws -> PhotoPreview? {
     guard url.pathExtension.lowercased() == "cr3" else { return nil }
     let file = try FileHandle(forReadingFrom: url)
     defer { try? file.close() }
     let length = try file.seekToEnd()
     func read(_ position: UInt64, _ count: Int) throws -> Data? {
       guard position <= length, UInt64(count) <= length - position else { return nil }
-      try Task.checkCancellation()
+      try checkCancellation()
       try file.seek(toOffset: position)
       let data = try file.read(upToCount: count)
       return data?.count == count ? data : nil
@@ -118,7 +121,7 @@ enum CanonEmbeddedPreview {
           ] as CFDictionary),
         let image = oriented(thumbnail, orientation: orientation)
       else { return nil }
-      try Task.checkCancellation()
+      try checkCancellation()
       return PhotoPreview(
         image: image, sourceKind: .embedded,
         originalWidth: orientation >= 5 ? height : width,
