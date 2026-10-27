@@ -16,19 +16,28 @@ enum CanonEmbeddedPreview {
     checkCancellation: @Sendable () throws -> Void = { try Task.checkCancellation() }
   ) throws -> PhotoPreview? {
     guard url.pathExtension.lowercased() == "cr3" else { return nil }
-    let file = try FileHandle(forReadingFrom: url)
-    defer { try? file.close() }
-    let length = try file.seekToEnd()
+    // The reader and its stored cancellation callback stay inside this
+    // synchronous decode; keep the pipeline's cancellation scope nonescaping.
+    return try withoutActuallyEscaping(checkCancellation) { cancellation in
+      let reader = try BufferedContainerReader(url: url, checkCancellation: cancellation)
+      return try decode(reader, maximumPixelSize: maximumPixelSize, checkCancellation: cancellation)
+    }
+  }
+  static func decode(
+    _ reader: BufferedContainerReader, maximumPixelSize: Int,
+    checkCancellation: @Sendable () throws -> Void = { try Task.checkCancellation() }
+  ) throws -> PhotoPreview? {
+    let length = reader.length
     func read(_ position: UInt64, _ count: Int) throws -> Data? {
-      guard position <= length, UInt64(count) <= length - position else { return nil }
-      try checkCancellation()
-      try file.seek(toOffset: position)
-      let data = try file.read(upToCount: count)
-      return data?.count == count ? data : nil
+      try reader.read(position, count)
     }
     func integer(_ data: Data, _ start: Int, _ count: Int, little: Bool = false) -> UInt64 {
-      let bytes = data[start..<(start + count)]
-      return (little ? Array(bytes.reversed()) : Array(bytes)).reduce(0) { ($0 << 8) | UInt64($1) }
+      var value: UInt64 = 0
+      for index in 0..<count {
+        let position = start + (little ? count - index - 1 : index)
+        value = (value << 8) | UInt64(data[position])
+      }
+      return value
     }
     var boxesRead = 0
     func boxes(_ start: UInt64, _ end: UInt64) throws -> [Box]? {

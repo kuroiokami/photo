@@ -169,12 +169,33 @@ For read-only performance measurements, use the commands and interpretation limi
 | `swift`, Git or the formatter is missing | Complete developer-tool installation and verify the three toolchain commands above. |
 | Swift reports an unsupported tools version | Update/select a compatible Apple toolchain. Photo requires Swift 6+. |
 | Native folder panels fail, or the bundle signature is invalid | Quit Photo and rebuild with `scripts/build-app.sh`; the helper seals the complete app after copying resources. |
+| Photo is running but no window appears | Click Photo in the Dock, or choose **Window → Show Photo Window** (**⌘0**). See [window recovery](#photo-is-running-but-no-window-appears). |
 | An old UI opens after a successful build | Quit other Photo instances and launch the exact `.build/Photo.app` path, or update your Applications copy. |
-| The chosen folder looks empty | Check supported extensions, filters, selected review and whether the photos are in a subfolder. Browsing is shallow. |
+| The chosen folder looks empty | Check supported extensions, filters and selected-only review. Turn on **Include Subfolders** when the photos are nested. |
 | A RAW has no Fit preview or fails detail rendering | Recognition is separate from embedded-preview availability and installed macOS camera support. Keep the file, try another supported sample and record camera/mode/macOS details. |
 | First RAW access is slower | Decoder initialization and metadata indexing can affect the first request. See recorded performance limits; avoid rebuilding/benchmarking while testing responsiveness. |
 | A save says local-only or XMP conflict | Follow [save/recovery instructions](USAGE.md#12-saving-conflicts-and-recovery); reinstalling does not resolve metadata conflicts. |
 | A build fails after an update | Save the first meaningful error and toolchain versions. Confirm the supported toolchain and run the required checks before removing generated build output. |
+
+### Photo is running but no window appears
+
+Click Photo in the Dock, or choose **Window → Show Photo Window** (**⌘0**). Photo brings an existing workspace forward, restores a minimized one, or opens a workspace when the last one was closed. A workspace completely outside the connected displays is brought back onto a screen. Closing the red window button leaves Photo running; **⌘Q** quits after pending saves and file work finish.
+
+After updating the app, quit the older running instance and launch the updated bundle once. If this recurs, note the time and use the local diagnostics below: `reopenRequested`, `windowRestored` and `windowCreated` distinguish a reopen request from process termination. The reported icon-with-no-window symptom does not establish a crash.
+
+### Photo closes unexpectedly
+
+Note approximately when it happened, whether Photo was idle or being used, and whether you chose Quit or had to force it to close. A closed window and a terminated app are different; check whether Photo still has a running indicator in the Dock.
+
+Photo records local diagnostic events with build identification, run duration, memory counts and app lifecycle state. They contain no photo filenames, folders, EXIF, captions or pixels and are not sent anywhere. To inspect recent events in Terminal:
+
+```sh
+/usr/bin/log show --last 2h --style compact --predicate 'subsystem == "org.photo.lifecycle"'
+```
+
+Look for `quitRequested` and `willTerminate` near the time Photo disappeared. Heartbeats may be delayed while the Mac sleeps or macOS pauses background work, so a gap alone does not prove a crash. macOS manages log retention. If macOS offers a Photo crash report, retain it with the time and build information; PhotoBench reports concern the separate benchmark tool. Review system reports for private information before sharing them.
+
+The currently reported intermittent idle exit has not yet been reproduced or tied to a matching crash report. Diagnostic logging helps investigate another occurrence; it is not a claim that every cause of unexpected termination has been fixed. See the [current tracker](../PROJECT_STATUS.md).
 
 ## 10. Local data and uninstalling
 
@@ -191,17 +212,3 @@ Protected source reviews use both `decisions.sqlite` and `source-protection.json
 Quit Photo before backing up its local data or moving the app. Deleting an app copy does not delete source photos, XMP sidecars or local application data. Removing local data would discard Photo-only edits/history and possibly unsynchronized intent, so it is not a routine troubleshooting step. Keep recovery journals until their operations are resolved.
 
 Continue with the [complete usage guide](USAGE.md).
-
-### Photo closes unexpectedly
-
-Note approximately when it happened, whether Photo was idle or being used, and whether you chose Quit or had to force it to close. A closed window and a terminated app are different; check whether Photo still has a running indicator in the Dock.
-
-Photo records local diagnostic events with build identification, run duration, memory counts and app lifecycle state. They contain no photo filenames, folders, EXIF, captions or pixels and are not sent anywhere. To inspect recent events in Terminal:
-
-```sh
-/usr/bin/log show --last 2h --style compact --predicate 'subsystem == "org.photo.lifecycle"'
-```
-
-Look for `quitRequested` and `willTerminate` near the time Photo disappeared. Heartbeats may be delayed while the Mac sleeps or macOS pauses background work, so a gap alone does not prove a crash. macOS manages log retention. If macOS offers a Photo crash report, retain it with the time and build information; PhotoBench reports concern the separate benchmark tool. Review system reports for private information before sharing them.
-
-The currently reported intermittent idle exit has not yet been reproduced or tied to a matching crash report. Diagnostic logging helps investigate another occurrence; it is not a claim that every cause of unexpected termination has been fixed. See the [current tracker](../PROJECT_STATUS.md).

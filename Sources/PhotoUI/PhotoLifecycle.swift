@@ -11,6 +11,7 @@ import os
 public final class PhotoLifecycle {
   public enum Event: String, Codable, Sendable {
     case launch, ready, active, background, heartbeat, sleep, wake
+    case reopenRequested, windowRestored, windowCreated
     case quitRequested, waitingForSaves, willTerminate, memoryWarning, memoryCritical, memoryNormal
   }
   struct Record: Codable, Sendable {

@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-27",
+  "release_uuid": "9522ECFB-589E-322B-9FEF-A3936729D41B",
+  "observed_event_counts": {
+    "launch": 1,
+    "ready": 1,
+    "sleep": 1,
+    "heartbeat": 9,
+    "wake": 1,
+    "active": 3,
+    "reopenRequested": 3,
+    "windowCreated": 1,
+    "windowRestored": 2,
+    "background": 1,
+    "quitRequested": 1,
+    "willTerminate": 1
+  },
+  "transitions": [
+    {
+      "event": "reopenRequested",
+      "window_count": 0,
+      "uptime_seconds": 265.49
+    },
+    {
+      "event": "windowCreated",
+      "window_count": 1,
+      "uptime_seconds": 265.797
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 1,
+      "uptime_seconds": 279.5
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 1,
+      "uptime_seconds": 280.184
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 2,
+      "uptime_seconds": 284.878
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 2,
+      "uptime_seconds": 284.879
+    },
+    {
+      "event": "quitRequested",
+      "window_count": 2,
+      "uptime_seconds": 313.389
+    },
+    {
+      "event": "willTerminate",
+      "window_count": 2,
+      "uptime_seconds": 313.39
+    }
+  ],
+  "checks": {
+    "last_window_close_then_standard_reopen": true,
+    "minimize_then_standard_reopen": true,
+    "show_window_shortcut": true,
+    "public_canon_embedded_preview_dimensions": [
+      1620,
+      1080
+    ],
+    "temporary_shortcut_removed": true,
+    "sample_workspace_restored": true,
+    "public_raw_hash_unchanged": true,
+    "public_raw_sidecars_created": 0,
+    "normal_personal_photo_session_untouched": true
+  },
+  "limitations": [
+    "Standard macOS launch/reopen requests were exercised; direct physical Dock clicks were not captured.",
+    "Wholly offscreen geometry and multiple-window choice are unit-tested, not monitor-disconnection trials.",
+    "A Mac lock interrupted a final attempt; checks resumed after user unlock. First native-tool connection delay is excluded from app startup/latency claims.",
+    "No original incident/root-cause, overnight, sleep/wake or memory-pressure reproduction is established."
+  ],
+  "window_count_scope": "All NSApplication windows, including native folder panels; not a count of workspaces.",
+  "creation_event_scope": "windowCreated marks submission to the SwiftUI opener; observed window count and native state confirm creation in this run."
+}

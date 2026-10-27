@@ -4,6 +4,10 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Window recovery
+
+- Restore an existing workspace on a macOS reopen request, including minimized and completely offscreen windows; open a workspace after the last window closes. Add **Window → Show Photo Window (⌘0)** and local reopen events. The reported Dock-icon/no-window symptom is distinct from a confirmed crash.
+
 ### Folder browsing
 
 - Add **Include Subfolders** for combined parent-folder review, relative folder labels and separate identities/pairing for repeated filenames. Keep ingest arrivals verified, including when browsing above the destination.
@@ -19,6 +23,8 @@ User-visible changes are collected here before a release. Development evidence a
 - Add a sourced, code-informed performance research plan covering responsive culling, focus checks, metadata, verified ingest and deadline/large-shoot workflows; distinguish proposals from implemented behavior.
 
 ### Performance
+
+- Buffer small Canon CR3 container reads within 4 KiB and a capped read-ahead budget; skip large sensor payloads and remove temporary integer arrays. Add malformed/sparse/cancellation regressions and a matched CC0-reference benchmark. Warm preview latency remains dominated by JPEG decoding; no new UI-speed claim.
 
 - Keep disk-hit thumbnails independent of cache directory scanning/publication/eviction locks, with bounded recency hints and generation checks. Add matched contention controls and concurrency/sanitizer regressions.
 

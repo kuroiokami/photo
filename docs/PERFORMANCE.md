@@ -471,3 +471,24 @@ No recent matching Photo crash report was found in local user/system diagnostics
 [Anonymous idle evidence](benchmarks/2026-10-27-idle-stability.json) records 61 liveness/RSS samples over 30 minutes for the accepted baseline and 41 over 20 minutes for an intermediate candidate, each viewing the generated 10k collection. Every sampled process remains alive until deliberate cleanup/Quit. RSS ranges are about 396.9–413.9 / 422.2–438.9 MiB; different histories, overlapping builds and sparse sampling prevent matched memory/CPU/peak claims. Automated Hide attempts still leave the recorded activity flag true: **do not claim continuous hidden/background coverage**. No overnight, sleep/wake or induced-pressure stability result. All 10k original hashes and unique inodes match, with no sidecars. Only isolated app shortcuts are removed; personal browsing preferences are untouched.
 
 The intermediate idle executable `BC1922B4-0609-3E94-87AF-B843699B5A5B` precedes the final saturated-hint admission adjustment. Final executable `60BD8320-01FA-3162-BFC0-8B833B447675` separately passes native sample forward/reverse, genuine JPEG 100%/Fit, Contact Sheet, cache clearing/return-to-Fit and normal Quit; strict signatures pass. Loaded UUIDs match diagnostics for both builds. Intermediate logs contain launch/ready, 22 heartbeats and normal quitRequested/willTerminate; final logs include launch/ready/heartbeat and the same orderly quit pair. No background/sleep/wake/memory-pressure events were demonstrated natively. Raw logs stay outside Git. One first-launch automation call took about 265 seconds; it is not an app startup benchmark and is excluded from latency claims.
+
+## Bounded Canon CR3 container reads — 2026-10-27
+
+[ADR 0041](decisions/0041-buffered-cr3-container.md) replaces tiny per-field seeks/reads with one 4 KiB header window, capped at 1 MiB speculative bytes per request, and removes temporary integer arrays. Existing box/CMT1/JPEG bounds, cancellation, orientation, source-change checks and embedded-only fallback remain. A 128 MiB sparse sensor-payload regression reads less than 256 KiB; it does not decode sensor data.
+
+The [anonymous release report](benchmarks/2026-10-27-canon-container.json) uses the SHA-verified CC0 EOS R fixture documented in [provenance](fixtures/public-raw-provenance.json), three warmups per mode and thirty alternating buffered/unbuffered pairs. Both modes use the same current parser and JPEG decode, maximum edge 2048; the actual embedded image is 1620 × 1080. The control isolates buffering, not the old integer-array implementation.
+
+| Mode | File reads | Bytes read | Median | Nearest-rank p95 |
+| --- | ---: | ---: | ---: | ---: |
+| Unbuffered control | 27 | 233,724 | 8.277 ms | 16.018 ms |
+| 4 KiB buffered | 12 | 278,112 | 8.449 ms | 10.614 ms |
+
+Read calls fall at the cost of 44,388 extra bytes on this fixture. Warm preview latency stays approximately 8 ms; variable tails/background load do not establish a speedup. A 32 KiB pilot also had no median improvement and read 396,896 bytes, so the smaller window limits read amplification. OS caches/user load are uncontrolled. This is not app first paint, full RAW rendering, card throughput, frame smoothness, peak memory or broad-camera acceptance. EXIF/XMP source reuse and cold ImageIO metadata startup remain separate work.
+
+Reproduce with `sh scripts/benchmark-canon-container.sh /disposable/public-eos-r.CR3 /tmp/canon-container.json`; the helper accepts only the documented public fixture and verifies its hash before/after. Native final release `9522ECFB-589E-322B-9FEF-A3936729D41B` displays the labeled 1620 × 1080 embedded preview while shooting information is still indexing. The original hash remains unchanged and no sidecars are created.
+
+## Workspace recovery acceptance — 2026-10-27
+
+The user clarifies the reported symptom as a running Dock icon with no window, rather than a confirmed process crash. [ADR 0040](decisions/0040-workspace-window-recovery.md) handles reopen requests and adds **Show Photo Window (⌘0)**. [Anonymous final-build evidence](benchmarks/2026-10-27-window-recovery.json) records actual loaded UUIDs and local reopen/window-count events alongside isolated native close/reopen, minimize/reopen, shortcut, Canon Fit and normal-Quit checks. Unit tests cover weak lifetime, coalescing, missing openers, multi-window choice and offscreen geometry.
+
+A locked Mac interrupted an attempt; final checks resumed after unlock. Direct physical Dock input/monitor removal and overnight/sleep/wake/pressure acceptance are not claimed. The initial native-tool connection delay is excluded from startup timing. The incident's original root cause is not established by adding explicit recovery; normal close/Quit/save barriers remain.
