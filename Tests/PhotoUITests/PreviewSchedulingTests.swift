@@ -4,7 +4,7 @@ import Testing
 
 @testable import PhotoImaging
 
-private actor GatedPreviewDecoder {
+actor GatedPreviewDecoder {
   let image: PhotoPreview
   private(set) var names: [String] = []
   private(set) var active = 0

@@ -18,6 +18,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ### Performance
 
+- Prepare the next/previous Fit previews after a short pause, with reserved selected-photo capacity and the existing cache budget. Pause optional reads during file workflows/detail/comparison and on cards or network/ejectable/unknown storage. Add measured settled/rapid navigation controls and native integration checks.
+
 - Load uncached thumbnails on two bounded workers while keeping scheduling/cancellation available. Share duplicate requests, prioritize selected photos and reject obsolete folder work; Fit remains independent. Small JPEG/Sony RAW service controls improve; broader media/frame acceptance remains open.
 
 - Reuse native Contact Sheet cells and stable layout while preserving interactive thumbnail controls and image services. Keep rows steady when adding edits and restore culling-key focus after group drags. Controlled 115/10k scrolling uses less process CPU and shorter potential stalls; physical-trackpad/real-shoot acceptance remains open.

@@ -98,6 +98,12 @@ public actor ImagePipeline: PhotoPreviewLoading {
   private nonisolated let memory: PreviewMemoryCache
   private let disk: ThumbnailDiskCache?
   private let workers: [PreviewDecodeWorker]
+  private let preparationWorker: Int?
+  private var preparationID: UUID?
+  private var foreground: Request?
+  private var preparationProtection: [URL] = []
+  private var nearbyQueue: [Ticket] = []
+  private var nearbyHead = 0
   private let loader: (@Sendable (URL, Int) async throws -> PhotoPreview)?
   private var session: UUID?
   private var retiredSessions: Set<UUID> = []
@@ -127,6 +133,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
   }
   private struct Waiter {
     let signal: CancellationSignal
+    let speculative: Bool
     let continuation: CheckedContinuation<PhotoPreview, any Error>
   }
   private final class Load {
@@ -134,33 +141,39 @@ public actor ImagePipeline: PhotoPreviewLoading {
     let generation: Int
     let trace: PhotoTrace.Interval
     var selected: Bool
+    let speculative: Bool
     var waiters: [UUID: Waiter] = [:]
     var worker: Int?
     var task: Task<Void, Never>?
-    init(generation: Int, selected: Bool, trace: PhotoTrace.Interval) {
+    init(generation: Int, selected: Bool, speculative: Bool, trace: PhotoTrace.Interval) {
       self.generation = generation
       self.selected = selected
+      self.speculative = speculative
       self.trace = trace
     }
   }
 
   public init(
     byteLimit: Int, thumbnailDiskCache: ThumbnailDiskCache? = nil,
-    maximumConcurrentLoads: Int = 1
+    maximumConcurrentLoads: Int = 1, preparesNearby: Bool = false
   ) {
     memory = PreviewMemoryCache(byteLimit: byteLimit)
     disk = thumbnailDiskCache
-    workers = (0..<min(4, max(1, maximumConcurrentLoads))).map { _ in PreviewDecodeWorker() }
+    let count = min(4, max(1, maximumConcurrentLoads))
+    preparationWorker = preparesNearby ? count : nil
+    workers = (0..<(count + (preparesNearby ? 1 : 0))).map { _ in PreviewDecodeWorker() }
     loader = nil
   }
   // Deterministic gates test races without sleeping inside a production worker.
   init(
-    byteLimit: Int, maximumConcurrentLoads: Int,
+    byteLimit: Int, maximumConcurrentLoads: Int, preparesNearby: Bool = false,
     loader: @escaping @Sendable (URL, Int) async throws -> PhotoPreview
   ) {
     memory = PreviewMemoryCache(byteLimit: byteLimit)
     disk = nil
-    workers = (0..<min(4, max(1, maximumConcurrentLoads))).map { _ in PreviewDecodeWorker() }
+    let count = min(4, max(1, maximumConcurrentLoads))
+    preparationWorker = preparesNearby ? count : nil
+    workers = (0..<(count + (preparesNearby ? 1 : 0))).map { _ in PreviewDecodeWorker() }
     self.loader = loader
   }
 
@@ -182,13 +195,28 @@ public actor ImagePipeline: PhotoPreviewLoading {
     for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil,
     priority: PreviewLoadPriority
   ) async throws -> PhotoPreview {
+    try await requestPreview(
+      for: file, maximumPixelSize: maximumPixelSize, sessionID: sessionID,
+      priority: priority, speculative: false)
+  }
+  private func requestPreview(
+    for file: URL, maximumPixelSize: Int, sessionID: UUID?,
+    priority: PreviewLoadPriority, speculative: Bool
+  ) async throws -> PhotoPreview {
     try Task.checkCancellation()
     guard prepareSession(sessionID) else { throw CancellationError() }
     let size = min(max(maximumPixelSize, 1), 2560)
-    if let cached = memory.lookup(file, size: size, session: sessionID) { return cached }
-    let trace = PhotoTrace.begin(size <= 480 ? "ThumbnailLoad" : "FitLoad")
-    defer { PhotoTrace.end(trace) }
     let request = Request(file: file, size: size, session: sessionID)
+    if priority == .selected, preparationWorker != nil {
+      foreground = request
+      preparationProtection = [file]
+      preparationID = nil
+      cancelPreparation(except: request)
+    }
+    if let cached = memory.lookup(file, size: size, session: sessionID) { return cached }
+    let trace = PhotoTrace.begin(
+      speculative ? "NearbyFitLoad" : (size <= 480 ? "ThumbnailLoad" : "FitLoad"))
+    defer { PhotoTrace.end(trace) }
     let id = UUID()
     let signal = CancellationSignal()
     return try await withTaskCancellationHandler {
@@ -202,20 +230,80 @@ public actor ImagePipeline: PhotoPreviewLoading {
           load = existing
           coalesced += 1
         } else {
-          load = Load(generation: generation, selected: priority == .selected, trace: trace)
+          load = Load(
+            generation: generation, selected: priority == .selected, speculative: speculative,
+            trace: trace)
           jobs[request] = load
           queued += 1
           let ticket = Ticket(request: request, id: load.id)
-          if load.selected { selectedQueue.append(ticket) } else { visibleQueue.append(ticket) }
+          if load.selected {
+            selectedQueue.append(ticket)
+          } else if speculative {
+            nearbyQueue.append(ticket)
+          } else {
+            visibleQueue.append(ticket)
+          }
           PhotoTrace.event("PreviewQueued", in: trace)
         }
-        load.waiters[id] = Waiter(signal: signal, continuation: continuation)
+        load.waiters[id] = Waiter(
+          signal: signal, speculative: speculative, continuation: continuation)
         if priority == .selected { promote(request) }
         drain()
       }
     } onCancel: {
       signal.cancel()
       Task { await self.cancel(request, waiter: id) }
+    }
+  }
+
+  /// At most two Fit neighbors, after the displayed foreground is ready and
+  /// settled. The caller owns cancellation; a separate slot protects foreground
+  /// admission even when an opaque speculative decode cannot be interrupted.
+  public func prepareNearby(after file: URL, candidates: [URL], sessionID: UUID?) async {
+    guard preparationWorker != nil, !Task.isCancelled, session == sessionID,
+      memory.lookup(file, size: 2560, session: sessionID) != nil
+    else { return }
+    let request = Request(file: file, size: 2560, session: sessionID)
+    foreground = request
+    preparationProtection = [file]
+    let trace = PhotoTrace.begin("NearbyFitPreparation")
+    defer { PhotoTrace.end(trace) }
+    cancelPreparation(except: nil)
+    let id = UUID()
+    preparationID = id
+    let epoch = generation
+    defer { if preparationID == id { preparationID = nil } }
+    do {
+      try await Task.sleep(for: .milliseconds(150))
+      var seen: Set<URL> = [file]
+      for candidate in candidates.prefix(2) where seen.insert(candidate).inserted {
+        try Task.checkCancellation()
+        guard preparationID == id, generation == epoch, foreground == request,
+          session == sessionID
+        else { return }
+        do {
+          _ = try await requestPreview(
+            for: candidate, maximumPixelSize: 2560, sessionID: sessionID,
+            priority: .visible, speculative: true)
+          if preparationID == id,
+            memory.lookup(candidate, size: 2560, session: sessionID) != nil
+          {
+            preparationProtection.append(candidate)
+          }
+        } catch is CancellationError { return } catch {
+          // A broken neighbor must not stop browsing.
+        }
+      }
+    } catch {
+      // A disappearing/changed Fit view cancels optional work.
+    }
+  }
+  private func cancelPreparation(except request: Request?) {
+    for (key, load) in jobs where key != request {
+      for (id, waiter) in load.waiters where waiter.speculative {
+        waiter.signal.cancel()
+        cancel(key, waiter: id)
+      }
     }
   }
 
@@ -226,11 +314,25 @@ public actor ImagePipeline: PhotoPreviewLoading {
     promote(Request(file: file, size: min(max(maximumPixelSize, 1), 2560), session: sessionID))
   }
   private func promote(_ request: Request) {
-    guard let load = jobs[request], !load.selected, load.worker == nil else { return }
+    guard let load = jobs[request], !load.selected else { return }
     load.selected = true
-    selectedQueue.append(Ticket(request: request, id: load.id))
+    if load.worker == nil { selectedQueue.append(Ticket(request: request, id: load.id)) }
   }
-  private func nextTicket() -> Ticket? {
+  private func nextTicket(preparation: Bool) -> Ticket? {
+    if preparation {
+      // Never start optional I/O while any foreground demand remains.
+      guard !jobs.values.contains(where: { !$0.speculative || $0.selected }) else { return nil }
+      while nearbyHead < nearbyQueue.count {
+        let value = nearbyQueue[nearbyHead]
+        nearbyHead += 1
+        if let load = jobs[value.request], load.id == value.id,
+          load.worker == nil, load.speculative, !load.selected
+        {
+          return value
+        }
+      }
+      return nil
+    }
     while selectedHead < selectedQueue.count {
       let value = selectedQueue[selectedHead]
       selectedHead += 1
@@ -244,7 +346,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
       let value = visibleQueue[visibleHead]
       visibleHead += 1
       if let load = jobs[value.request], load.id == value.id,
-        load.worker == nil, !load.selected
+        load.worker == nil, !load.selected, !load.speculative
       {
         return value
       }
@@ -252,6 +354,13 @@ public actor ImagePipeline: PhotoPreviewLoading {
     return nil
   }
   private func compactQueues() {
+    if nearbyQueue.count > 128 || nearbyHead == nearbyQueue.count {
+      nearbyQueue = nearbyQueue.dropFirst(nearbyHead).filter { value in
+        guard let load = jobs[value.request] else { return false }
+        return load.id == value.id && load.worker == nil && load.speculative && !load.selected
+      }
+      nearbyHead = 0
+    }
     if selectedQueue.count > 128 || selectedHead == selectedQueue.count {
       selectedQueue = selectedQueue.dropFirst(selectedHead).filter { value in
         guard let load = jobs[value.request] else { return false }
@@ -262,14 +371,16 @@ public actor ImagePipeline: PhotoPreviewLoading {
     if visibleQueue.count > 128 || visibleHead == visibleQueue.count {
       visibleQueue = visibleQueue.dropFirst(visibleHead).filter { value in
         guard let load = jobs[value.request] else { return false }
-        return load.id == value.id && load.worker == nil && !load.selected
+        return load.id == value.id && load.worker == nil && !load.selected && !load.speculative
       }
       visibleHead = 0
     }
   }
   private func drain() {
     for index in workers.indices where active[index] == nil {
-      while let ticket = nextTicket(), let load = jobs[ticket.request] {
+      while let ticket = nextTicket(preparation: index == preparationWorker),
+        let load = jobs[ticket.request]
+      {
         pruneCancelled(load)
         guard !load.waiters.isEmpty else {
           jobs.removeValue(forKey: ticket.request)
@@ -287,8 +398,11 @@ public actor ImagePipeline: PhotoPreviewLoading {
         let loader = loader
         let trace = load.trace
         let selected = load.selected
+        let speculative = load.speculative
         PhotoTrace.event("PreviewWorkStarted", in: trace)
-        load.task = Task(priority: load.selected ? .userInitiated : .utility) {
+        load.task = Task(
+          priority: load.selected ? .userInitiated : (speculative ? .background : .utility)
+        ) {
           let outcome: PreviewLoadOutcome
           if let loader {
             do {
@@ -300,7 +414,8 @@ public actor ImagePipeline: PhotoPreviewLoading {
             }
           } else {
             outcome = await worker.load(
-              request.file, size: request.size, disk: disk, trace: trace, selected: selected)
+              request.file, size: request.size, disk: disk, trace: trace, selected: selected,
+              speculative: speculative)
           }
           self.finish(ticket, worker: index, outcome: outcome)
         }
@@ -339,7 +454,9 @@ public actor ImagePipeline: PhotoPreviewLoading {
       pruneCancelled(load)
       let current = load.generation == generation && ticket.request.session == session
       if current, !load.waiters.isEmpty, case .success(let image) = outcome.result {
-        memory.insert(image, file: ticket.request.file, size: ticket.request.size)
+        memory.insert(
+          image, file: ticket.request.file, size: ticket.request.size,
+          protecting: load.speculative ? preparationProtection : [])
         if let stamp = outcome.stamp {
           disk?.enqueue(image, file: ticket.request.file, size: ticket.request.size, stamp: stamp)
         }
@@ -356,6 +473,11 @@ public actor ImagePipeline: PhotoPreviewLoading {
   }
   private func invalidate() {
     generation += 1
+    preparationID = nil
+    foreground = nil
+    preparationProtection = []
+    nearbyQueue.removeAll(keepingCapacity: true)
+    nearbyHead = 0
     for load in jobs.values {
       load.task?.cancel()
       for waiter in load.waiters.values {
@@ -427,14 +549,15 @@ private final class PreviewDecodeWorker: @unchecked Sendable {
     label: "Photo.PreviewDecode", qos: .utility, autoreleaseFrequency: .workItem)
   func load(
     _ file: URL, size: Int, disk: ThumbnailDiskCache?, trace: PhotoTrace.Interval,
-    selected: Bool
+    selected: Bool, speculative: Bool
   ) async -> PreviewLoadOutcome {
     let signal = CancellationSignal()
     return await withTaskCancellationHandler {
       await withCheckedContinuation { continuation in
-        queue.async(qos: selected ? .userInitiated : .utility) {
+        queue.async(qos: selected ? .userInitiated : (speculative ? .background : .utility)) {
           continuation.resume(
-            returning: self.decode(file, size: size, disk: disk, trace: trace, signal: signal))
+            returning: self.decode(
+              file, size: size, disk: disk, trace: trace, signal: signal, speculative: speculative))
         }
       }
     } onCancel: {
@@ -443,11 +566,14 @@ private final class PreviewDecodeWorker: @unchecked Sendable {
   }
   private func decode(
     _ file: URL, size: Int, disk: ThumbnailDiskCache?, trace: PhotoTrace.Interval,
-    signal: CancellationSignal
+    signal: CancellationSignal, speculative: Bool
   ) -> PreviewLoadOutcome {
     var attempts = 0
     do {
       try signal.check()
+      if speculative, !NearbyPreviewStorage.allows(file) {
+        throw NearbyPreviewStorage.Unavailable()
+      }
       let stamp = disk?.stamp(for: file, size: size)
       if let stamp, let image = disk?.read(stamp.key),
         disk?.matches(stamp, file: file, size: size) == true

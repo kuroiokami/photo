@@ -446,3 +446,14 @@ See [ADR 0035](decisions/0035-native-contact-sheet.md) and the measured limits. 
 - [ ] Evaluate foreground-first nearby Fit preparation, time-budgeted UI completion publication and broader camera/card/concurrent-ingest/memory-pressure acceptance separately.
 
 See [ADR 0036](decisions/0036-visible-thumbnail-scheduling.md) and [service evidence](PERFORMANCE.md#visible-demand-thumbnail-scheduling--2026-10-26). This does not establish presented FPS or physical-trackpad/40k acceptance.
+
+## Foreground-first nearby Fit preparation — 2026-10-26
+
+- [x] Prepare only the next/previous visible Fit neighbors after foreground readiness and 150 ms settling; retain a reserved foreground worker.
+- [x] Bound optional work to one worker/two sequential candidates and the existing 64 MiB Fit cache, protecting the displayed/first-priority previews.
+- [x] Pause for detail/comparison/inactive scenes, protected sources, setup and cross-window file work; skip removable/ejectable/network/unknown storage.
+- [x] Cover live coalescing, cancellation/clear/session races, budget protection, unavailable neighbors, storage policy and actual ImageIO/original preservation.
+- [x] Compare off/on settled and rapid service routes; verify native JPEG/RAW navigation, source switching and fixed-name UI preparation events without altering the user's session.
+- [ ] Broaden physical-input/frame, camera/media, pressure, multi-window and concurrent-ingest acceptance; profile cache locks and EXIF/CR3 work separately.
+
+See [ADR 0037](decisions/0037-nearby-fit-preparation.md) and [measured limits](PERFORMANCE.md#foreground-first-nearby-fit-preparation--2026-10-26).

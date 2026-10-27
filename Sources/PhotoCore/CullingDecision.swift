@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 public enum PhotoFlag: Int, Codable, CaseIterable, Sendable {
   case reject = -1
@@ -94,16 +95,19 @@ public final class DecisionSaveQueue {
 
 /// Tracks long file operations without delaying independent culling saves.
 @MainActor
+@Observable
 public final class WorkflowOperationBarrier {
   public static let shared = WorkflowOperationBarrier()
-  private var tasks: [UUID: Task<Void, Never>] = [:]
-  public var hasPending: Bool { !tasks.isEmpty }
+  @ObservationIgnored private var tasks: [UUID: Task<Void, Never>] = [:]
+  public private(set) var hasPending = false
   public func track(_ task: Task<Void, Never>) {
     let id = UUID()
     tasks[id] = Task {
       await task.value
       tasks[id] = nil
+      hasPending = !tasks.isEmpty
     }
+    hasPending = true
   }
   public func flush() async {
     while let task = tasks.values.first { await task.value }

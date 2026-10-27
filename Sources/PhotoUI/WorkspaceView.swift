@@ -51,7 +51,8 @@ public struct WorkspaceView: View {
   @PipelineStorage private var thumbnails = ImagePipeline(
     byteLimit: ThumbnailCachePolicy.memoryByteLimit(), thumbnailDiskCache: .standard,
     maximumConcurrentLoads: 2)
-  @PipelineStorage private var previews = ImagePipeline(byteLimit: 64 * 1024 * 1024)
+  @PipelineStorage private var previews = ImagePipeline(
+    byteLimit: 64 * 1024 * 1024, preparesNearby: true)
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
   @BoolStorage private var showInspector = false
@@ -787,7 +788,7 @@ public struct WorkspaceView: View {
             DetailPreviewView(
               photo: photo, pipeline: previews, detailPipeline: detailPipeline,
               sessionID: workspace.sessionID, comparison: comparison, pane: .active,
-              edit: workspace.imageEdits[photo.id] ?? PhotoEdit()
+              edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), nearbyFiles: nearbyFitFiles
             )
             .id("active-\(workspace.sessionID)-\(photo.id)")
           }.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -827,6 +828,18 @@ public struct WorkspaceView: View {
         ContentUnavailableView("Select a photo", systemImage: "photo")
       }
     }.background(Color.black.opacity(0.2))
+  }
+
+  private var nearbyFitFiles: [URL] {
+    guard !comparison.enabled, !workflowModel.busy, !WorkflowOperationBarrier.shared.hasPending,
+      !showingWorkflow, croppingPhoto == nil, !preparingTrash, trashPlan == nil,
+      !workspace.isSourceReview, let index = workspace.selectedIndex
+    else { return [] }
+    return [index + 1, index - 1].compactMap { position in
+      guard workspace.photos.indices.contains(position) else { return nil }
+      let photo = workspace.photos[position]
+      return photo.fileURL ?? SampleResources.url(for: photo)
+    }
   }
 
   private var comparisonControls: some View {
