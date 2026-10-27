@@ -11,7 +11,7 @@ Give the existing SwiftUI WindowGroup a stable ID. Resolve and retain `openWindo
 
 Register weak window references only when the lightweight view bridge attaches to a window. Remove them on `willClose`; ordinary SwiftUI view updates cannot re-register a closing workspace. Do not replace SwiftUI's window delegate, manually create hosting windows, or keep closed scenes hidden. Coalesce pending scene creation with a bounded retry, armed before calling SwiftUI so synchronous registration cancels it safely.
 
-Add an always-available **Window → Show Photo Window (⌘0)** command independent of focused-photo actions. Keep default new-window behavior and existing multi-window save/operation barriers. Add fixed local `reopenRequested`, `windowRestored` and `windowCreated` diagnostic events; the record schema and privacy boundaries stay unchanged. No image, sidecar, termination-policy or sleep-policy changes.
+Add an always-available **Window → Show Photo Window (⌘0)** command independent of focused-photo actions. Keep it in a separate Commands conformer: adding it to the already-large workspace builder exceeds CI compiler type-checking limits; explicitly discard the Bool action result. Keep default new-window behavior and existing multi-window save/operation barriers. Add fixed local `reopenRequested`, `windowRestored` and `windowCreated` diagnostic events; the record schema and privacy boundaries stay unchanged. No image, sidecar, termination-policy or sleep-policy changes.
 
 Apple documents [AppKit reopen requests](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationshouldhandlereopen(_:hasvisiblewindows:)) and [SwiftUI scene opening](https://developer.apple.com/documentation/swiftui/openwindowaction).
 

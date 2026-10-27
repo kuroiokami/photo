@@ -140,3 +140,14 @@ private final class WorkspaceWindowProbe: NSView {
     if let window { PhotoWindowRecovery.shared.register(window) }
   }
 }
+
+/// Window recovery remains available without a focused workspace or photo.
+public struct PhotoWindowCommands: Commands {
+  public init() {}
+  public var body: some Commands {
+    CommandGroup(after: .windowArrangement) {
+      Button("Show Photo Window") { _ = PhotoWindowRecovery.shared.showWorkspace() }
+        .keyboardShortcut("0", modifiers: .command)
+    }
+  }
+}

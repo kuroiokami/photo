@@ -44,10 +44,6 @@ public struct WorkspaceCommands: Commands {
   public init() {}
 
   public var body: some Commands {
-    CommandGroup(after: .windowArrangement) {
-      Button("Show Photo Window") { PhotoWindowRecovery.shared.showWorkspace() }
-        .keyboardShortcut("0", modifiers: .command)
-    }
     if actions?.canDecide == true {
       CommandGroup(replacing: .undoRedo) {
         Button("Undo " + (actions?.workspace.undoTitle ?? "Change")) {

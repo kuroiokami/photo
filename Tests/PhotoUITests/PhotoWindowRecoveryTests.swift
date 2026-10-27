@@ -7,6 +7,7 @@ import Testing
 @MainActor
 struct PhotoWindowRecoveryTests {
   private func window() -> NSWindow {
+    _ = NSApplication.shared
     let window = NSWindow(
       contentRect: CGRect(x: 100, y: 100, width: 800, height: 600),
       styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)

@@ -52,6 +52,9 @@ private struct PhotoScene: App {
       PhotoWorkspaceRoot()
     }
     .defaultSize(width: 1280, height: 820)
-    .commands { WorkspaceCommands() }
+    .commands {
+      WorkspaceCommands()
+      PhotoWindowCommands()
+    }
   }
 }
