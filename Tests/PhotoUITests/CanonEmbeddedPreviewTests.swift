@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 
 @testable import PhotoImaging
 
+@Suite(.serialized)
 struct CanonEmbeddedPreviewTests {
   private func pixels(_ image: CGImage) throws -> Data {
     let context = try #require(
@@ -49,11 +50,7 @@ struct CanonEmbeddedPreviewTests {
   private func box(_ type: String, _ payload: Data) -> Data {
     big(UInt32(payload.count + 8)) + Data(type.utf8) + payload
   }
-  @Test func boundedContainerReadsPreviewAndRejectsInvalidOffsets() throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: root) }
-    let image = root.appendingPathComponent("synthetic.CR3")
+  private func container() throws -> (Data, Data) {
     let original = try #require(SampleResources.url(for: SampleLibrary.photos[0]))
     let source = try #require(CGImageSourceCreateWithURL(original as CFURL, nil))
     let jpeg = NSMutableData()
@@ -80,6 +77,118 @@ struct CanonEmbeddedPreviewTests {
     let preview =
       previewUUID + Data(repeating: 0, count: 8) + big(UInt32(jpeg.length + 24)) + Data("PRVW".utf8)
       + Data(repeating: 0, count: 12) + big(UInt32(jpeg.length)) + (jpeg as Data)
+    return (header, preview)
+  }
+  private func big64(_ value: UInt64) -> Data {
+    withUnsafeBytes(of: value.bigEndian) { Data($0) }
+  }
+  @Test func denseHeadersAndExtendedSizesKeepSamePreviewWithFarFewerReads() throws {
+    let image = FileManager.default.temporaryDirectory.appendingPathComponent(
+      UUID().uuidString + ".CR3")
+    defer { try? FileManager.default.removeItem(at: image) }
+    let (header, preview) = try container()
+    let brand = box("ftyp", Data("crx ".utf8))
+    var dense = brand
+    for _ in 0..<4094 { dense.append(box("free", Data())) }
+    // The extended box header crosses the reader's window boundary.
+    dense.append(big(1) + Data("free".utf8) + big64(16))
+    dense.append(header.dropFirst(brand.count))
+    // A zero-sized final box extends to EOF, as allowed by the container.
+    dense.append(big(0) + Data("uuid".utf8) + preview)
+    try dense.write(to: image)
+    let buffered = try BufferedContainerReader(url: image)
+    let control = try BufferedContainerReader(url: image, buffering: false)
+    let actual = try #require(try CanonEmbeddedPreview.decode(buffered, maximumPixelSize: 160))
+    let expected = try #require(try CanonEmbeddedPreview.decode(control, maximumPixelSize: 160))
+    #expect(try pixels(actual.image) == pixels(expected.image))
+    #expect(buffered.statistics.reads <= 12)
+    #expect(control.statistics.reads > 4000)
+    var excessiveBoxes = brand
+    for _ in 0..<10_001 { excessiveBoxes.append(box("free", Data())) }
+    var oversized = brand + big(1)
+    oversized.append(Data("uuid".utf8))
+    oversized.append(big64(UInt64.max))
+    var undersized = brand + big(1)
+    undersized.append(Data("uuid".utf8))
+    undersized.append(big64(15))
+    let malformed: [Data] = [
+      oversized, undersized, brand + Data(repeating: 0, count: 7), excessiveBoxes,
+    ]
+    for invalid in malformed {
+      try invalid.write(to: image)
+      #expect(try CanonEmbeddedPreview.decode(image, maximumPixelSize: 160) == nil)
+    }
+    if let fixture = ProcessInfo.processInfo.environment["PHOTO_CANON_BENCHMARK_FIXTURE"],
+      let report = ProcessInfo.processInfo.environment["PHOTO_CANON_BENCHMARK_REPORT"]
+    {
+      try benchmark(URL(fileURLWithPath: fixture), report: URL(fileURLWithPath: report))
+    }
+  }
+  @Test func skipsLargeSparseSensorPayloadWithoutReadingItAll() throws {
+    let image = FileManager.default.temporaryDirectory.appendingPathComponent(
+      UUID().uuidString + ".CR3")
+    defer { try? FileManager.default.removeItem(at: image) }
+    let (header, preview) = try container()
+    try header.write(to: image)
+    let writer = try FileHandle(forWritingTo: image)
+    let payloadSize: UInt64 = 128 * 1024 * 1024 + 16
+    try writer.seekToEnd()
+    try writer.write(contentsOf: big(1) + Data("mdat".utf8) + big64(payloadSize))
+    try writer.seek(toOffset: UInt64(header.count) + payloadSize)
+    try writer.write(contentsOf: box("uuid", preview))
+    try writer.close()
+    let reader = try BufferedContainerReader(url: image)
+    let decoded = try #require(try CanonEmbeddedPreview.decode(reader, maximumPixelSize: 160))
+    #expect(decoded.decodedWidth == 100 && decoded.decodedHeight == 160)
+    #expect(reader.length > 128 * 1024 * 1024)
+    #expect(reader.statistics.bytesRead < 256 * 1024)
+    #expect(reader.statistics.reads <= 8)
+  }
+  private func benchmark(_ image: URL, report: URL) throws {
+    func run(_ buffering: Bool) throws -> [String: Any] {
+      try autoreleasepool {
+        let start = ContinuousClock.now
+        let reader = try BufferedContainerReader(url: image, buffering: buffering)
+        let preview = try #require(try CanonEmbeddedPreview.decode(reader, maximumPixelSize: 2048))
+        let duration = start.duration(to: .now).components
+        return [
+          "milliseconds": Double(duration.seconds) * 1000 + Double(duration.attoseconds) / 1e15,
+          "reads": reader.statistics.reads, "bytes_read": reader.statistics.bytesRead,
+          "speculative_bytes": reader.statistics.speculativeBytes,
+          "decoded_width": preview.decodedWidth, "decoded_height": preview.decodedHeight,
+          "original_width": preview.originalWidth, "original_height": preview.originalHeight,
+        ]
+      }
+    }
+    for _ in 0..<3 {
+      _ = try run(false)
+      _ = try run(true)
+    }
+    var samples: [[String: Any]] = []
+    for index in 0..<30 {
+      for buffered in (index.isMultiple(of: 2) ? [false, true] : [true, false]) {
+        var sample = try run(buffered)
+        sample["buffered"] = buffered
+        samples.append(sample)
+      }
+    }
+    let data = try JSONSerialization.data(
+      withJSONObject: [
+        "maximum_pixel_size": 2048,
+        "warmups_per_mode": 3, "pairs": 30,
+        "control": "Same parser and JPEG decode with header buffering disabled",
+        "limitations":
+          "Warm filesystem/cache component benchmark; not app first-paint or full RAW rendering.",
+        "samples": samples,
+      ], options: [.prettyPrinted, .sortedKeys])
+    try data.write(to: report, options: .atomic)
+  }
+  @Test func boundedContainerReadsPreviewAndRejectsInvalidOffsets() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let image = root.appendingPathComponent("synthetic.CR3")
+    let (header, preview) = try container()
     try (header + box("uuid", preview)).write(to: image)
     #expect(throws: CancellationError.self) {
       try CanonEmbeddedPreview.decode(

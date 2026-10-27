@@ -21,6 +21,10 @@ private final class PhotoDelegate: NSObject, NSApplicationDelegate {
   func applicationDidResignActive(_ notification: Notification) {
     PhotoLifecycle.shared.record(.background)
   }
+  func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool
+  {
+    !PhotoWindowRecovery.shared.showWorkspace()
+  }
   func applicationWillTerminate(_ notification: Notification) {
     PhotoLifecycle.shared.record(.willTerminate)
     PhotoLifecycle.shared.stop()
@@ -44,10 +48,13 @@ private struct PhotoScene: App {
   @NSApplicationDelegateAdaptor(PhotoDelegate.self) private var delegate
 
   var body: some Scene {
-    WindowGroup("Photo") {
-      WorkspaceView()
+    WindowGroup("Photo", id: PhotoWindowRecovery.sceneID) {
+      PhotoWorkspaceRoot()
     }
     .defaultSize(width: 1280, height: 820)
-    .commands { WorkspaceCommands() }
+    .commands {
+      WorkspaceCommands()
+      PhotoWindowCommands()
+    }
   }
 }

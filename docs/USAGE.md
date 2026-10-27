@@ -61,6 +61,10 @@ Workflow setup now occupies the main window’s content area rather than a pop-u
 | Status bar | Decision or image-edit saving state and current photo/count |
 | Workflow | In-window Ingest, Bulk Rename, IPTC & Keywords, and Deliver / Edit |
 
+### Bring back the workspace
+
+Click Photo in the Dock, or choose **Window → Show Photo Window** (**⌘0**). A hidden or minimized workspace comes forward. If you closed the last window, Photo opens a workspace again. The red close button closes the window; **⌘Q** quits the app after outstanding saves and file operations finish.
+
 ### Open and revisit folders
 
 Choose **File → Open Folder…** or **⌘O**. Photo starts by showing supported photos directly inside that folder. Turn on **Include Subfolders** beneath the folder name to combine its photos and all descendant folders in one contact sheet or filmstrip. For example, open a wedding folder containing `Day 1/Card A`, `Day 1/Card B` and `Day 2`, then enable this option to cull the whole shoot together. Nothing is moved or copied.
@@ -427,6 +431,7 @@ Browser shortcuts yield to modal editors and native text editing. Hover help and
 | ⇧⌘C | Crop focused photo |
 | ⌘G / M | Ingest / Bulk Rename |
 | I / ⌘I / ⌘K | IPTC & Keywords |
+| ⌘0 | Show Photo Window; restore an existing workspace or open one |
 | ⌘M | Standard macOS Minimize |
 | ⌘Q | Normal quit with save/operation barrier |
 

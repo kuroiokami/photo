@@ -1,0 +1,703 @@
+{
+  "control": "Same parser and JPEG decode with header buffering disabled",
+  "limitations": "Warm filesystem/cache component benchmark; not app first-paint or full RAW rendering. Background user/system load is uncontrolled; p95 differences are not an established tail-latency improvement. No pixel-decode, UI-first-paint, physical-media or scrolling speedup is claimed.",
+  "maximum_pixel_size": 2048,
+  "pairs": 30,
+  "samples": [
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.596334,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.2015,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 6.737375,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.069125,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 6.86425,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 10.390459,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.289458,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.496167,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.107583,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.354958,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.2925,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.508625,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.624375,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.666209,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.741,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.711292,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.062958,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.226666,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.417209,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.215375,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 16.641417,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.9235,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.18375,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 16.01775,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.0925,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 10.613708,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 6.984458,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 10.618042,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.049166,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.886416,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 14.004125,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.384916,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.737292,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.720792,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.232708,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.233625,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.00775,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.385917,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.256333,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.203041,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.185209,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.001125,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.649583,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.464084,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.9275,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.22,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.865958,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 6.967208,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.428792,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.0455,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.61225,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.548792,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.906875,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.115709,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.449416,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 8.058208,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.465583,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.232,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": true,
+      "bytes_read": 278112,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 7.246792,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 12,
+      "speculative_bytes": 44508
+    },
+    {
+      "buffered": false,
+      "bytes_read": 233724,
+      "decoded_height": 1080,
+      "decoded_width": 1620,
+      "milliseconds": 9.430167,
+      "original_height": 4480,
+      "original_width": 6720,
+      "reads": 27,
+      "speculative_bytes": 0
+    }
+  ],
+  "warmups_per_mode": 3,
+  "date": "2026-10-27",
+  "macos": "27.0.1",
+  "window_bytes": 4096,
+  "speculative_limit_bytes": 1048576,
+  "fixture": "CC0 Canon EOS R reference",
+  "fixture_sha256": "89bd55532b0cceb5efa360e97827ba35c2076bce0de4675f3a4413a883dac880",
+  "original_unchanged": true,
+  "summary": {
+    "unbuffered_control": {
+      "median_ms": 8.2771875,
+      "p95_ms": 16.01775,
+      "minimum_ms": 6.86425,
+      "maximum_ms": 16.641417,
+      "reads": [
+        27
+      ],
+      "bytes_read": [
+        233724
+      ]
+    },
+    "buffered": {
+      "median_ms": 8.4494585,
+      "p95_ms": 10.613708,
+      "minimum_ms": 6.737375,
+      "maximum_ms": 14.004125,
+      "reads": [
+        12
+      ],
+      "bytes_read": [
+        278112
+      ]
+    }
+  },
+  "imaging_sources_git_tree": "2ed50fc2d44efb49bab9876b6248e5e00de8a69a"
+}

@@ -13,6 +13,8 @@ Built for photographers working to a deadline and photographers sorting through 
 
 Photo is open source and in active development. You can build it from source today; a signed installer is still on the [roadmap](ROADMAP.md).
 
+Bring back a hidden, minimized or closed workspace with **Window → Show Photo Window (⌘0)** or by clicking Photo in the Dock.
+
 ## What you can do
 
 | Feature | What it does |

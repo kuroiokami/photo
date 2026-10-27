@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-27",
+  "release_uuid": "60EB1FDB-DD31-30FB-BF89-4E099F4081FA",
+  "observed_event_counts": {
+    "launch": 1,
+    "ready": 1,
+    "active": 4,
+    "reopenRequested": 5,
+    "windowRestored": 4,
+    "background": 2,
+    "windowCreated": 1,
+    "quitRequested": 1,
+    "willTerminate": 1
+  },
+  "transitions": [
+    {
+      "event": "reopenRequested",
+      "window_count": 2,
+      "uptime_seconds": 2.199
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 2,
+      "uptime_seconds": 2.2
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 2,
+      "uptime_seconds": 10.105
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 2,
+      "uptime_seconds": 10.113
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 2,
+      "uptime_seconds": 10.177
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 2,
+      "uptime_seconds": 10.181
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 0,
+      "uptime_seconds": 13.919
+    },
+    {
+      "event": "windowCreated",
+      "window_count": 1,
+      "uptime_seconds": 14.248
+    },
+    {
+      "event": "reopenRequested",
+      "window_count": 1,
+      "uptime_seconds": 23.093
+    },
+    {
+      "event": "windowRestored",
+      "window_count": 1,
+      "uptime_seconds": 23.887
+    },
+    {
+      "event": "quitRequested",
+      "window_count": 2,
+      "uptime_seconds": 28.907
+    },
+    {
+      "event": "willTerminate",
+      "window_count": 2,
+      "uptime_seconds": 28.908
+    }
+  ],
+  "checks": {
+    "last_window_close_then_standard_reopen": true,
+    "minimize_then_standard_reopen": true,
+    "show_window_shortcut": true,
+    "temporary_shortcut_removed": true,
+    "sample_workspace_restored": true,
+    "normal_personal_photo_session_untouched": true,
+    "show_window_menu_command": true
+  },
+  "limitations": [
+    "Standard macOS launch/reopen requests were exercised; direct physical Dock clicks were not captured.",
+    "Wholly offscreen geometry and multiple-window choice are unit-tested, not monitor-disconnection trials.",
+    "A Mac lock interrupted a final attempt; checks resumed after user unlock. First native-tool connection delay is excluded from app startup/latency claims.",
+    "No original incident/root-cause, overnight, sleep/wake or memory-pressure reproduction is established."
+  ],
+  "window_count_scope": "All NSApplication windows, including native folder panels; not a count of workspaces.",
+  "creation_event_scope": "windowCreated marks submission to the SwiftUI opener; observed window count and native state confirm creation in this run.",
+  "prior_build_canon_check": {
+    "release_uuid": "9522ECFB-589E-322B-9FEF-A3936729D41B",
+    "embedded_preview_dimensions": [
+      1620,
+      1080
+    ],
+    "raw_hash_unchanged": true,
+    "sidecars_created": 0,
+    "same_imaging_sources_as_final": true
+  },
+  "ci_compiler_followup": "Separate window Commands from the large WorkspaceCommands builder; explicitly discard Bool action result. Native menu/shortcut/reopen checks repeated after extraction."
+}

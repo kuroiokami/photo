@@ -468,3 +468,13 @@ See [ADR 0037](decisions/0037-nearby-fit-preparation.md) and [measured limits](P
 - [ ] Reproduce or capture a matching unexpected idle exit; short synthetic soaks do not establish overnight/sleep/wake/pressure stability.
 
 See [ADR 0038](decisions/0038-cache-read-bookkeeping.md), [ADR 0039](decisions/0039-local-lifecycle-diagnostics.md) and the tracker for actual native/soak/delivery evidence.
+
+## Workspace recovery and bounded Canon reads — 2026-10-27
+
+- [x] Treat the clarified running-icon/no-window symptom separately from process crashes; add explicit workspace recovery and **Show Photo Window (⌘0)**.
+- [x] Keep scene restoration on the main actor, track windows weakly, coalesce new-window requests and retain normal close/Quit/save barriers.
+- [x] Replace per-header Canon reads with one 4 KiB window and a 1 MiB speculative-byte cap; preserve bounds, cancellation, orientation and embedded-only fallback.
+- [x] Validate dense, sparse, extended/zero-size and malformed layouts; add a repeatable licensed-reference release control and retain its measurement limits.
+- [ ] Profile shared EXIF/XMP parsing with source-change invalidation before adding a result cache. Physical media, broader cameras, frame/trackpad, pressure and long-session acceptance remain separate.
+
+See [ADR 0040](decisions/0040-workspace-window-recovery.md), [ADR 0041](decisions/0041-buffered-cr3-container.md) and the tracker for validation and delivery evidence.
