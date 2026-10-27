@@ -42,8 +42,12 @@ public actor ImageMetadataReader: PhotoMetadataReading {
     var xmpRead = false
     var accessed: UInt64 = 0
     var cost: Int {
-      128 + (xmp?.count ?? 0) + (metadata?.camera?.utf8.count ?? 0)
-        + (metadata?.lens?.utf8.count ?? 0) + (metadata?.captureTimeText?.utf8.count ?? 0)
+      var result = 128
+      if let xmp { result += xmp.count }
+      if let camera = metadata?.camera { result += camera.utf8.count }
+      if let lens = metadata?.lens { result += lens.utf8.count }
+      if let text = metadata?.captureTimeText { result += text.utf8.count }
+      return result
     }
   }
   private struct Source {

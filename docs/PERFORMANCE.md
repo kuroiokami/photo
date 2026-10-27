@@ -501,13 +501,15 @@ The [anonymous release report](benchmarks/2026-10-27-metadata-read-reuse.json) u
 
 | Workload | Uncached sources → reused sources | Median per visit, uncached | Median per visit, reuse |
 | --- | ---: | ---: | ---: |
-| Cold EXIF, 24 files | 24 → 24 | 0.742–0.765 ms | 0.747–0.750 ms |
-| Paired EXIF/XMP, 24 files | 48 → 24 | 1.462–1.487 ms | 0.857–0.859 ms |
-| Repeated panel visits, 32 visits/four files | 64 → 4 | 1.461–1.473 ms | 0.031 ms |
-| Cold EXIF beyond capacity, 512 files | 512 → 512 | 0.743–0.750 ms | 0.750 ms |
+| Cold EXIF, 24 files | 24 → 24 | 0.747–0.761 ms | 0.752–0.757 ms |
+| Paired EXIF/XMP, 24 files | 48 → 24 | 1.467–1.469 ms | 0.864–0.967 ms |
+| Repeated panel visits, 32 visits/four files | 64 → 4 | 1.457–1.468 ms | 0.031 ms |
+| Cold EXIF beyond capacity, 512 files | 512 → 512 | 0.746–0.747 ms | 0.750 ms |
 
 Cold EXIF performs **zero XMP reads** in both modes. The 512-file route retains exactly 128 entries with reuse enabled and none in the control; it establishes no cold-scan speedup. Repeated visits perform four property reads/four XMP extractions instead of 32 each, with 56 result hits. Paired queries retain about 27 KiB of accounted results at the phase endpoint; this is not RSS. No metadata values/paths or pixels are included in output. Run `sh scripts/benchmark.sh --metadata-reads` to reproduce; generated inputs are removed after the run.
 
 Native release `F637E0D2-B198-31E6-8C93-78E9366F20C0` displays the expected generated camera/lens/ISO as keyboard focus moves. Reopening IPTC retains its embedded title, a newly added external sidecar overrides it, and removing that sidecar restores the embedded title. Reload retains selection/shooting information. The public EOS R fixture displays the 1620 × 1080 embedded preview, 6720 × 4480 sensor dimensions and shooting information, and its IPTC workflow opens. All original hashes remain unchanged; only a disposable test sidecar is written/removed. Temporary shortcuts and isolated test state are cleaned up.
 
 This is a small metadata-service control with uncontrolled filesystem caches/background load, not a scrolling/frame, full RAW render, cold RAW initialization, card, large-shoot or memory-peak comparison. Downstream sidecar XML parsing is unchanged. Physical-input/media, broad cameras, pressure and concurrent-workflow latency acceptance remain open.
+
+The initial CI compiler reaches a type-inference limit in the cost-accounting expression. Rewriting it as explicit Int additions preserves its result; strict tests and all release controls are repeated. Final native build `455ECDB5-F4AF-37B3-B053-C306091448EA` repeats embedded IPTC, Reload/shooting-strip and clean Quit; the broader sidecar/Canon checks above apply to preceding `F637E0D2-B198-31E6-8C93-78E9366F20C0`.
