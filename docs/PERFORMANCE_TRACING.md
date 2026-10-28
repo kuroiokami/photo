@@ -145,3 +145,11 @@ sh scripts/benchmark.sh --cache-contention > cache-contention.json
 Requires APFS cloning for 4,000 synthetic derived records. Eight hot photos/readers overlap one new writer's lazy index; one-byte RAM caching forces disk hits. Report first viewport, queued readiness distributions, settled reads, source/disk counts and original hashes separately. Run quiet baseline/candidate/candidate/baseline processes with identical harness/core code and only the cache implementation changed. Scheduling overlap is uncontrolled; maintenance drain includes the foreground route. No UI/FPS or physical cold-media claim. See [ADR 0038](decisions/0038-cache-read-bookkeeping.md).
 
 For local idle-exit diagnosis, use the [installation troubleshooting instructions](INSTALLATION.md#photo-closes-unexpectedly) and [ADR 0039](decisions/0039-local-lifecycle-diagnostics.md). Distinguish orderly Quit from abrupt process loss, and check liveness alongside fixed resource samples. Raw OS reports/logs stay outside Git. Missing minute heartbeats can reflect sleep/App Nap/scheduling, not necessarily a crash.
+
+## Durable group decision saves
+
+```sh
+sh scripts/benchmark.sh --decision-saves > /tmp/photo-decision-saves.json
+```
+
+This self-contained generated control compares singleton/32-file ordinary and protected-review saves, three iterations with reversed order in the second. It includes production identity/protection checks, FULL-durability local intent/acknowledgement and ordinary atomic XMP writes. Fixture creation, schema/index seeding and restart/byte verification are outside timing. Reports contain fixed aggregate values, save commit counters and verification results, without photo paths/metadata. Temporary inputs are removed. This is service throughput on local storage, not historical before/after code, UI frames, physical media or power-loss verification. [Measured results](PERFORMANCE.md#bounded-decision-saves--2026-10-27).

@@ -489,3 +489,14 @@ See [ADR 0040](decisions/0040-workspace-window-recovery.md), [ADR 0041](decision
 - [ ] Profile cold RAW initialization, cross-window reuse and downstream XML separately; broaden media, real-shoot, pressure and concurrent-workflow acceptance.
 
 See [ADR 0042](decisions/0042-metadata-read-reuse.md), [performance evidence](PERFORMANCE.md#validated-metadata-read-reuse--2026-10-27) and the tracker for exact checks and delivery.
+
+## Bounded bulk decisions — 2026-10-27
+
+- [x] Queue one action snapshot for ratings/flags and Undo/Redo; save up to 32 physical files per durable transaction and yield between chunks.
+- [x] Commit pending intent before publishing ordinary XMP, batch acknowledgements/baseline rebases and recover exact interrupted publications.
+- [x] Preserve per-file failures, external edits, identity checks, source protection, protected-review field ownership/composition and normal Quit/workflow draining.
+- [x] Cover database/partial-publication recovery, bounds, cancellation, grouped history and persistence after workspace release.
+- [x] Complete generated release save controls and ordinary native group/history/restart checks; retain scope limits and source hashes.
+- [ ] Profile time-budgeted UI updates, detail navigation state and representative media/shoots separately.
+
+See [ADR 0043](decisions/0043-bulk-decision-transactions.md) and [performance evidence](PERFORMANCE.md#bounded-decision-saves--2026-10-27). Exact-head CI and delivery evidence is maintained in the change’s PR after completion.

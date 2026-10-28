@@ -111,6 +111,19 @@ private struct PhotoBench {
       print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
+    if arguments == ["--decision-saves"] {
+      do {
+        let report = try await DecisionSaveBenchmark.run()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      } catch {
+        FileHandle.standardError.write(
+          Data("Decision-save benchmark could not run: \(error.localizedDescription)\n".utf8))
+        exit(2)
+      }
+      return
+    }
     if arguments == ["--metadata-reads"] {
       do {
         let report = try await MetadataReadBenchmark.run()

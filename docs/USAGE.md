@@ -407,6 +407,8 @@ Actual application-level Lightroom round trips remain unverified. Field compatib
 | Local image-edit save failure | Fix the cause, then Retry Image Edit Save; Reload if the image changed |
 | Preview unavailable | File/embedded preview failed; Try Again or Reload, while keeping originals |
 
+Group ratings and flags update immediately and finish saving in the background. Watch the saving status before removing a card or handing files to another app. If a sidecar write was interrupted, reopening can recognize an already completed write; other pending files still need **Retry XMP Sync**.
+
 Normal **⌘Q** drains queued saves and file operations. Forced termination can lose a change still marked Saving. Sidecar replacement is coordinated/atomic per file; a whole batch of filesystem writes is not one transaction.
 
 RAW sidecars use `basename.xmp`; JPEG/PNG use `filename.ext.xmp`. Rejection never uses a star rating of −1 when writing independent decisions. Existing −1 ratings can import as rejected/unrated. Malformed/ambiguous XMP, symlinks and unsafe collisions are not silently overwritten.

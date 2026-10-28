@@ -9,7 +9,7 @@
 
 Photo helps you get from a card full of images to a set of keepers. Browse folders, review RAW previews, flag your picks, add captions and keywords, and prepare photos for publication or your favorite editor.
 
-Built for photographers working to a deadline and photographers sorting through a large shoot. Start reviewing before copying, or begin culling as verified copies arrive. Lightroom is optional.
+Built for photographers working to a deadline and photographers sorting through a large shoot. Start reviewing before copying, or begin culling as verified copies arrive. Lightroom is optional. Group ratings and flags save in the background; normal Quit waits for pending saves.
 
 Photo is open source and in active development. You can build it from source today; a signed installer is still on the [roadmap](ROADMAP.md).
 

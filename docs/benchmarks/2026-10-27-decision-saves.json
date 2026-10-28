@@ -1,0 +1,245 @@
+{
+  "logicalCPUCount": 18,
+  "measurements": [
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 0,
+      "milliseconds": 2191.729625,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 1000,
+        "intentCommits": 1000,
+        "maximumPreparedXMPBytes": 299,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 0,
+      "milliseconds": 1899.7597919999998,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 32,
+        "intentCommits": 32,
+        "maximumPreparedXMPBytes": 9568,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 0,
+      "milliseconds": 806.068,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 1000,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 0,
+      "milliseconds": 412.244666,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 32,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 1,
+      "milliseconds": 415.225209,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 32,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    },
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 1,
+      "milliseconds": 773.867959,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 1000,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 1,
+      "milliseconds": 1849.18525,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 32,
+        "intentCommits": 32,
+        "maximumPreparedXMPBytes": 9568,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 1,
+      "milliseconds": 2290.95525,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 1000,
+        "intentCommits": 1000,
+        "maximumPreparedXMPBytes": 299,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 2,
+      "milliseconds": 2266.917958,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 1000,
+        "intentCommits": 1000,
+        "maximumPreparedXMPBytes": 299,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 2,
+      "milliseconds": 1812.441208,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 32,
+        "intentCommits": 32,
+        "maximumPreparedXMPBytes": 9568,
+        "recoveryCommits": 0,
+        "reviewCommits": 0,
+        "rollbacks": 0,
+        "sidecarPublications": 1000
+      },
+      "valuesCorrect": true,
+      "workflow": "ordinary"
+    },
+    {
+      "batchSize": 1,
+      "files": 1000,
+      "iteration": 2,
+      "milliseconds": 883.569042,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 1000,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    },
+    {
+      "batchSize": 32,
+      "files": 1000,
+      "iteration": 2,
+      "milliseconds": 404.125541,
+      "originalsUnchanged": true,
+      "statistics": {
+        "acknowledgementCommits": 0,
+        "intentCommits": 0,
+        "maximumPreparedXMPBytes": 0,
+        "recoveryCommits": 0,
+        "reviewCommits": 32,
+        "rollbacks": 0,
+        "sidecarPublications": 0
+      },
+      "valuesCorrect": true,
+      "workflow": "protected-review"
+    }
+  ],
+  "nativeAcceptance": {
+    "generatedJPEGCount": 65,
+    "groupUndoRedo": true,
+    "keyboardGroupStarsFlags": true,
+    "nativeFrameRateMeasured": false,
+    "normalQuitAndRelaunch": true,
+    "originalSHA256Unchanged": true,
+    "personalSessionPreserved": true,
+    "protectedReviewNativeCheckedThisRound": false,
+    "sampleViewRestored": true,
+    "temporaryShortcutRemoved": true,
+    "thumbnailGroupControls": true
+  },
+  "notes": [
+    "Three matched iterations of 1,000 generated marker files per workflow/mode; order reverses in iteration two.",
+    "Singleton and 32-file modes use the same final implementation and SQLite synchronous=FULL; this isolates batching rather than historical before/after code.",
+    "Timing excludes fixture creation, schema/index seeds and verification; includes identity/protection checks, durable pending writes, atomic ordinary XMP publication, acknowledgements and yields.",
+    "Protected review saves are local only; every original is byte-compared and every saved value is checked after reopening the store.",
+    "Commit counters cover decision saves only. These are local-filesystem model timings, not camera-card latency, UI frame rates or a durability power-loss test."
+  ],
+  "operatingSystem": "Version 27.0.1 (Build 26A434)",
+  "physicalMemoryGiB": 128,
+  "releaseExecutableUUID": "102EED8D-7328-3C66-93EB-05C8A2DC55CF",
+  "schemaVersion": 1
+}

@@ -981,8 +981,8 @@ public final class WorkspaceState {
         publishThumbnailDecision(change.photo.id)
         if change.afterReviewed { sourceReviewedIDs.insert(change.photo.id) }
         sourceFields[change.photo.id] = change.afterFields
-        persist(change.photo, change.after, reviewed: change.afterReviewed)
       }
+      persistDecisions(changes.map { ($0.photo, $0.after, $0.afterReviewed) })
       if sort == .rating {
         if changes.count == 1 {
           repositionRating(photo)
@@ -1135,8 +1135,14 @@ public final class WorkspaceState {
         sourceReviewedIDs.remove(item.photo.id)
       }
       sourceFields[item.photo.id] = undo ? item.beforeFields : item.afterFields
-      persist(item.photo, value, reviewed: reviewed)
     }
+    persistDecisions(
+      change.items.map { item in
+        (
+          item.photo, undo ? item.before : item.after,
+          undo ? item.beforeReviewed : item.afterReviewed
+        )
+      })
     if sort == .rating {
       allPhotos = sort.ordered(
         allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
@@ -1145,38 +1151,81 @@ public final class WorkspaceState {
     rebuildVisible(preferred: change.focus)
   }
 
+  private struct DecisionSaveSnapshot {
+    let id: String
+    let version: Int
+    let request: DecisionWrite
+    let reviewed: Bool
+    let fields: SourceDecisionFields
+  }
   private func persist(
     _ photo: PhotoItem, _ decision: CullingDecision, resolveConflict: Bool = false,
     reviewed: Bool = true
   ) {
-    guard let url = photo.fileURL else { return }
+    persistDecisions([(photo, decision, reviewed)], resolveConflict: resolveConflict)
+  }
+  private func persistDecisions(
+    _ updates: [(PhotoItem, CullingDecision, Bool)], resolveConflict: Bool = false
+  ) {
     let session = sessionID
-    let version = decisionVersions[photo.id, default: 0] + 1
-    decisionVersions[photo.id] = version
-    saveStatus[photo.id] = isSourceReview ? "Saving review…" : "Saving…"
     let review = sourceReview
-    let fields = sourceFields[photo.id] ?? []
+    var requests: [DecisionSaveSnapshot] = []
+    requests.reserveCapacity(updates.count)
+    for (photo, decision, reviewed) in updates {
+      guard let url = photo.fileURL else { continue }
+      let version = decisionVersions[photo.id, default: 0] + 1
+      decisionVersions[photo.id] = version
+      saveStatus[photo.id] = review == nil ? "Saving…" : "Saving review…"
+      requests.append(
+        DecisionSaveSnapshot(
+          id: photo.id, version: version,
+          request: DecisionWrite(
+            image: url, decision: decision, expectedIdentity: fileIdentities[photo.id],
+            resolveConflict: resolveConflict),
+          reviewed: reviewed, fields: sourceFields[photo.id] ?? []))
+    }
+    guard !requests.isEmpty else { return }
+    let snapshot = requests
     let store = decisionStore
-    let identity = fileIdentities[photo.id]
     DecisionSaveQueue.shared.enqueue { [weak self] in
-      let status: String
-      do {
-        if let review {
-          guard let identity else { throw SourceReviewError.unavailable }
-          status = try await store.saveSourceDecision(
-            decision, reviewed: reviewed,
-            session: review, image: url, identity: identity, fields: fields
-          ).status
-        } else {
-          status = try await store.save(
-            decision, for: url, resolveConflict: resolveConflict, expectedIdentity: identity
-          ).status
+      for start in stride(from: 0, to: snapshot.count, by: DecisionStore.decisionBatchLimit) {
+        let chunk = Array(
+          snapshot[start..<min(start + DecisionStore.decisionBatchLimit, snapshot.count)])
+        let results: [Result<DecisionEntry, any Error>]
+        do {
+          if let review {
+            var values = chunk.map { _ in
+              Result<DecisionEntry, any Error>.failure(SourceReviewError.unavailable)
+            }
+            var writes: [SourceDecisionWrite] = []
+            var indices: [Int] = []
+            for (index, value) in chunk.enumerated() {
+              guard let identity = value.request.expectedIdentity else { continue }
+              indices.append(index)
+              writes.append(
+                SourceDecisionWrite(
+                  image: value.request.image, identity: identity, decision: value.request.decision,
+                  reviewed: value.reviewed, fields: value.fields))
+            }
+            let saved = try await store.saveSourceDecisions(writes, session: review)
+            for (index, result) in zip(indices, saved) { values[index] = result }
+            results = values
+          } else {
+            results = try await store.saveDecisions(chunk.map(\.request))
+          }
+        } catch { results = chunk.map { _ in .failure(error) } }
+        if let self, self.sessionID == session {
+          for (value, result) in zip(chunk, results)
+          where self.decisionVersions[value.id] == value.version {
+            switch result {
+            case .success(let entry): self.saveStatus[value.id] = entry.status
+            case .failure(let error): self.saveStatus[value.id] = error.localizedDescription
+            }
+          }
         }
-      } catch { status = error.localizedDescription }
-      guard let self, self.sessionID == session, self.decisionVersions[photo.id] == version else {
-        return
+        // The store releases its transaction/registry boundary before this yield.
+        await Task.yield()
       }
-      self.saveStatus[photo.id] = status
     }
   }
 

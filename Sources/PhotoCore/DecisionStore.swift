@@ -22,12 +22,17 @@ public struct DecisionEntry: Sendable {
   public var conflict: Bool { status.hasPrefix("XMP conflict") }
 }
 
+struct DecisionPublication: Codable {
+  let before: String
+  let after: String
+}
 struct StoredDecision: Codable {
   var decision: CullingDecision
   var pending: Bool
   var baseline: String
   // Nil is legacy/unknown intent; only explicit false is a read-only cache seed.
   var userModified: Bool?
+  var publication: DecisionPublication? = nil
 }
 
 public enum DecisionStoreError: LocalizedError {
@@ -53,6 +58,12 @@ public actor DecisionStore {
   // Actor-owned, default configuration shared by decision and metadata records.
   let recordEncoder = JSONEncoder()
   let recordDecoder = JSONDecoder()
+  var decisionWriteCounters = DecisionWriteStatistics()
+  var decisionBatchProbe: (@Sendable (DecisionBatchCheckpoint) throws -> Void)?
+  public var decisionWriteStatistics: DecisionWriteStatistics { decisionWriteCounters }
+  func setDecisionBatchProbe(_ probe: (@Sendable (DecisionBatchCheckpoint) throws -> Void)?) {
+    decisionBatchProbe = probe
+  }
   public init(databaseURL: URL, sourceProtection: SourceProtection = .shared) {
     self.databaseURL = databaseURL
     self.sourceProtection = sourceProtection
@@ -231,11 +242,12 @@ public actor DecisionStore {
         if !local.baseline.hasPrefix("replacement:"), let data,
           try XMPSidecar.read(data) == local.decision
         {
-          try write(
-            StoredDecision(
-              decision: local.decision, pending: false, baseline: digest,
-              userModified: local.userModified),
-            key: identity)
+          if let publication = local.publication, publication.after != digest {
+            return DecisionEntry(
+              decision: local.decision,
+              status: local.baseline == digest ? "Saved locally · XMP pending" : "XMP conflict")
+          }
+          _ = try acknowledgeDecision(local, identity: identity, digest: digest)
           return DecisionEntry(decision: local.decision, status: "Saved")
         }
         return DecisionEntry(
@@ -268,54 +280,11 @@ public actor DecisionStore {
   )
     throws -> DecisionEntry
   {
-    let trace = PhotoTrace.begin("SaveDecision")
-    defer { PhotoTrace.end(trace) }
-    return try sourceProtection.withWritable([image, XMPSidecar.url(for: image)]) {
-      let identity = try key(for: image)
-      guard expectedIdentity == nil || expectedIdentity == identity else {
-        throw DecisionStoreError.fileChanged
-      }
-      let local = try read(identity)
-      // Baseline must come from load: an external edit after loading is a conflict.
-      let baseline = local?.baseline ?? "absent"
-      var record = StoredDecision(
-        decision: decision, pending: true, baseline: baseline, userModified: true)
-      try write(record, key: identity)
-      PhotoTrace.event("LocalDecisionCommitted", in: trace)
-      let sidecar = PhotoTrace.begin("DecisionXMP")
-      defer { PhotoTrace.end(sidecar) }
-      do {
-        var coordinationError: NSError?
-        var operationError: (any Error)?
-        let coordinator = NSFileCoordinator()
-        coordinator.coordinate(
-          writingItemAt: XMPSidecar.url(for: image), options: .forMerging, error: &coordinationError
-        ) { _ in
-          do {
-            let current = try sidecarData(image)
-            guard resolveConflict || XMPSidecar.digest(current) == baseline else {
-              throw SidecarError.conflict
-            }
-            let output = try XMPSidecar.merging(decision, into: current)
-            try output.write(to: XMPSidecar.url(for: image), options: .atomic)
-            record.baseline = XMPSidecar.digest(output)
-            try rebaseMetadata(
-              identity: identity, from: XMPSidecar.digest(current), to: record.baseline)
-          } catch { operationError = error }
-        }
-        if let error = coordinationError { throw error }
-        if let error = operationError { throw error }
-        record.pending = false
-        try write(record, key: identity)
-        return DecisionEntry(decision: decision, status: "Saved")
-      } catch SidecarError.conflict {
-        return DecisionEntry(decision: decision, status: "XMP conflict")
-      } catch {
-        return DecisionEntry(
-          decision: decision, status: "Saved locally · \(error.localizedDescription)")
-      }
-
-    }
+    try saveDecisions([
+      DecisionWrite(
+        image: image, decision: decision,
+        expectedIdentity: expectedIdentity, resolveConflict: resolveConflict)
+    ])[0].get()
   }
 
   public func useExternal(for image: URL, expectedIdentity: String? = nil) throws -> DecisionEntry {
