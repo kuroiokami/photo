@@ -163,6 +163,13 @@ public final class SourceProtection: @unchecked Sendable {
     wasPresent = true
     return session
   }
+  /// Hold registry activation stable while a bounded group performs its usual
+  /// per-file writable/review checks. This grants no write permission by itself.
+  func withLockedRegistry<T>(_ operation: () throws -> T) rethrows -> T {
+    Self.lock.lock()
+    defer { Self.lock.unlock() }
+    return try operation()
+  }
   public func withWritable<T>(_ urls: [URL], _ operation: () throws -> T) throws -> T {
     Self.lock.lock()
     defer { Self.lock.unlock() }

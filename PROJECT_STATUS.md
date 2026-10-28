@@ -4,6 +4,18 @@ Last updated: 2026-10-27
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
+## Bounded bulk decision saves — 2026-10-27
+
+Implemented [ADR 0043](docs/decisions/0043-bulk-decision-transactions.md): ratings/flags and their Undo/Redo queue one immutable action snapshot, save at most **32 physical files per chunk**, publish guarded statuses and yield between chunks. Ordinary saves durably commit pending decisions before coordinated atomic XMP, then acknowledge successful publications and rebase descriptive metadata together. Protected pre-copy review commits locally while retaining field ownership, composition and revisions. FULL durability, independent per-file errors/conflicts, original identity/source protection and normal Quit/workflow draining remain. Closing a workspace does not abandon its queued decisions. Exact publication receipts recover interrupted acknowledgements and immediate retries without hiding unrelated external edits.
+
+[Matched final-release controls](docs/PERFORMANCE.md#bounded-decision-saves--2026-10-27) run three iterations of 1,000 generated files per workflow/mode. Ordinary median saves fall **2,266.9 → 1,849.2 ms** (about 18%); protected review **806.1 → 412.2 ms** (about 49%). Decision-save commits fall **2,000 → 64** and **1,000 → 32** respectively. Both modes use the same final code and checks; this isolates batching, not a historical code comparison. Every original byte and restarted value matches; protected review creates no XMP. These local-storage service results do not establish scrolling FPS, camera-card/large-shoot throughput, peak RSS or power-loss recovery.
+
+Formatter/strict build/tests pass **255 registered Swift tests, 253 executed/two optional RAW skips**. Fifteen new tests cover rollback, nested/partial recovery, metadata rebasing/retry, late external edits, malformed/conflicting/replaced inputs, cancellation, aliases, output bounds, source review/edits/ownership, queue grouping, Undo/Redo and persistence after window release. Final release Photo/PhotoBench build passes. Native isolated **102EED8D-7328-3C66-93EB-05C8A2DC55CF** verifies 65-photo keyboard/thumbnail group decisions, independent stars/flags, Undo/Redo, normal Quit/relaunch and saved values; all 65 originals retain SHA256. Temporary shortcut removed, sample view restored and only the isolated app quit. Personal Photo stays running.
+
+Guides, changelog, checklist, milestones, benchmark/reproduction notes and architecture rationale are updated. Full repository checks pass for **251 tracked files**, including local links/JSON/data policy, workflow lint and redacted history/working-tree secret scans; all nine Python analyzer tests pass. Exact-head remote CI and merge evidence will be recorded in this change’s PR after inspection. Preserve the unrelated development-plan wording edit.
+
+Next: time-budgeted UI publication and detail pan/zoom observation. Cold RAW metadata initialization, cross-window/result sharing, representative shoots/media, physical frames, pressure and long-session/sleep-wake acceptance remain open.
+
 ## Validated metadata read reuse — 2026-10-27
 
 Implemented [ADR 0042](docs/decisions/0042-metadata-read-reuse.md): one retained reader per workspace serves browsing/workflow/rename/arrival reads. Lazy typed EXIF and embedded-packet results use a **128-entry / 4 MiB accounted-result** LRU; one short-lived actor-owned ImageIO source serves adjacent field requests. No eager XMP during EXIF indexing. Identity/size/nanosecond modification/change stamps are checked before and after reads/reuse. Reload clears state; failed/oversized/unstampable reads do not populate results. A weak, epoch-guarded idle sleeper releases opaque source state without one task per photo. Sidecar XML reads/merges, conflict handling, source protection and selected-first/session behavior remain.
@@ -14,7 +26,7 @@ Formatter/strict checks pass **240 registered Swift tests, 238 executed/two opti
 
 The initial CI compiler reaches its type-inference limit in the cache-cost sum; explicit Int additions preserve accounting and pass local tests/release controls. Final native **455ECDB5-F4AF-37B3-B053-C306091448EA** repeats embedded IPTC, Reload/shooting-strip, cleanup and normal Quit. Guides, changelog, checklist and milestones are updated. Full repository checks pass for 246 tracked files, including links, workflow lint and redacted history/working-tree secret scans. Exact-head CI/delivery evidence belongs in this change's PR after inspection. Preserve the unrelated development-plan wording edit.
 
-Next: profile time-budgeted UI publication, bulk user-decision transactions and detail pan/zoom observation separately. Cold RAW metadata initialization, cross-window/result sharing, representative shoots/media, physical frames and pressure acceptance remain open.
+Historical follow-up: bulk user-decision transactions are now implemented in ADR 0043; time-budgeted UI publication and detail pan/zoom observation remain separate work. Cold RAW metadata initialization, cross-window/result sharing, representative shoots/media, physical frames and pressure acceptance remain open.
 
 ## Window recovery and bounded Canon reads — 2026-10-27
 
@@ -458,6 +470,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-10-27: Batch rating/flag and Undo/Redo saves in bounded durable transactions, recover exact XMP publications with metadata baselines, and retain measured ordinary/protected-review controls plus native group/restart acceptance (ADR 0043).
 
 - **2026-10-19 — Ingest, metadata and cameras:** added verified background ingest, paired/batch decisions, reviewed companion-safe renaming/recovery, layered IPTC/keywords and explicit Lightroom handoff copies. Added Canon/Olympus formats and a fast bounded CR3 preview path; public camera hashes and large-folder checks passed. Real CRW, direct Lightroom exchange and broader storage/platform coverage remain open.
 

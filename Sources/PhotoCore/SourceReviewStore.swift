@@ -101,21 +101,12 @@ extension DecisionStore {
     _ decision: CullingDecision, reviewed: Bool, session: SourceReviewSession, image: URL,
     identity: String, fields: SourceDecisionFields? = nil
   ) throws -> DecisionEntry {
-    let trace = PhotoTrace.begin("SaveSourceDecision")
-    defer { PhotoTrace.end(trace) }
-    let key = try validateReview(session, image: image, identity: identity)
-    guard var item = try reviewItem(session.id, identity: key) else {
-      throw SourceReviewError.unavailable
-    }
-    item.decision = decision
-    item.reviewed = reviewed
-    item.fields = fields ?? (reviewed ? .all : [])
-    item.revision = (item.revision ?? 0) + 1
-    try putReview(item, session: session.id, identity: key)
-    PhotoTrace.event("LocalReviewCommitted", in: trace)
-    return DecisionEntry(
-      decision: decision, status: "Review saved on this Mac", identity: key, reviewed: reviewed,
-      sourceReview: session, reviewFields: item.fields ?? [])
+    try saveSourceDecisions(
+      [
+        SourceDecisionWrite(
+          image: image, identity: identity, decision: decision,
+          reviewed: reviewed, fields: fields)
+      ], session: session)[0].get()
   }
   public func saveSourceEdits(_ writes: [ImageEditWrite], session: SourceReviewSession) throws {
     let items = try writes.map { write -> (ImageEditWrite, SourceReviewItem) in
