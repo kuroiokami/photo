@@ -16,24 +16,33 @@ struct ComparisonRequest: Equatable {
   let action: Action
 }
 
+@MainActor @Observable
+final class ComparisonChannel {
+  var request: ComparisonRequest?
+}
+
 /// Routes intent between panes, never decoded images or echoed scroll results.
 @MainActor @Observable
 final class ComparisonSession {
   private(set) var reference: PhotoItem?
   private(set) var linked = true
-  private var requests: [ComparisonPane: ComparisonRequest] = [:]
+  let activeChannel = ComparisonChannel()
+  let referenceChannel = ComparisonChannel()
+  func channel(for pane: ComparisonPane) -> ComparisonChannel {
+    pane == .active ? activeChannel : referenceChannel
+  }
   private struct Viewport {
     var zoom = false
     var scale = 1.0
     var center = CGPoint(x: 0.5, y: 0.5)
   }
-  private var viewports: [ComparisonPane: Viewport] = [:]
+  @ObservationIgnored private var viewports: [ComparisonPane: Viewport] = [:]
   var enabled: Bool { reference != nil }
-  func request(for pane: ComparisonPane) -> ComparisonRequest? { requests[pane] }
+  func request(for pane: ComparisonPane) -> ComparisonRequest? { channel(for: pane).request }
   func toggleInspection() {
     let viewport = viewports[.active] ?? Viewport()
     zoom(!viewport.zoom, center: viewport.center, from: .active)
-    requests[.active] = ComparisonRequest(
+    activeChannel.request = ComparisonRequest(
       action: viewport.zoom ? .fit : .zoom(viewport.center))
   }
   func pin(_ photo: PhotoItem) {
@@ -46,15 +55,14 @@ final class ComparisonSession {
   }
   func resetViewports() {
     viewports = [:]
-    requests = [
-      .active: ComparisonRequest(action: .fit), .reference: ComparisonRequest(action: .fit),
-    ]
+    activeChannel.request = ComparisonRequest(action: .fit)
+    referenceChannel.request = ComparisonRequest(action: .fit)
   }
   func setLinked(_ value: Bool) {
     linked = value
     guard value, enabled else { return }
     let active = viewports[.active] ?? Viewport()
-    requests[.reference] = ComparisonRequest(
+    referenceChannel.request = ComparisonRequest(
       action: active.zoom ? .zoom(active.center, scale: active.scale) : .fit)
   }
   func zoom(_ value: Bool, center: CGPoint, scale: Double = 1, from pane: ComparisonPane) {
@@ -63,7 +71,7 @@ final class ComparisonSession {
     guard enabled, linked else { return }
     viewports[pane.other] = Viewport(
       zoom: value, scale: InspectionZoom.bounded(scale), center: point)
-    requests[pane.other] = ComparisonRequest(
+    channel(for: pane.other).request = ComparisonRequest(
       action: value ? .zoom(point, scale: InspectionZoom.bounded(scale)) : .fit)
   }
   func pan(_ point: CGPoint, from pane: ComparisonPane) {
@@ -71,7 +79,7 @@ final class ComparisonSession {
     viewports[pane, default: Viewport()].center = point
     guard enabled, linked else { return }
     viewports[pane.other, default: Viewport()].center = point
-    requests[pane.other] = ComparisonRequest(action: .pan(point))
+    channel(for: pane.other).request = ComparisonRequest(action: .pan(point))
   }
   private func bounded(_ point: CGPoint) -> CGPoint {
     CGPoint(

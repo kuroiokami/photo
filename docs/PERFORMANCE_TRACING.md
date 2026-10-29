@@ -153,3 +153,7 @@ sh scripts/benchmark.sh --decision-saves > /tmp/photo-decision-saves.json
 ```
 
 This self-contained generated control compares singleton/32-file ordinary and protected-review saves, three iterations with reversed order in the second. It includes production identity/protection checks, FULL-durability local intent/acknowledgement and ordinary atomic XMP writes. Fixture creation, schema/index seeding and restart/byte verification are outside timing. Reports contain fixed aggregate values, save commit counters and verification results, without photo paths/metadata. Temporary inputs are removed. This is service throughput on local storage, not historical before/after code, UI frames, physical media or power-loss verification. [Measured results](PERFORMANCE.md#bounded-decision-saves--2026-10-27).
+
+## Publication work and sleep contamination
+
+Scale-report schema 3 retains earlier fields and adds maximum records/synchronous duration/2 ms overshoot counts for metadata and decision publication. These measure model updates, separately from later layout/presented frames. It also reports `maximumClockSuspensionMilliseconds` from continuous versus system-awake clock intervals. Exclude significant suspension from speed/stall comparisons and inspect power events; do not label a sleeping Mac as an app freeze. A temporary `caffeinate -i` assertion can reduce idle sleep during manual controls, without preventing all lid/OS sleep. [Architecture and limits](decisions/0045-cooperative-publication-and-detail-navigation.md).

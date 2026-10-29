@@ -4,6 +4,7 @@ import PhotoImaging
 import SwiftUI
 import UniformTypeIdentifiers
 
+private typealias LayoutStorage = SwiftUI.State<WorkspaceLayout>
 private typealias WorkspaceStorage = SwiftUI.State<WorkspaceState>
 private typealias ThumbnailLabelsStorage = SwiftUI.State<[ThumbnailInfoField]>
 private typealias ComparisonStorage = SwiftUI.State<ComparisonSession>
@@ -40,6 +41,9 @@ public struct WorkspaceView: View {
   @ComparisonStorage private var comparison = ComparisonSession()
   @DetailPipelineStorage private var referenceDetails = DetailPipeline()
   @FolderLibraryStorage private var folderLibrary = FolderLibrary()
+  @LayoutStorage private var layout = WorkspaceLayout()
+  @BoolStorage private var showingFilters = false
+  @BoolStorage private var showingOptions = false
   @WorkspaceStorage private var workspace: WorkspaceState
   @WorkflowModelStorage private var workflowModel: WorkflowModel
   @BoolStorage private var showPreview = true
@@ -47,7 +51,7 @@ public struct WorkspaceView: View {
   @ColumnStorage private var gridColumns = 1
   @ColumnStorage private var thumbnailCacheGeneration = 0
   @SizeStorage private var thumbnailSize = 160
-  @SizeStorage private var filmstripSize = 120
+  @SizeStorage private var filmstripSize = 84
   @PipelineStorage private var thumbnails = ImagePipeline(
     byteLimit: ThumbnailCachePolicy.memoryByteLimit(), thumbnailDiskCache: .standard,
     maximumConcurrentLoads: 2)
@@ -55,6 +59,7 @@ public struct WorkspaceView: View {
     byteLimit: 64 * 1024 * 1024, preparesNearby: true)
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
+  @GridFocus private var previewFocused: Bool
   @BoolStorage private var showInspector = false
   @BoolStorage private var showingWorkflow = false
   @BoolStorage private var showingHelp = false
@@ -75,11 +80,21 @@ public struct WorkspaceView: View {
     _workflowModel = State(initialValue: WorkflowModel(workspace: workspace))
   }
 
+  private var canvasMeasured: ((CGSize) -> Void)? = nil
+  init(
+    workspace: WorkspaceState, layout: WorkspaceLayout, canvasMeasured: @escaping (CGSize) -> Void
+  ) {
+    _workspace = State(initialValue: workspace)
+    _workflowModel = State(initialValue: WorkflowModel(workspace: workspace))
+    _layout = State(initialValue: layout)
+    self.canvasMeasured = canvasMeasured
+  }
+
   public var body: some View {
-    NavigationSplitView {
+    NavigationSplitView(columnVisibility: $layout.sidebar) {
       sidebar
         .disabled(showingWorkflow || preparingTrash || trashPlan != nil)
-        .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 280)
+        .navigationSplitViewColumnWidth(min: 160, ideal: 190, max: 320)
     } detail: {
       ZStack {
         browsingContent
@@ -115,14 +130,16 @@ public struct WorkspaceView: View {
             workspace.directory == nil || showingWorkflow || preparingTrash || trashPlan != nil
           ).help("Reload Folder (⌘R)")
         Divider()
-        Button {
-          showPreview.toggle()
-        } label: {
+        Button(action: toggleFocus) {
           Label(
-            showPreview ? "Contact Sheet" : "Preview",
-            systemImage: showPreview ? "square.grid.3x3" : "rectangle.bottomthird.inset.filled")
-        }
-        .help("Switch between large preview with bottom filmstrip and contact sheet (Space).")
+            layout.focused ? "Exit Focus" : "Focus on Photo",
+            systemImage: layout.focused
+              ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+        }.disabled(workspace.selectedPhoto == nil || showingWorkflow)
+          .help(
+            "Give the photo the window: hide browsing controls, sidebar and filmstrip (⇧⌘F). Press Escape to return."
+          )
+
       }
     }
     .sheet(item: $croppingPhoto) { photo in
@@ -163,7 +180,14 @@ public struct WorkspaceView: View {
       croppingPhoto = nil
     }
     .onChange(of: workspace.selectedID) { comparison.resetViewports() }
+    .onChange(of: layout.focused) {
+      if showPreview && !layout.showsFilmstrip { previewFocused = true } else { gridFocused = true }
+    }
+    .onChange(of: layout.filmstrip) {
+      if showPreview && !layout.showsFilmstrip { previewFocused = true } else { gridFocused = true }
+    }
     .onChange(of: showPreview) {
+      if !showPreview { layout.leaveFocus() }
       comparison.resetViewports()
       if pendingInspection && showPreview {
         pendingInspection = false
@@ -189,10 +213,11 @@ public struct WorkspaceView: View {
       \.workspaceActions,
       WorkspaceActions(
         workspace: workspace,
-        canDecide: !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil
+        canDecide: !choosingFolder && !showingWorkflow && !showingHelp && !showingOptions
+          && !showingFilters && croppingPhoto == nil
           && trashPlan == nil && !preparingTrash
           && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
-        togglePreview: { showPreview.toggle() }, hidePreview: { showPreview = false },
+        togglePreview: { showPreview.toggle() }, hidePreview: cancelBrowsing,
         openFolder: openFolder, reload: reload,
         clearThumbnails: {
           Task {
@@ -210,7 +235,9 @@ public struct WorkspaceView: View {
         inspect: toggleInspection, trash: prepareTrash,
         canTrash: !workspace.isSourceReview && workspace.directory != nil
           && workspace.decisionSelectionReady
-          && !workflowModel.busy
+          && !workflowModel.busy,
+        toggleFocus: toggleFocus, focused: layout.focused,
+        toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip
       )
     )
     .task(id: workspace.sessionID) {
@@ -231,93 +258,159 @@ public struct WorkspaceView: View {
 
   private var browsingContent: some View {
     VStack(spacing: 0) {
-      WorkspaceRegion { collectionHeader }
-      if workspace.isSourceReview {
-        WorkspaceRegion { sourceReviewBanner }
+      if !layout.focused {
+        WorkspaceRegion { collectionHeader }
+        WorkspaceRegion { cullingBar }
       }
-      filterBar
-      imageEditControls
+      if workspace.isSourceReview { WorkspaceRegion { sourceReviewBanner } }
       Divider()
       VStack(spacing: 0) {
         if showPreview && !workspace.photos.isEmpty {
           WorkspaceRegion { previewPane }.frame(maxWidth: .infinity, maxHeight: .infinity)
-          Divider()
+          if layout.showsFilmstrip { Divider() }
         }
-        WorkspaceRegion { contactSheet }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .frame(
-            height: showPreview && !workspace.photos.isEmpty
-              ? thumbnailEdge * 0.7 + (workspace.groupPairs ? 120 : 100)
-                + Double(thumbnailLabels.count * 20) + (workspace.includesSubfolders ? 20 : 0) : nil
-          )
+        if !showPreview || workspace.photos.isEmpty || layout.showsFilmstrip {
+          WorkspaceRegion { contactSheet }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(
+              height: showPreview && !workspace.photos.isEmpty
+                ? WorkspaceLayout.filmstripHeight(
+                  edge: thumbnailEdge, labels: thumbnailLabels.count,
+                  folders: workspace.includesSubfolders) : nil)
+        }
       }
       Divider()
       WorkspaceRegion { statusBar }
-    }
-    .background(Color(nsColor: .underPageBackgroundColor))
+    }.background(Color(nsColor: .underPageBackgroundColor))
+      .onExitCommand(perform: cancelBrowsing)
   }
 
   private var sidebar: some View {
-    VStack(alignment: .leading, spacing: 20) {
-      VStack(alignment: .leading, spacing: 4) {
-        Label("PHOTO", systemImage: "square.grid.2x2.fill")
-          .font(.headline).tracking(2)
-        Text("A closer look.").font(.caption).foregroundStyle(.secondary)
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text("FOLDERS").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+        Spacer()
+        Button(action: openFolder) { Image(systemName: "folder.badge.plus") }
+          .buttonStyle(.borderless).accessibilityLabel("Open Folder…").help(
+            "Open a folder and keep it in the sidebar (⌘O).")
       }
-      .padding(.top, 12)
-      Text("FOLDERS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
       FolderSidebar(
         library: folderLibrary, current: workspace.directory, open: browse,
         remove: { folder in
           folderLibrary.remove(folder)
           if folderLibrary.selected == nil { workspace.showSamples() }
         })
-      Button(folderLibrary.home == nil ? "Choose Photo Home…" : "Change Photo Home…") {
-        chooseFolder(asHome: true)
-      }.disabled(choosingFolder)
-        .help(
-          "Choose your usual photo folder. Its subfolders stay browsable; nothing is moved or copied."
-        )
-      Button("Open Folder…", action: openFolder).disabled(choosingFolder)
-      Button("Workflow…") { showWorkflow(workflowModel.requestedTab) }
-        .help("Copy from a card, rename, add captions and keywords, and prepare delivery copies.")
-      if workspace.directory != nil {
-        Button("Show Sample Collection") {
-          workspace.showSamples()
-          gridFocused = true
+      Divider()
+      HStack {
+        Button(folderLibrary.home == nil ? "Choose Photo Home…" : "Change Photo Home…") {
+          chooseFolder(asHome: true)
         }
-        .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
+        .buttonStyle(.borderless).font(.caption).disabled(choosingFolder)
+        .help(
+          "Your usual starting folder. Expand arrows to browse; click a folder to see its photos. Nothing is moved."
+        )
+        Spacer(minLength: 0)
+        Menu {
+          Button("Open Folder…", action: openFolder)
+          Button("Workflow…") { showWorkflow(workflowModel.requestedTab) }
+          Button("Show Sample Collection") {
+            workspace.showSamples()
+            gridFocused = true
+          }
+          Button("Quick Start & Shortcuts") { showingHelp = true }
+        } label: {
+          Image(systemName: "ellipsis.circle")
+        }
+        .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Folder and help options")
       }
-      Button("Quick Start & Shortcuts") { showingHelp = true }.font(.caption)
-      VStack(alignment: .leading, spacing: 7) {
-        Label("Edits preserve original bytes", systemImage: "lock.shield")
-        Text("JPEG · PNG · Sony · Canon · Olympus RAW")
-        Text("← → Navigate   Space Preview")
-      }
-      .font(.caption).foregroundStyle(.secondary)
-    }
-    .padding(18).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    .background(Color(nsColor: .windowBackgroundColor))
+    }.padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      .background(Color(nsColor: .windowBackgroundColor))
   }
 
   private var collectionHeader: some View {
-    HStack(spacing: 16) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text(workspace.title).font(.title3.weight(.semibold)).lineLimit(1)
-        Text(
-          workspace.reviewingSelection
-            ? "Reviewing \(workspace.reviewIDs?.count ?? 0) chosen files · Show All Photos to finish"
-            : (workspace.includesSubfolders
-              ? "Browsing this folder and subfolders" : "Browsing this folder")
-        )
-        .font(.caption2).foregroundStyle(
-          workspace.reviewingSelection ? Color.accentColor : Color.secondary
-        )
-        .lineLimit(1).frame(height: 16)
+    HStack(spacing: 10) {
+      VStack(alignment: .leading, spacing: 1) {
+        Text(workspace.title).font(.callout.weight(.semibold)).lineLimit(1).truncationMode(.middle)
         Text(
           "\(workspace.photos.count) of \(workspace.totalCount) photos"
+            + (workspace.includesSubfolders ? " · subfolders" : "")
         )
-        .font(.caption).foregroundStyle(.secondary)
+        .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+      }.frame(minWidth: 80, maxWidth: .infinity, alignment: .leading)
+      if workspace.indexing {
+        Text("EXIF \(workspace.indexedCount)/\(workspace.totalCount)").font(.caption2)
+          .monospacedDigit().foregroundStyle(.secondary)
+      }
+      Picker("Browsing view", selection: $showPreview) {
+        Text("Contact Sheet").tag(false)
+        Text("Preview").tag(true)
+      }.pickerStyle(.segmented).labelsHidden().frame(width: 184)
+        .help("Large preview with bottom filmstrip, or full contact sheet (Space).")
+      Picker(
+        "Sort",
+        selection: Binding(
+          get: { workspace.sort }, set: { sort in Task { await workspace.setSort(sort) } })
+      ) {
+        ForEach(PhotoSort.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+      }.labelsHidden().frame(width: 116).accessibilityLabel("Sort")
+      Button {
+        showingFilters.toggle()
+      } label: {
+        Label(
+          filtersActive ? activeFilterLabel : "Filters",
+          systemImage: "line.3.horizontal.decrease.circle")
+      }.popover(isPresented: $showingFilters, arrowEdge: .bottom) {
+        VStack(alignment: .leading, spacing: 12) {
+          HStack {
+            Text("Filter & select").font(.headline)
+            Spacer()
+            Button("Done", action: dismissPopovers).keyboardShortcut(.cancelAction)
+          }
+          filters
+          selectionTools
+          if filtersActive {
+            Text("Filters hide photos; they do not change files.").font(.caption).foregroundStyle(
+              .secondary)
+          }
+        }.padding(16).onExitCommand(perform: dismissPopovers)
+      }.help(
+        "Filter picks, rejects and stars; select or review a group. Active filters are named here; × clears them."
+      )
+      if filtersActive {
+        Button {
+          workspace.setFilter(.all, minimumRating: 0)
+        } label: {
+          Image(systemName: "xmark.circle")
+        }
+        .accessibilityLabel("Clear Filters").help("Show all flags and stars again.")
+      }
+      if workspace.reviewingSelection {
+        Button("Show All Photos") { workspace.endReview() }.help(
+          "Finish selected-only review and return to the folder.")
+      }
+      collectionOptions
+    }.controlSize(.small).padding(.horizontal, 10).padding(.vertical, 5)
+  }
+  private var filtersActive: Bool { workspace.flagFilter != .all || workspace.minimumRating != 0 }
+  private var activeFilterLabel: String {
+    let flag = workspace.flagFilter == .all ? "All flags" : workspace.flagFilter.rawValue
+    return flag + (workspace.minimumRating == 0 ? "" : " · ≥\(workspace.minimumRating)★")
+  }
+  private var collectionOptions: some View {
+    Button {
+      showingOptions.toggle()
+    } label: {
+      Image(systemName: "slider.horizontal.3")
+    }
+    .accessibilityLabel("Browsing options")
+    .help("Include subfolders, group RAW+JPEG, choose EXIF labels and adjust thumbnail size.")
+    .popover(isPresented: $showingOptions, arrowEdge: .bottom) {
+      VStack(alignment: .leading, spacing: 8) {
+        HStack {
+          Text("Browsing options").font(.headline)
+          Spacer()
+          Button("Done", action: dismissPopovers).keyboardShortcut(.cancelAction)
+        }
         Toggle(
           "Include Subfolders",
           isOn: Binding(
@@ -326,39 +419,14 @@ public struct WorkspaceView: View {
               guard let directory = workspace.directory else { return }
               Task { await workflowModel.openFolder(directory, includingSubfolders: value) }
             })
+        ).disabled(
+          workspace.directory == nil || (workflowModel.busy && !workflowModel.backgroundable))
+        Toggle(
+          "RAW+JPEG",
+          isOn: Binding(get: { workspace.groupPairs }, set: { workspace.setGrouping($0) })
         )
-        .disabled(
-          workspace.directory == nil || (workflowModel.busy && !workflowModel.backgroundable)
-        )
-        .help(
-          "Show photos in this folder and all its subfolders together. Files stay in their original folders."
-        ).font(.caption)
-      }
-      Spacer(minLength: 8)
-      Picker("Browsing view", selection: $showPreview) {
-        Text("Contact Sheet").tag(false)
-        Text("Preview").tag(true)
-      }.pickerStyle(.segmented).labelsHidden().frame(width: 205)
-        .help(
-          "Preview above a horizontal filmstrip, or a full contact sheet. Space switches views.")
-      Picker(
-        "Sort",
-        selection: Binding(
-          get: { workspace.sort },
-          set: { sort in
-            Task { await workspace.setSort(sort) }
-          })
-      ) {
-        ForEach(PhotoSort.allCases, id: \.self) {
-          Text($0.rawValue).tag($0)
-        }
-      }.frame(width: 160)
-      if workspace.indexing {
-        Text("EXIF \(workspace.indexedCount)/\(workspace.totalCount)")
-          .font(.caption).foregroundStyle(.secondary)
-      }
-      Menu {
-        Text("Choose up to two extra labels")
+        Divider()
+        Text("Thumbnail information · up to two labels")
         ForEach(ThumbnailInfoField.allCases) { field in
           Toggle(
             field.title,
@@ -371,31 +439,88 @@ public struct WorkspaceView: View {
                   thumbnailLabels.removeAll { $0 == field }
                 }
               })
-          )
-          .disabled(!thumbnailLabels.contains(field) && thumbnailLabels.count >= 2)
+          ).disabled(!thumbnailLabels.contains(field) && thumbnailLabels.count >= 2)
         }
-        Divider()
         Button("Hide Extra Labels") { thumbnailLabels = [] }
-      } label: {
-        Text("Labels")
-      }
-      .menuStyle(.borderlessButton).fixedSize()
-      .accessibilityLabel("Thumbnail information labels")
-      .help(
-        "Choose up to two EXIF labels beneath filenames. Uses indexed metadata; does not decode images."
-      )
-      Image(systemName: showPreview ? "rectangle.split.3x1" : "square.grid.3x3").foregroundStyle(
-        .secondary)
-      Slider(
-        value: Binding(
-          get: { thumbnailEdge },
-          set: { value in
-            if showPreview { filmstripSize = value } else { thumbnailSize = value }
-          }), in: showPreview ? 90...170 : 110...240, step: 10
-      )
-      .frame(width: 100).accessibilityLabel("Thumbnail size")
+        Divider()
+        Toggle("Show Filmstrip", isOn: $layout.filmstrip)
+        Button("Focus on Photo", action: toggleFocus).disabled(workspace.selectedPhoto == nil)
+        Text("Thumbnail size")
+        Slider(
+          value: Binding(
+            get: { thumbnailEdge },
+            set: { if showPreview { filmstripSize = $0 } else { thumbnailSize = $0 } }),
+          in: showPreview ? 64...134 : 110...240, step: 10
+        )
+        .accessibilityLabel("Thumbnail size")
+      }.padding(14).frame(width: 280)
     }
-    .padding(.horizontal, 16).padding(.vertical, 8)
+  }
+  private var cullingBar: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 8) {
+        decisionButtons
+        Divider().frame(height: 20)
+        imageEditControls
+        Spacer(minLength: 4)
+        selectionSummary
+        autoAdvance
+      }
+      VStack(alignment: .leading, spacing: 2) {
+        HStack {
+          decisionButtons
+          Spacer(minLength: 4)
+          selectionSummary
+        }
+        HStack {
+          imageEditControls
+          Spacer(minLength: 4)
+          autoAdvance
+        }
+      }
+    }.controlSize(.small).padding(.horizontal, 10).padding(.bottom, 4)
+  }
+  private var selectionSummary: some View {
+    let summary = workspace.selectionSummary
+    return Text(
+      "\(summary.fileCount) selected"
+        + (summary.flag == nil || summary.rating == nil ? " · mixed" : "")
+    )
+    .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+    .help("Decisions and edits apply to selected physical files, including grouped RAW+JPEG pairs.")
+  }
+  private var browsingCommandsAvailable: Bool {
+    !choosingFolder && !showingWorkflow && !showingHelp && !showingOptions && !showingFilters
+      && croppingPhoto == nil && trashPlan == nil && !preparingTrash
+      && (!workflowModel.busy || workflowModel.backgroundable)
+  }
+  private func toggleFocus() {
+    showingOptions = false
+    showingFilters = false
+    layout.toggleFocus()
+    if layout.focused { showPreview = true }
+    gridFocused = true
+  }
+  private func dismissPopovers() {
+    showingOptions = false
+    showingFilters = false
+    Task { @MainActor in
+      await Task.yield()
+      if showPreview && !layout.showsFilmstrip { previewFocused = true } else { gridFocused = true }
+    }
+  }
+  private func cancelBrowsing() {
+    if showingOptions || showingFilters {
+      dismissPopovers()
+      return
+    }
+    guard !showingWorkflow, !showingHelp, croppingPhoto == nil, trashPlan == nil, !preparingTrash
+    else { return }
+    leavePreview()
+  }
+  private func leavePreview() {
+    if layout.focused { layout.leaveFocus() } else { showPreview = false }
+    gridFocused = true
   }
 
   private var thumbnailEdge: Double { showPreview ? filmstripSize : thumbnailSize }
@@ -448,7 +573,7 @@ public struct WorkspaceView: View {
             Label("No supported images", systemImage: "photo.on.rectangle")
           } description: {
             Text(
-              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Turn on Include Subfolders above to see the whole shoot, or expand a sidebar folder and choose a subfolder. Hidden files are not included."
+              "Choose a folder with JPEG, PNG, or Sony/Canon/Olympus RAW files. Open Browsing options and turn on Include Subfolders to see the whole shoot, or expand a sidebar folder and choose a subfolder. Hidden files are not included."
             )
           } actions: {
             Button("Open Folder…", action: openFolder)
@@ -468,18 +593,18 @@ public struct WorkspaceView: View {
           } else {
             ScrollViewReader { proxy in
               ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: 12) {
+                LazyHStack(alignment: .top, spacing: 6) {
                   ForEach(workspace.photos) { photo in
                     framedThumbnail(photo).frame(width: thumbnailEdge + 16)
                   }
-                }.padding(12)
+                }.padding(6)
               }
               .simultaneousGesture(
                 MagnifyGesture(minimumScaleDelta: 0.02).onChanged { value in
                   if pinchSize == nil { pinchSize = thumbnailEdge }
                   let size = (pinchSize ?? thumbnailEdge) * value.magnification
                   if showPreview {
-                    filmstripSize = min(170, max(90, size))
+                    filmstripSize = min(134, max(64, size))
                   } else {
                     thumbnailSize = min(240, max(110, size))
                   }
@@ -554,30 +679,37 @@ public struct WorkspaceView: View {
       }
       .focusable().focused($gridFocused).focusEffectDisabled()
       .onKeyPress(.leftArrow, phases: .down) { press in
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: -1, extending: press.modifiers.contains(.shift))
         return .handled
       }
       .onKeyPress(.rightArrow, phases: .down) { press in
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: 1, extending: press.modifiers.contains(.shift))
         return .handled
       }
       .onKeyPress(.upArrow, phases: .down) { press in
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: -columns, extending: press.modifiers.contains(.shift))
         return .handled
       }
       .onKeyPress(.downArrow, phases: .down) { press in
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: columns, extending: press.modifiers.contains(.shift))
         return .handled
       }
       .onKeyPress(.space) {
+        guard !showingOptions, !showingFilters else { return .ignored }
         showPreview.toggle()
         return .handled
       }
       .onKeyPress(.home) {
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: Int.min)
         return .handled
       }
       .onKeyPress(.end) {
+        guard !showingOptions, !showingFilters else { return .ignored }
         workspace.moveSelection(by: Int.max)
         return .handled
       }
@@ -588,7 +720,7 @@ public struct WorkspaceView: View {
         gridFocused = true
       }
       .onKeyPress(.escape) {
-        showPreview = false
+        cancelBrowsing()
         return .handled
       }
     }
@@ -604,7 +736,8 @@ public struct WorkspaceView: View {
         cacheGeneration: thumbnailCacheGeneration, thumbnailEdge: thumbnailEdge,
         thumbnailLabels: thumbnailLabels, groupPairs: workspace.groupPairs,
         folderLabel: workspace.includesSubfolders ? workspace.folderLabel(for: photo.id) : nil,
-        hasCopiedCrop: copiedCrop != nil, fixedContentHeight: fixedContentHeight,
+        hasCopiedCrop: copiedCrop != nil, compact: showPreview,
+        fixedContentHeight: fixedContentHeight,
         select: { selectThumbnail(photo) },
         action: { thumbnailAction($0, photo: photo) },
         openPreview: { showPreview = true },
@@ -670,58 +803,50 @@ public struct WorkspaceView: View {
   private func pasteCrop() { if let copiedCrop { workspace.pasteCrop(copiedCrop) } }
 
   private var imageEditControls: some View {
-    HStack(spacing: 8) {
-      Text("Image").foregroundStyle(.secondary)
+    HStack(spacing: 6) {
       Button {
         workspace.editSelection(.counterclockwise)
+        gridFocused = true
       } label: {
-        HStack(spacing: 6) {
-          Label("Rotate Left", systemImage: "rotate.left")
-          Text("[").font(.caption.monospaced()).foregroundStyle(.secondary)
-        }
-      }.accessibilityLabel("Rotate Left")
-        .help("Rotate selected photos left 90° ([). With a group selected, rotate the whole group.")
+        Image(systemName: "rotate.left").frame(width: 24, height: 24).contentShape(Rectangle())
+      }
+      .accessibilityLabel("Rotate Left").help(
+        "Rotate selected photos left 90° ([). Photo-only edit; originals stay unchanged.")
       Button {
         workspace.editSelection(.clockwise)
+        gridFocused = true
       } label: {
-        HStack(spacing: 6) {
-          Label("Rotate Right", systemImage: "rotate.right")
-          Text("]").font(.caption.monospaced()).foregroundStyle(.secondary)
-        }
-      }.accessibilityLabel("Rotate Right")
-        .help(
-          "Rotate selected photos right 90° (]). With a group selected, rotate the whole group.")
-      Menu("Mirror") {
+        Image(systemName: "rotate.right").frame(width: 24, height: 24).contentShape(Rectangle())
+      }
+      .accessibilityLabel("Rotate Right").help(
+        "Rotate selected photos right 90° (]). Photo-only edit; originals stay unchanged.")
+      Menu {
         Button("Flip Left / Right") { workspace.editSelection(.horizontal) }
         Button("Flip Top / Bottom") { workspace.editSelection(.vertical) }
-      }.fixedSize().help(
-        "Flip selected photos horizontally or vertically. Rotation changes orientation in 90° steps."
-      )
+      } label: {
+        Image(systemName: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+      }
+      .menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Mirror").help(
+        "Mirror selected photos. Photo-only edit.")
       Button {
         croppingPhoto = workspace.selectedPhoto
       } label: {
-        HStack(spacing: 6) {
-          Label("Crop…", systemImage: "crop")
-          Text("⇧⌘C").font(.caption).foregroundStyle(.secondary)
-        }
-      }.accessibilityLabel("Crop")
-        .help(
-          "Crop the current photo (⇧⌘C). To reuse its crop, choose Image → Copy Crop, then Paste Crop to Selection."
-        )
-      Spacer(minLength: 0)
-      Text("Photo-only edits").font(.caption2).foregroundStyle(.secondary)
-        .help(
-          "Rotation, mirror and crop are saved in Photo. Originals stay unchanged; these edits are not yet applied to delivery copies or Lightroom."
-        )
-    }
-    .font(.caption).buttonStyle(.bordered).controlSize(.small)
-    .disabled(!workspace.decisionSelectionReady)
-    .padding(.horizontal, 20).padding(.bottom, 8)
+        Label("Crop", systemImage: "crop")
+      }
+      .help("Crop the current photo (⇧⌘C). Photo-only edit; copy/paste crops from the Image menu.")
+      Button {
+        showWorkflow(2)
+      } label: {
+        Label("IPTC", systemImage: "info.circle")
+      }
+      .disabled(workspace.isSourceReview).help(
+        "Edit selected captions, copyright and keywords; choose only fields you want to apply.")
+    }.labelStyle(.titleAndIcon).buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
   }
 
   private var previewPane: some View {
-    VStack(spacing: 6) {
-      HStack(spacing: 12) {
+    VStack(spacing: 0) {
+      HStack(spacing: 8) {
         Text(workspace.selectedPhoto?.filename ?? "PREVIEW")
           .font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
         Spacer(minLength: 0)
@@ -752,18 +877,32 @@ public struct WorkspaceView: View {
           workspace.selectedIndex == nil || workspace.selectedIndex == workspace.photos.count - 1
         )
         .accessibilityLabel("Next photo")
-        Toggle(isOn: $showInspector) { Image(systemName: "info.circle") }
-          .toggleStyle(.button).accessibilityLabel("Shooting information")
-          .help("Show camera, lens, capture time and dimensions beside the preview.")
-        Button {
-          showPreview = false
-          gridFocused = true
-        } label: {
-          Image(systemName: "square.grid.3x3")
+        if !layout.focused {
+          Toggle(isOn: $showInspector) { Image(systemName: "info.circle") }
+            .toggleStyle(.button).accessibilityLabel("Shooting information")
+            .help("Show camera, lens, capture time and dimensions beside the preview.")
+          Button {
+            layout.filmstrip.toggle()
+            gridFocused = true
+          } label: {
+            Image(systemName: "rectangle.bottomthird.inset.filled")
+          }.accessibilityLabel(layout.filmstrip ? "Hide Filmstrip" : "Show Filmstrip")
+            .help(
+              layout.filmstrip
+                ? "Hide the filmstrip to give the photo more height (⌥⌘T)."
+                : "Show the bottom filmstrip (⌥⌘T).")
         }
-        .accessibilityLabel("Show contact sheet")
-        .help("Show the full contact sheet (Space or Escape).")
-      }.buttonStyle(.borderless).padding(.horizontal, 12).padding(.top, 8)
+        if layout.focused {
+          Button("Exit Focus", action: cancelBrowsing)
+            .keyboardShortcut(.cancelAction).help("Restore panels (Escape or ⇧⌘F).")
+            .disabled(!browsingCommandsAvailable)
+        } else {
+          Button(action: cancelBrowsing) { Image(systemName: "square.grid.3x3") }
+            .keyboardShortcut(.cancelAction).accessibilityLabel("Show contact sheet")
+            .help("Return to the contact sheet (Escape or Space).")
+            .disabled(!browsingCommandsAvailable)
+        }
+      }.buttonStyle(.borderless).padding(.horizontal, 8).padding(.vertical, 3)
       if let photo = workspace.selectedPhoto {
         if comparison.enabled { comparisonControls }
         HStack(alignment: .top, spacing: 12) {
@@ -788,46 +927,55 @@ public struct WorkspaceView: View {
             DetailPreviewView(
               photo: photo, pipeline: previews, detailPipeline: detailPipeline,
               sessionID: workspace.sessionID, comparison: comparison, pane: .active,
-              edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), nearbyFiles: nearbyFitFiles
+              edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), nearbyFiles: nearbyFitFiles,
+              didMeasure: canvasMeasured
             )
             .id("active-\(workspace.sessionID)-\(photo.id)")
           }.frame(maxWidth: .infinity, maxHeight: .infinity)
-          if showInspector {
-            ScrollView {
-              VStack(alignment: .leading, spacing: 8) {
-                Text("SHOOTING INFORMATION").font(.caption.weight(.semibold))
-                if let metadata = workspace.metadata[photo.id] {
-                  Text(metadata.camera ?? "Camera unavailable")
-                  Text(metadata.lens ?? "Lens unavailable")
-                  Text(metadata.captureTimeText ?? "Capture time unavailable")
-                  Text(metadata.shootingSummary)
-                  Text(
-                    metadata.focalLength.map { "\($0.formatted()) mm" }
-                      ?? "Focal length unavailable")
-                  Text("\(metadata.pixelWidth) × \(metadata.pixelHeight)")
-                } else if workspace.indexing && photo.fileURL != nil {
-                  ProgressView("Reading shooting information…")
-                } else {
-                  Text("No shooting information available.").foregroundStyle(.secondary)
-                }
-              }.font(.caption).textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            }.frame(width: 220).frame(maxHeight: .infinity)
-              .background(Color.white.opacity(0.025))
+          if showInspector && !layout.focused {
+            WorkspaceRegion { inspector(photo) }
           }
-        }.padding(.horizontal, 12)
-        ViewThatFits(in: .horizontal) {
-          HStack {
-            decisionControls(photo)
-            Spacer(minLength: 8)
-            shootingSummary(photo)
-          }
-          decisionControls(photo)
-        }.padding(.horizontal, 12).padding(.bottom, 6)
+        }.padding(.horizontal, 4)
+        HStack {
+          WorkspaceRegion { shootingSummary(photo) }
+          Spacer(minLength: 0)
+          WorkspaceRegion { decisionRecovery(photo) }
+        }.padding(.horizontal, 8).padding(.vertical, 2)
+
       } else {
         ContentUnavailableView("Select a photo", systemImage: "photo")
       }
     }.background(Color.black.opacity(0.2))
+      .focusable().focused($previewFocused).focusEffectDisabled()
+      .onAppear { if !layout.showsFilmstrip { previewFocused = true } }
+      .onKeyPress(.escape) {
+        cancelBrowsing()
+        return .handled
+      }
+  }
+
+  private func inspector(_ photo: PhotoItem) -> some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("SHOOTING INFORMATION").font(.caption.weight(.semibold))
+        if let metadata = workspace.thumbnailState(for: photo.id)?.metadata {
+          Text(metadata.camera ?? "Camera unavailable")
+          Text(metadata.lens ?? "Lens unavailable")
+          Text(metadata.captureTimeText ?? "Capture time unavailable")
+          Text(metadata.shootingSummary)
+          Text(
+            metadata.focalLength.map { "\($0.formatted()) mm" }
+              ?? "Focal length unavailable")
+          Text("\(metadata.pixelWidth) × \(metadata.pixelHeight)")
+        } else if workspace.indexing && photo.fileURL != nil {
+          ProgressView("Reading shooting information…")
+        } else {
+          Text("No shooting information available.").foregroundStyle(.secondary)
+        }
+      }.font(.caption).textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+    }.frame(width: 200).frame(maxHeight: .infinity)
+      .background(Color.white.opacity(0.025))
   }
 
   private var nearbyFitFiles: [URL] {
@@ -902,55 +1050,13 @@ public struct WorkspaceView: View {
 
   private func shootingSummary(_ photo: PhotoItem) -> some View {
     Text(
-      workspace.metadata[photo.id]?.shootingSummary
+      workspace.thumbnailState(for: photo.id)?.metadata?.shootingSummary
         ?? (workspace.indexing && photo.fileURL != nil
           ? "Reading shooting information…" : "No shooting information")
     )
     .font(.caption.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
   }
 
-  private var filterBar: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      ViewThatFits(in: .horizontal) {
-        HStack {
-          filters
-          selectionTools
-          Spacer(minLength: 0)
-          autoAdvance
-        }
-        VStack(alignment: .leading, spacing: 8) {
-          HStack {
-            filters
-            Spacer(minLength: 0)
-          }
-          HStack {
-            selectionTools
-            Spacer(minLength: 0)
-            autoAdvance
-          }
-        }
-      }
-      HStack {
-        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
-          Button {
-            workspace.applyDecision(flag: flag)
-          } label: {
-            Label(
-              flag == .unflagged ? "Clear Flags" : flag.title + " Selection",
-              systemImage: flag.symbol)
-          }.disabled(!workspace.decisionSelectionReady)
-            .help(
-              "Apply to all selected files, preserving stars. P picks, X rejects, U clears flags. Reject never deletes files."
-            )
-        }
-        Button("Edit Selected IPTC…") { showWorkflow(2) }
-          .disabled(workspace.selectedIDs.isEmpty || workspace.isSourceReview)
-          .help("Add captions and shared metadata to working copies after copying.")
-          .help("Edit one field or review several checked fields across the selection.")
-        Spacer(minLength: 0)
-      }
-    }.font(.caption).padding(.horizontal, 20).padding(.bottom, 10)
-  }
   private var filters: some View {
     HStack {
       Picker(
@@ -985,15 +1091,24 @@ public struct WorkspaceView: View {
       )
       .toggleStyle(.checkbox).help(
         "Show each unique RAW+JPEG pair once. Decisions and metadata target both files.")
-      Button("Select All") { workspace.selectAllVisible() }.disabled(workspace.photos.isEmpty)
+      Button("Select All") {
+        workspace.selectAllVisible()
+        dismissPopovers()
+      }.disabled(workspace.photos.isEmpty)
         .help("Select every visible photo (⌘A). Filters limit this selection.")
       Text("\(workspace.selectedIDs.count) selected").monospacedDigit()
       Menu {
-        Button("Select Rejects") { workspace.selectRejects() }
-        Button("Move Selected to Trash…", action: prepareTrash)
-          .disabled(
-            workspace.directory == nil || workspace.isSourceReview
-              || !workspace.decisionSelectionReady || workflowModel.busy)
+        Button("Select Rejects") {
+          workspace.selectRejects()
+          dismissPopovers()
+        }
+        Button("Move Selected to Trash…") {
+          dismissPopovers()
+          prepareTrash()
+        }
+        .disabled(
+          workspace.directory == nil || workspace.isSourceReview
+            || !workspace.decisionSelectionReady || workflowModel.busy)
       } label: {
         Label("Remove", systemImage: "trash")
       }
@@ -1009,7 +1124,7 @@ public struct WorkspaceView: View {
           workspace.reviewSelection()
           showPreview = true
         }
-        gridFocused = true
+        dismissPopovers()
       }.disabled(!workspace.reviewingSelection && workspace.selectedIDs.count < 2)
         .help(
           "Select two or more photos first. Review Only Selected hides the others so you can judge each photo individually. Show All Photos returns to the folder."
@@ -1027,67 +1142,59 @@ public struct WorkspaceView: View {
     )
   }
 
-  private func decisionControls(_ photo: PhotoItem) -> some View {
+  private var decisionButtons: some View {
     let summary = workspace.selectionSummary
-    return VStack(spacing: 8) {
-      Text(
-        (summary.fileCount == 1 ? "Editing this photo" : "Editing \(summary.fileCount) files")
-          + (summary.flag == nil ? " · Mixed flags" : "")
-          + (summary.rating == nil ? " · Mixed stars" : "")
-      )
-      .font(.caption).foregroundStyle(.secondary).lineLimit(1).frame(height: 16)
-      HStack(spacing: 4) {
-        ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
-          Button {
-            workspace.applyDecision(flag: flag)
-            gridFocused = true
-          } label: {
-            Image(systemName: flag.symbol)
-              .foregroundStyle(summary.flag == flag ? Color.accentColor : Color.secondary)
-          }.frame(minWidth: 22, minHeight: 26)
-            .help((flag == .unflagged ? "Clear flags" : flag.title) + " for all selected files.")
-            .accessibilityLabel(flag == .unflagged ? "Clear flags" : flag.title)
-        }
-        Divider().frame(height: 16)
-        ForEach(1...5, id: \.self) { rating in
-          Button {
-            workspace.applyDecision(rating: rating)
-            gridFocused = true
-          } label: {
-            Image(systemName: rating <= (summary.rating ?? 0) ? "star.fill" : "star")
-          }
-          .accessibilityLabel("Set \(rating) stars")
-          .frame(minWidth: 22, minHeight: 26)
-          .help("Set \(rating) stars for all selected files (\(rating)). Flags are preserved.")
-          .accessibilityValue(
-            summary.rating == nil
-              ? "Mixed ratings" : rating <= (summary.rating ?? 0) ? "Selected" : "Not selected")
-        }
-        Button("0") {
-          workspace.applyDecision(rating: 0)
+    return HStack(spacing: 2) {
+      ForEach([PhotoFlag.pick, .reject, .unflagged], id: \.self) { flag in
+        Button {
+          workspace.applyDecision(flag: flag)
           gridFocused = true
-        }.frame(minWidth: 22, minHeight: 26).help(
-          "Clear stars for all selected files (0). Flags are preserved.")
-      }.buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
-      let status = workspace.saveStatus[photo.id] ?? ""
-      Text(status == "Saved" ? "" : status).font(.caption).foregroundStyle(.secondary)
-        .textSelection(.enabled).lineLimit(1).frame(height: 16)
-      if !status.isEmpty && status != "Saved" && status != "Saving…" && status != "Saving review…"
-        && !status.hasPrefix("Review saved on this Mac") && photo.fileURL != nil
-      {
-        HStack {
-          if workspace.isSourceReview {
-            if !status.hasPrefix("Review saved on this Mac") && status != "Saving review…" {
-              Button("Retry Review Save") { workspace.retrySync() }
-            }
-          } else if status.hasPrefix("XMP conflict") {
-            Button("Use My Decisions") { workspace.retrySync(useLocal: true) }
-            Button("Use External Decisions") { Task { await workspace.useExternalDecision() } }
-          } else if status != "Saving…" {
-            Button("Retry XMP Sync") { workspace.retrySync() }
-          }
-        }.font(.caption)
+        } label: {
+          Image(systemName: flag.symbol)
+            .foregroundStyle(summary.flag == flag ? Color.accentColor : Color.secondary)
+        }.frame(minWidth: 22, minHeight: 26)
+          .help((flag == .unflagged ? "Clear flags" : flag.title) + " for all selected files.")
+          .accessibilityLabel(flag == .unflagged ? "Clear flags" : flag.title)
       }
+      Divider().frame(height: 16)
+      ForEach(1...5, id: \.self) { rating in
+        Button {
+          workspace.applyDecision(rating: rating)
+          gridFocused = true
+        } label: {
+          Image(systemName: rating <= (summary.rating ?? 0) ? "star.fill" : "star")
+        }
+        .accessibilityLabel("Set \(rating) stars")
+        .frame(minWidth: 22, minHeight: 26)
+        .help("Set \(rating) stars for all selected files (\(rating)). Flags are preserved.")
+        .accessibilityValue(
+          summary.rating == nil
+            ? "Mixed ratings" : rating <= (summary.rating ?? 0) ? "Selected" : "Not selected")
+      }
+      Button("0") {
+        workspace.applyDecision(rating: 0)
+        gridFocused = true
+      }.frame(minWidth: 22, minHeight: 26).help(
+        "Clear stars for all selected files (0). Flags are preserved.")
+    }.buttonStyle(.borderless).disabled(!workspace.decisionSelectionReady)
+  }
+  @ViewBuilder private func decisionRecovery(_ photo: PhotoItem) -> some View {
+    let status = workspace.saveStatus[photo.id] ?? ""
+    if !status.isEmpty && status != "Saved" && status != "Saving…" && status != "Saving review…"
+      && !status.hasPrefix("Review saved on this Mac") && photo.fileURL != nil
+    {
+      HStack {
+        if workspace.isSourceReview {
+          if !status.hasPrefix("Review saved on this Mac") && status != "Saving review…" {
+            Button("Retry Review Save") { workspace.retrySync() }
+          }
+        } else if status.hasPrefix("XMP conflict") {
+          Button("Use My Decisions") { workspace.retrySync(useLocal: true) }
+          Button("Use External Decisions") { Task { await workspace.useExternalDecision() } }
+        } else if status != "Saving…" {
+          Button("Retry XMP Sync") { workspace.retrySync() }
+        }
+      }.font(.caption)
     }
   }
 
@@ -1111,7 +1218,7 @@ public struct WorkspaceView: View {
       Text(workspace.selectedPhoto?.filename ?? "No selection").lineLimit(1)
       Text("·  \(workspace.photos.count) photos")
     }
-    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.vertical, 9)
+    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.vertical, 4)
   }
 
   private func toggleInspection() {
@@ -1205,23 +1312,21 @@ public struct WorkspaceView: View {
   }
 
   private var sourceReviewBanner: some View {
-    VStack(alignment: .leading, spacing: 3) {
-      Label("Reviewing source · Source unchanged", systemImage: "lock.shield")
-        .font(.callout.bold())
-      Text(
-        "Open a subfolder in the sidebar if needed. Click photos and press P to pick, X to reject, or 0–5 for stars. Then choose Copy Reviewed Photos below. Your source stays unchanged."
-      )
-      .font(.caption).foregroundStyle(.secondary)
-      Text(
-        "\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) files reviewed in this folder"
-      )
-      .font(.caption.monospacedDigit())
+    HStack(spacing: 8) {
+      Label("Source protected", systemImage: "lock.shield").font(.caption.weight(.semibold))
+        .help(
+          "Decisions save on this Mac. The card/source stays unchanged; copy reviewed keepers when ready."
+        )
+      Text("\(workspace.sourceReviewedIDs.count) of \(workspace.totalCount) reviewed").font(
+        .caption
+      ).monospacedDigit().foregroundStyle(.secondary)
+      Spacer(minLength: 0)
       Button("Copy Reviewed Photos…") { showWorkflow(0, reviewedCopy: true) }
         .help(
           "Prepare an explicit copy list and two verified destinations. The source stays unchanged."
         )
-    }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
-      .background(Color.accentColor.opacity(0.10))
+    }.controlSize(.small).padding(.horizontal, 10).padding(.vertical, 4).background(
+      Color.accentColor.opacity(0.10))
   }
 
   private func showWorkflow(_ tab: Int, reviewedCopy: Bool = false) {

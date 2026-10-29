@@ -500,3 +500,15 @@ See [ADR 0042](decisions/0042-metadata-read-reuse.md), [performance evidence](PE
 - [ ] Profile time-budgeted UI updates, detail navigation state and representative media/shoots separately.
 
 See [ADR 0043](decisions/0043-bulk-decision-transactions.md) and [performance evidence](PERFORMANCE.md#bounded-decision-saves--2026-10-27). Exact-head CI and delivery evidence is maintained in the change’s PR after completion.
+
+## Photo-first review and cooperative UI work — 2026-10-28
+
+- [x] Maximize usable viewing space with compact visible decisions/edits, shorter filmstrip, folder-focused sidebar and named settings popovers.
+- [x] Add Focus on Photo and filmstrip commands; restore prior panel choices and keep source/recovery access visible.
+- [x] Isolate high-frequency pan/pinch state, comparison channels and native report bursts from decoded-image/loading state.
+- [x] Bound background publications, adapt toward a measured 2 ms model target, yield between batches and drain before final order/readiness.
+- [x] Add real rendered isolation, window/canvas, cancellation/lifetime, controller and complete-index regressions.
+- [x] Complete native control/keyboard/canvas checks and awake generated scale controls; retain actual overshoots, sleep exclusions and acceptance limits. Exact-head CI/delivery evidence is maintained in the change’s PR after completion.
+- [ ] Broaden physical gesture/presented-frame, real-shoot/media, sleep/wake, pressure and concurrent-workflow acceptance.
+
+See [ADR 0044](decisions/0044-photo-first-workspace.md) and [ADR 0045](decisions/0045-cooperative-publication-and-detail-navigation.md).

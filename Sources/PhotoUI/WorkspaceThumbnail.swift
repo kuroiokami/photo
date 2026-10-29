@@ -17,6 +17,7 @@ struct WorkspaceThumbnail: View, Equatable {
   let groupPairs: Bool
   let folderLabel: String?
   let hasCopiedCrop: Bool
+  var compact = false
   var fixedContentHeight: Double? = nil
   let select: () -> Void
   let action: (ThumbnailAction) -> Void
@@ -33,7 +34,7 @@ struct WorkspaceThumbnail: View, Equatable {
       && lhs.cacheGeneration == rhs.cacheGeneration && lhs.thumbnailEdge == rhs.thumbnailEdge
       && lhs.thumbnailLabels == rhs.thumbnailLabels && lhs.groupPairs == rhs.groupPairs
       && lhs.hasCopiedCrop == rhs.hasCopiedCrop && lhs.folderLabel == rhs.folderLabel
-      && lhs.fixedContentHeight == rhs.fixedContentHeight
+      && lhs.compact == rhs.compact && lhs.fixedContentHeight == rhs.fixedContentHeight
   }
   private var canEdit: Bool { state.ready && (!state.selected || selection.ready) }
   var body: some View {
@@ -46,35 +47,33 @@ struct WorkspaceThumbnail: View, Equatable {
       (["\(decision.flag.title), \(decision.rating) stars"] + [folderLabel].compactMap { $0 }
       + information.map(\.value)).joined(
         separator: ", ")
-    return VStack(alignment: .leading, spacing: 6) {
-      ThumbnailQuickActions(
-        filename: photo.filename, selected: selected, canEdit: canEdit,
-        action: { action($0) }
-      ) {
-        Button {
-          select()
-        } label: {
-          PhotoImageView(
-            photo: photo, pipeline: thumbnails, maximumPixelSize: 480,
-            edit: state.edit, prioritize: selected, sessionID: sessionID,
-            cacheGeneration: cacheGeneration
-          )
-          .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Select \(photo.filename)").accessibilityValue(spokenValue)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .simultaneousGesture(TapGesture(count: 2).onEnded { openPreview() })
+    return VStack(alignment: .leading, spacing: compact ? 3 : 6) {
+      if compact {
+        previewButton(spokenValue)
+      } else {
+        ThumbnailQuickActions(
+          filename: photo.filename, selected: selected, canEdit: canEdit, action: { action($0) }
+        ) { previewButton(spokenValue) }
       }
       thumbnailDecisions
       Button {
         select()
       } label: {
         VStack(alignment: .leading, spacing: 4) {
-          if groupPairs, state.pairedCount > 1 {
+          if !compact, groupPairs, state.pairedCount > 1 {
             Text("RAW + JPEG").font(.caption2)
           }
-          Text(photo.filename).font(.caption).lineLimit(1).truncationMode(.middle)
+          HStack(spacing: 3) {
+            Text(photo.filename).font(compact ? .caption2 : .caption).lineLimit(1).truncationMode(
+              .middle)
+            if compact, groupPairs, state.pairedCount > 1 {
+              Image(systemName: "square.on.square").help("RAW + JPEG")
+            }
+            if compact, state.edit.isEdited {
+              Image(systemName: state.edit.crop == nil ? "rotate.right" : "crop").help(
+                "Photo-only edit")
+            }
+          }
           if let folderLabel {
             Text(folderLabel).font(.caption2).lineLimit(1).truncationMode(.middle).help(folderLabel)
           }
@@ -83,13 +82,13 @@ struct WorkspaceThumbnail: View, Equatable {
           maxWidth: .infinity, alignment: .leading
         ).contentShape(Rectangle())
       }.buttonStyle(.plain)
-      if state.edit.isEdited {
+      if !compact, state.edit.isEdited {
         Text(state.edit.crop != nil ? "Cropped · Photo edit" : "Photo edit")
           .font(.caption2).foregroundStyle(.secondary)
       }
     }
     .frame(height: fixedContentHeight.map { CGFloat($0) }, alignment: .top)
-    .padding(8)
+    .padding(compact ? 6 : 8)
     .background(
       selected ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.025),
       in: RoundedRectangle(cornerRadius: 7)
@@ -135,6 +134,19 @@ struct WorkspaceThumbnail: View, Equatable {
       Divider()
       Button("Edit IPTC & Keywords…") { metadata() }
     }
+  }
+  private func previewButton(_ spokenValue: String) -> some View {
+    Button {
+      select()
+    } label: {
+      PhotoImageView(
+        photo: photo, pipeline: thumbnails, maximumPixelSize: 480, edit: state.edit,
+        prioritize: state.selected, sessionID: sessionID, cacheGeneration: cacheGeneration
+      )
+      .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))
+    }.buttonStyle(.plain).accessibilityLabel("Select \(photo.filename)")
+      .accessibilityValue(spokenValue).accessibilityAddTraits(state.selected ? .isSelected : [])
+      .simultaneousGesture(TapGesture(count: 2).onEnded { openPreview() })
   }
   private var thumbnailDecisions: some View {
     let decision = state.decision

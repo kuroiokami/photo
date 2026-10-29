@@ -10,16 +10,12 @@ private struct NearbyFitRequest: Equatable {
 
 private struct DetailPresentation {
   var zoom = false
-  var magnification = 1.0
   var image: PhotoPreview?
   var region: DetailRegion?
   var fitPreview: PhotoPreview?
   var viewport = CGSize(width: 600, height: 500)
   var fitSize = CGSize(width: 1, height: 1)
-  var focal = CGPoint(x: 0.5, y: 0.5)
-  var visible = CGRect(x: 0, y: 0, width: 1, height: 1)
   var error: String?
-  var navigation: DetailNavigationRequest?
   var display: (image: CGImage, size: CGSize, bounds: CGRect)? {
     if let image {
       let size = CGSize(width: image.decodedWidth, height: image.decodedHeight)
@@ -35,6 +31,7 @@ private struct DetailPresentation {
     return nil
   }
 }
+private typealias ViewportStorage = SwiftUI.State<InspectionViewport>
 private typealias DetailStorage = SwiftUI.State<DetailPresentation>
 
 struct DetailPreviewView: View {
@@ -46,49 +43,24 @@ struct DetailPreviewView: View {
   var pane: ComparisonPane = .active
   var edit = PhotoEdit()
   var nearbyFiles: [URL] = []
+  var didMeasure: ((CGSize) -> Void)? = nil
   @Environment(\.scenePhase) private var scenePhase
+  @ViewportStorage private var viewport = InspectionViewport()
   @DetailStorage private var state = DetailPresentation()
 
   var body: some View {
-    VStack(spacing: 8) {
-      HStack {
-        Button {
-          chooseZoom(false)
-        } label: {
-          Text("Fit").frame(width: 46, height: 25)
-            .background(
-              !state.zoom ? Color.accentColor : Color.white.opacity(0.1),
-              in: RoundedRectangle(cornerRadius: 5))
-        }.buttonStyle(.plain).accessibilityValue(!state.zoom ? "Selected" : "Not selected")
-        Button {
-          chooseZoom(true)
-        } label: {
-          Text("100%").frame(width: 58, height: 25)
-            .background(
-              state.zoom && abs(state.magnification - 1) < 0.005
-                ? Color.accentColor : Color.white.opacity(0.1),
-              in: RoundedRectangle(cornerRadius: 5))
-        }.buttonStyle(.plain)
-          .accessibilityValue(
-            state.zoom && abs(state.magnification - 1) < 0.005 ? "Selected" : "Not selected"
-          )
-          .help(
-            "Z toggles Fit / 100%. One image pixel per physical display pixel. Pinch to adjust magnification; two-finger scrolling pans."
-          )
-        Spacer()
-        if state.zoom, state.image == nil, state.error == nil {
-          ProgressView().controlSize(.small)
-          Text(state.region == nil ? "Loading…" : "Finishing…").font(.caption).lineLimit(1)
-          Button("Cancel") { chooseZoom(false) }.help("Cancel detail loading and return to Fit.")
-        }
-      }.buttonStyle(.borderless)
+    VStack(spacing: 0) {
+      InspectionControls(
+        viewport: viewport, zoom: state.zoom, loading: state.image == nil && state.error == nil,
+        hasRegion: state.region != nil, choose: { chooseZoom($0) })
       GeometryReader { geometry in
         ZStack(alignment: .bottomTrailing) {
           if state.zoom, let display = state.display {
-            PixelScrollView(
-              image: display.image, focal: state.focal,
-              canvasSize: display.size, imageBounds: display.bounds, navigation: state.navigation,
-              visible: $state.visible, edit: edit, magnification: state.magnification,
+            InspectionSurface(
+              viewport: viewport,
+
+              image: display.image,
+              canvasSize: display.size, imageBounds: display.bounds, edit: edit,
               onMagnify: magnify, onFit: { chooseZoom(false) },
               onPan: { comparison?.pan($0, from: pane) })
             if let thumbnail = state.fitPreview?.image ?? state.image?.image {
@@ -109,7 +81,7 @@ struct DetailPreviewView: View {
                   return
                 }
                 let frame = CropGeometry.fit(edit.cropBounds(state.fitSize).size, in: geometry.size)
-                state.focal = CropGeometry.point(
+                viewport.focal = CropGeometry.point(
                   CGPoint(
                     x: value.startAnchor.x * geometry.size.width,
                     y: value.startAnchor.y * geometry.size.height), frame: frame)
@@ -125,25 +97,20 @@ struct DetailPreviewView: View {
                 let origin = CGPoint(
                   x: (geometry.size.width - displayed.width) / 2,
                   y: (geometry.size.height - displayed.height) / 2)
-                state.focal = CGPoint(
+                viewport.focal = CGPoint(
                   x: min(1, max(0, (event.location.x - origin.x) / displayed.width)),
                   y: min(1, max(0, (event.location.y - origin.y) / displayed.height)))
                 chooseZoom(true)
               })
           }
         }
-        .onChange(of: geometry.size, initial: true) { state.viewport = geometry.size }
+        .onChange(of: geometry.size, initial: true) {
+          state.viewport = geometry.size
+          didMeasure?(geometry.size)
+        }
       }
       if state.zoom {
-        Text(
-          state.image.map {
-            "\($0.sourceKind.rawValue) · \(Int((state.magnification * 100).rounded()))% · \($0.decodedWidth) × \($0.decodedHeight)"
-          }
-            ?? (state.region != nil
-              ? "Rendered RAW · \(Int((state.magnification * 100).rounded()))% focus region · surrounding detail is loading"
-              : "Preparing full detail…")
-        )
-        .font(.caption).foregroundStyle(.secondary).lineLimit(2).frame(height: 28)
+        InspectionScaleLabel(viewport: viewport, source: detailSource)
       }
       if let error = state.error {
         Text(error).font(.caption).foregroundStyle(.secondary)
@@ -152,18 +119,19 @@ struct DetailPreviewView: View {
         }
       }
     }
-    .onChange(of: comparison?.request(for: pane), initial: true) { _, request in
-      guard let request else { return }
-      switch request.action {
-      case .fit: fit()
-      case .zoom(let point, let scale):
-        state.magnification = scale
-        state.error = nil
-        state.focal = point
-        state.navigation = DetailNavigationRequest(center: point)
-        state.zoom = true
-      case .pan(let point):
-        if state.zoom { state.navigation = DetailNavigationRequest(center: point) }
+    .background {
+      ComparisonCommandRelay(channel: comparison?.channel(for: pane)) { request in
+        switch request.action {
+        case .fit: fit()
+        case .zoom(let point, let scale):
+          viewport.magnification = scale
+          if state.error != nil { state.error = nil }
+          viewport.focal = point
+          viewport.navigation = DetailNavigationRequest(center: point)
+          if !state.zoom { state.zoom = true }
+        case .pan(let point):
+          if state.zoom { viewport.navigation = DetailNavigationRequest(center: point) }
+        }
       }
     }
     .onChange(of: edit) {
@@ -178,7 +146,7 @@ struct DetailPreviewView: View {
         }
         let scale = NSApp.keyWindow?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
         let focus = DetailFocus(
-          point: edit.originalPoint(state.focal, original: originalSize),
+          point: edit.originalPoint(viewport.focal, original: originalSize),
           viewportPixels: CGSize(
             width: state.viewport.width * scale, height: state.viewport.height * scale))
         for try await update in detailPipeline.updates(for: url, focus: focus) {
@@ -196,7 +164,7 @@ struct DetailPreviewView: View {
         state.zoom = false
         state.image = nil
         state.region = nil
-        comparison?.zoom(false, center: state.focal, from: pane)
+        comparison?.zoom(false, center: viewport.focal, from: pane)
       }
     }
     .task(
@@ -212,6 +180,13 @@ struct DetailPreviewView: View {
     .onDisappear { fit() }
   }
 
+  private var detailSource: String {
+    if let image = state.image {
+      return "\(image.sourceKind.rawValue) · \(image.decodedWidth) × \(image.decodedHeight)"
+    }
+    return state.region != nil
+      ? "Rendered RAW · focus region · surrounding detail is loading" : "Preparing full detail…"
+  }
   private var originalSize: CGSize {
     state.fitPreview.map { CGSize(width: $0.originalWidth, height: $0.originalHeight) }
       ?? state.fitSize
@@ -224,14 +199,14 @@ struct DetailPreviewView: View {
       state.viewport.height * backing / max(1, pixels.height))
   }
   private func magnify(_ delta: Double, _ center: CGPoint, _ anchor: CGPoint) {
-    let scale = InspectionZoom.changed(state.magnification, delta: delta)
+    let scale = InspectionZoom.changed(viewport.magnification, delta: delta)
     if delta < 0 && fitMagnification < 1 && scale <= fitMagnification * 1.02 {
       chooseZoom(false)
       return
     }
-    state.magnification = scale
-    state.focal = center
-    state.navigation = DetailNavigationRequest(center: center, anchor: anchor)
+    viewport.magnification = scale
+    viewport.focal = center
+    viewport.navigation = DetailNavigationRequest(center: center, anchor: anchor)
     let output = edit.cropBounds(originalSize).size
     let backing = NSApp.keyWindow?.backingScaleFactor ?? 1
     let span = CGSize(
@@ -244,15 +219,16 @@ struct DetailPreviewView: View {
     comparison?.zoom(true, center: linkedCenter, scale: scale, from: pane)
   }
   private func chooseZoom(_ zoom: Bool, scale: Double = 1) {
-    let center = state.zoom ? CGPoint(x: state.visible.midX, y: state.visible.midY) : state.focal
+    let center =
+      state.zoom ? CGPoint(x: viewport.visible.midX, y: viewport.visible.midY) : viewport.focal
     if zoom {
-      state.error = nil
-      state.magnification = InspectionZoom.bounded(scale)
-      state.zoom = true
+      if state.error != nil { state.error = nil }
+      viewport.magnification = InspectionZoom.bounded(scale)
+      if !state.zoom { state.zoom = true }
     } else {
       fit()
     }
-    comparison?.zoom(zoom, center: center, scale: state.magnification, from: pane)
+    comparison?.zoom(zoom, center: center, scale: viewport.magnification, from: pane)
   }
 
   private func fit() {
@@ -260,21 +236,93 @@ struct DetailPreviewView: View {
     state.image = nil
     state.region = nil
     state.error = nil
-    state.navigation = nil
+    viewport.navigation = nil
   }
 
   private func navigator(_ image: CGImage, width imageWidth: Int, height imageHeight: Int)
     -> some View
   {
-    DetailNavigator(
+    InspectionNavigatorView(
+      viewport: viewport,
       image: image, edit: edit,
-      imageSize: edit.cropBounds(CGSize(width: imageWidth, height: imageHeight)).size,
-      visible: state.visible
+      imageSize: edit.cropBounds(CGSize(width: imageWidth, height: imageHeight)).size
     ) { point in
-      state.navigation = DetailNavigationRequest(center: point)
+      viewport.navigation = DetailNavigationRequest(center: point)
       comparison?.pan(point, from: pane)
     }
 
+  }
+}
+
+/// Ordinary scroll reports go through the binding without registering image
+/// controls on the visible rectangle. Only commands update the native surface.
+private struct InspectionSurface: View {
+  let viewport: InspectionViewport
+  let image: CGImage
+  let canvasSize: CGSize
+  let imageBounds: CGRect
+  let edit: PhotoEdit
+  let onMagnify: @MainActor (Double, CGPoint, CGPoint) -> Void
+  let onFit: @MainActor () -> Void
+  let onPan: @MainActor (CGPoint) -> Void
+  var body: some View {
+    PixelScrollView(
+      image: image, focal: viewport.focal, canvasSize: canvasSize, imageBounds: imageBounds,
+      navigation: viewport.navigation,
+      visible: Binding(get: { viewport.visible }, set: { viewport.visible = $0 }),
+      edit: edit, magnification: viewport.magnification, onMagnify: onMagnify, onFit: onFit,
+      onPan: onPan)
+  }
+}
+private struct InspectionControls: View {
+  let viewport: InspectionViewport
+  let zoom: Bool
+  let loading: Bool
+  let hasRegion: Bool
+  let choose: (Bool) -> Void
+  var body: some View {
+    HStack {
+      Button {
+        choose(false)
+      } label: {
+        Text("Fit").frame(width: 46, height: 25)
+          .background(
+            !zoom ? Color.accentColor : Color.white.opacity(0.1),
+            in: RoundedRectangle(cornerRadius: 5))
+      }.buttonStyle(.plain).accessibilityValue(!zoom ? "Selected" : "Not selected")
+      Button {
+        choose(true)
+      } label: {
+        Text("100%").frame(width: 58, height: 25)
+          .background(
+            zoom && abs(viewport.magnification - 1) < 0.005
+              ? Color.accentColor : Color.white.opacity(0.1),
+            in: RoundedRectangle(cornerRadius: 5))
+      }.buttonStyle(.plain)
+        .accessibilityValue(
+          zoom && abs(viewport.magnification - 1) < 0.005 ? "Selected" : "Not selected"
+        )
+        .help(
+          "Z toggles Fit / 100%. One image pixel per physical display pixel. Pinch to adjust magnification; two-finger scrolling pans."
+        )
+      Spacer()
+      if zoom, loading {
+        ProgressView().controlSize(.small)
+        Text(!hasRegion ? "Loading…" : "Finishing…").font(.caption).lineLimit(1)
+        Button("Cancel") { choose(false) }.help("Cancel detail loading and return to Fit.")
+      }
+    }.buttonStyle(.borderless)
+  }
+}
+
+private struct ComparisonCommandRelay: View {
+  let channel: ComparisonChannel?
+  let apply: (ComparisonRequest) -> Void
+  var body: some View {
+    Color.clear.frame(width: 0, height: 0).onChange(of: channel?.request, initial: true) {
+      _, request in
+      if let request { apply(request) }
+    }
   }
 }
 
@@ -293,6 +341,16 @@ struct PixelScrollView: NSViewRepresentable {
   let onFit: () -> Void
   var onPan: (@MainActor (CGPoint) -> Void)? = nil
 
+  func makeCoordinator() -> InspectionReports { InspectionReports() }
+  private func bindReports(_ reports: InspectionReports) {
+    reports.onVisible = { rect in if visible != rect { visible = rect } }
+    reports.onPan = onPan
+  }
+  static func dismantleNSView(_ view: PixelScroller, coordinator: InspectionReports) {
+    view.onVisible = nil
+    view.onUserPan = nil
+    coordinator.cancel()
+  }
   func makeNSView(context: Context) -> PixelScroller {
     let view = PixelScroller()
     view.hasHorizontalScroller = true
@@ -305,25 +363,24 @@ struct PixelScrollView: NSViewRepresentable {
     view.pixelSize = canvasSize
     view.imageBounds = imageBounds
     view.focal = focal
-    view.onVisible = { rect in
-      // AppKit layout callbacks cannot synchronously mutate SwiftUI state.
-      Task { @MainActor in
-        if visible != rect { visible = rect }
-      }
-    }
+    let reports = context.coordinator
+    bindReports(reports)
+    view.onVisible = { [weak reports] rect in reports?.visible(rect) }
     view.edit = edit
     view.inspectionScale = magnification
     view.onMagnify = onMagnify
     view.onFit = onFit
-    view.onUserPan = { point in Task { @MainActor in onPan?(point) } }
+    view.onUserPan = { [weak reports] point in reports?.pan(point) }
     return view
   }
   func updateNSView(_ view: PixelScroller, context: Context) {
+    let reports = context.coordinator
+    bindReports(reports)
     view.edit = edit
     view.inspectionScale = magnification
     view.onMagnify = onMagnify
     view.onFit = onFit
-    view.onUserPan = { point in Task { @MainActor in onPan?(point) } }
+    view.onUserPan = { [weak reports] point in reports?.pan(point) }
     view.pixelImage = image
     view.pixelSize = canvasSize
     view.imageBounds = imageBounds

@@ -25,6 +25,11 @@ struct WorkspaceActions {
   let inspect: @MainActor () -> Void
   let trash: @MainActor () -> Void
   let canTrash: Bool
+  var toggleFocus: @MainActor () -> Void = {}
+  var focused = false
+  var toggleFilmstrip: @MainActor () -> Void = {}
+  var filmstripVisible = true
+
 }
 
 private struct WorkspaceActionsKey: FocusedValueKey {
@@ -264,6 +269,15 @@ public struct WorkspaceCommands: Commands {
         actions?.canDecide != true)
     }
     CommandGroup(after: .toolbar) {
+      Button(actions?.focused == true ? "Exit Focus on Photo" : "Focus on Photo") {
+        actions?.toggleFocus()
+      }
+      .keyboardShortcut("f", modifiers: [.command, .shift]).disabled(actions?.canDecide != true)
+      Button(actions?.filmstripVisible == true ? "Hide Filmstrip" : "Show Filmstrip") {
+        actions?.toggleFilmstrip()
+      }
+      .keyboardShortcut("t", modifiers: [.command, .option]).disabled(actions?.canDecide != true)
+      Divider()
       Button("Clear Thumbnail Cache") { actions?.clearThumbnails() }
         .disabled(actions?.canDecide != true)
     }

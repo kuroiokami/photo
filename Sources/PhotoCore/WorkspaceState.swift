@@ -241,13 +241,14 @@ public final class WorkspaceState {
   @ObservationIgnored private var metadataAttempted: Set<String> = []
   @ObservationIgnored private var pendingMetadata: [String: PhotoMetadata] = [:]
   @ObservationIgnored private var pendingMetadataReads = 0
+  @ObservationIgnored private var metadataBudget = PublicationBudget()
+  @ObservationIgnored private var decisionBudget = PublicationBudget()
   @ObservationIgnored private var metadataPublishedAt = ContinuousClock.now
   private struct LoadedDecision {
     let entry: DecisionEntry
     let edit: PhotoEdit
   }
   @ObservationIgnored private var pendingDecisions: [String: LoadedDecision] = [:]
-  @ObservationIgnored private var decisionsPublishedAt = ContinuousClock.now
   public private(set) var indexedCount = 0
   public private(set) var indexing = false
   @ObservationIgnored private var metadataJobs: Set<UUID> = []
@@ -325,6 +326,8 @@ public final class WorkspaceState {
     let session = sessionID
     self.directory = directory
     publicationMetrics = WorkspacePublicationMetrics()
+    metadataBudget = PublicationBudget()
+    decisionBudget = PublicationBudget()
     selectedIndex = nil
     photos = []
     allPhotos = []
@@ -450,6 +453,8 @@ public final class WorkspaceState {
     directory = nil
     folderLabels = [:]
     publicationMetrics = WorkspacePublicationMetrics()
+    metadataBudget = PublicationBudget()
+    decisionBudget = PublicationBudget()
     selectedIndex = nil
     allPhotos = SampleLibrary.photos
     refreshFilenameRanks()
@@ -520,14 +525,21 @@ public final class WorkspaceState {
       guard !Task.isCancelled, sessionID == session else { return }
       await readMetadata(photo, using: reader, immediate: false)
       guard !Task.isCancelled, sessionID == session else { return }
-      if pendingMetadataReads >= 64 || metadataPublishedAt.duration(to: .now) >= .milliseconds(50) {
+      if pendingMetadata.count >= metadataBudget.limit || pendingMetadataReads >= 64
+        || metadataPublishedAt.duration(to: .now) >= .milliseconds(50)
+      {
         publishMetadata()
       }
       await Task.yield()
     }
+    while !pendingMetadata.isEmpty {
+      guard sessionID == session, !Task.isCancelled else { return }
+      publishMetadata()
+      await Task.yield()
+    }
+    guard sessionID == session else { return }
     metadataJobs.remove(job)
     indexing = !metadataJobs.isEmpty
-    guard sessionID == session else { return }
     publishMetadata()
     await setSort(sort)
   }
@@ -634,7 +646,8 @@ public final class WorkspaceState {
 
   private func publishMetadata(ids: [String]? = nil) {
     var updates: [String: PhotoMetadata] = [:]
-    for id in ids ?? Array(pendingMetadata.keys) {
+    let started = ContinuousClock.now
+    for id in ids ?? Array(pendingMetadata.keys.prefix(metadataBudget.limit)) {
       if let value = pendingMetadata.removeValue(forKey: id), allByID[id] != nil {
         updates[id] = value
       }
@@ -651,6 +664,11 @@ public final class WorkspaceState {
     }
     indexedCount = progress
     publicationMetrics.metadata += 1
+    let elapsed = started.duration(to: .now)
+    let milliseconds =
+      Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+    publicationMetrics.metadataWork.record(items: updates.count, milliseconds: milliseconds)
+    if ids == nil { metadataBudget.record(milliseconds: milliseconds) }
     PhotoTrace.event("MetadataPublished", in: trace)
     if ids == nil {
       pendingMetadataReads = 0
@@ -791,14 +809,13 @@ public final class WorkspaceState {
       guard session == sessionID, !Task.isCancelled else { return }
       await loadDecisionBatch(
         Array(snapshot[start..<min(start + 16, snapshot.count)]), session: session)
-      if session == sessionID,
-        pendingDecisions.count >= 64 || decisionsPublishedAt.duration(to: .now) >= .milliseconds(50)
-      {
+      while session == sessionID, !pendingDecisions.isEmpty {
+        guard !Task.isCancelled else { return }
         publishDecisions()
+        await Task.yield()
       }
     }
     guard session == sessionID, !Task.isCancelled else { return }
-    publishDecisions()
     if sort == .rating {
       allPhotos = sort.ordered(
         allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
@@ -865,7 +882,8 @@ public final class WorkspaceState {
 
   private func publishDecisions(ids: [String]? = nil) {
     var loaded: [String: LoadedDecision] = [:]
-    for id in ids ?? Array(pendingDecisions.keys) {
+    let started = ContinuousClock.now
+    for id in ids ?? Array(pendingDecisions.keys.prefix(decisionBudget.limit)) {
       if let value = pendingDecisions.removeValue(forKey: id), allByID[id] != nil,
         !decisionsReady.contains(id)
       {
@@ -899,11 +917,15 @@ public final class WorkspaceState {
       publishThumbnailEdit(id)
     }
     publicationMetrics.decisions += 1
+    let elapsed = started.duration(to: .now)
+    let milliseconds =
+      Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+    publicationMetrics.decisionWork.record(items: loaded.count, milliseconds: milliseconds)
+    if ids == nil { decisionBudget.record(milliseconds: milliseconds) }
     PhotoTrace.event("DecisionsPublished", in: trace)
     if let selectedID, loaded[selectedID] != nil {
       PhotoTrace.event("SelectedDecisionReady", in: trace)
     }
-    if ids == nil { decisionsPublishedAt = .now }
   }
 
   private func matches(_ photo: PhotoItem) -> Bool {

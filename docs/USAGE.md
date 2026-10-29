@@ -59,6 +59,7 @@ Workflow setup now occupies the main window’s content area rather than a pop-u
 | Large preview | Fast Fit view, detail controls, rotate/mirror/crop and optional shooting-information pane |
 | Contact sheet / bottom filmstrip | Selection, direct stars/flags and contextual actions |
 | Status bar | Decision or image-edit saving state and current photo/count |
+| Filters / Browsing options | Filters and selection / folder scope, pairing, EXIF labels and thumbnail size |
 | Workflow | In-window Ingest, Bulk Rename, IPTC & Keywords, and Deliver / Edit |
 
 ### Bring back the workspace
@@ -67,7 +68,7 @@ Click Photo in the Dock, or choose **Window → Show Photo Window** (**⌘0**). 
 
 ### Open and revisit folders
 
-Choose **File → Open Folder…** or **⌘O**. Photo starts by showing supported photos directly inside that folder. Turn on **Include Subfolders** beneath the folder name to combine its photos and all descendant folders in one contact sheet or filmstrip. For example, open a wedding folder containing `Day 1/Card A`, `Day 1/Card B` and `Day 2`, then enable this option to cull the whole shoot together. Nothing is moved or copied.
+Choose **File → Open Folder…** or **⌘O**. Photo starts by showing supported photos directly inside that folder. Turn on **Browsing options → Include Subfolders** to combine its photos and all descendant folders in one contact sheet or filmstrip. For example, open a wedding folder containing `Day 1/Card A`, `Day 1/Card B` and `Day 2`, then enable this option to cull the whole shoot together. Nothing is moved or copied.
 
 Each nested photo shows its relative folder beneath its filename. Repeated filenames on different cards stay separate. Choose **Capture time** sorting for shooting order when the camera clocks agree. RAW+JPEG grouping only pairs files within the same folder. Flags, stars, filters, sorting, group selection, metadata and confirmed Trash actions use the displayed collection; workflow **All files** includes its hidden-by-filter photos too.
 
@@ -162,8 +163,8 @@ If a filter hides the decided photo, Photo selects the next surviving neighbor, 
 **X marks a reject; it does not delete anything.** In a working folder:
 
 1. Choose **Show All Photos** if reviewing a shortlist, then **Clear Filters** if you want every reject in the current folder included.
-2. Press **⇧⌘X** or open **Remove → Select Rejects** (also available in the Decisions menu). Check the selected count. This selects rejected thumbnails in the visible collection. Enable **Include Subfolders** first to include nested photos; filters and selected-only review still limit the selection.
-3. Press **⌘Delete** or choose **Remove → Move Selected to Trash…**.
+2. Press **⇧⌘X** or open **Filters → Remove → Select Rejects** (also available in the Decisions menu). Check the selected count. This selects rejected thumbnails in the visible collection. Enable **Include Subfolders** first to include nested photos; filters and selected-only review still limit the selection.
+3. Press **⌘Delete** or choose **Filters → Remove → Move Selected to Trash…**.
 4. Check the exact file list and any picked-photo warning, then click **Move to Trash** or press **Return**. Escape cancels.
 
 You can also select any working photos manually and use the same command. RAW+JPEG grouping expands a selection to both physical files, so check the list; mixed pairs may include a keeper. Only the listed images and exclusively owned XMP/ACR companions move. Shared sidecars stay with unselected photos. Copies in other folders and backups are unaffected. Bundled sample photos and protected pre-copy sources cannot be trashed. During pre-copy review, copy only keepers and leave the source card alone.
@@ -172,15 +173,23 @@ Restore through **Finder → Trash → select the files → Put Back**; include 
 
 ## 5. Filters, sorting and EXIF labels
 
-Combine a flag filter with a minimum-star filter. The header shows visible and total counts. **Clear Filters** removes both restrictions; a selected-review set is ended separately.
+Open **Filters** to combine a flag filter with a minimum-star filter. The header shows visible and total counts. **Clear Filters** removes both restrictions; a selected-review set is ended separately.
 
 Sort by filename, capture time, ISO, shutter speed, aperture, focal length or rating. Numeric EXIF values sort numerically; missing values go last with filename ties. EXIF sorts wait for indexing rather than repeatedly shuffling the collection. Selection follows identity after reordering. Rating sort puts highest stars first.
 
 The **shooting-information** button displays capture time, camera/lens, shutter, aperture, ISO, focal length and dimensions. A compact exposure strip remains near preview decisions.
 
-The **Labels** menu adds up to two remembered rows beneath thumbnail filenames: exposure summary, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Values reuse already indexed metadata; they do not decode images. Missing values are explicit. **Hide Extra Labels** restores compact thumbnails.
+**Browsing options** (the sliders button beside Filters) adds up to two remembered rows beneath thumbnail filenames: exposure summary, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Values reuse already indexed metadata; they do not decode images. Missing values are explicit. **Hide Extra Labels** restores compact thumbnails.
 
 ## 6. Preview, trackpad zoom and focus inspection
+
+### Give the photo more room
+
+Preview uses a compact culling bar and smaller bottom filmstrip. Stars, flags, rotate, mirror, crop and IPTC stay directly accessible. Open **Filters** for filtering, selection and reject cleanup; **Browsing options** holds Include Subfolders, RAW+JPEG grouping, EXIF labels and thumbnail size. Active filters are named in the header; its adjacent × clears them in one click. Close either popover with Done or Escape before returning to culling shortcuts.
+
+Press **⇧⌘F** or choose **View → Focus on Photo** to hide browsing controls, sidebar, filmstrip and shooting inspector temporarily. Keep navigating with B/N, use Z for focus inspection, P/X/U and 0–5 for decisions, and [ / ] for rotation. Fit, navigation, exposure information and saving/recovery controls stay available. **Escape** restores your previous panels, including after comparison; a second Escape shows the contact sheet. Focus starts off in each new window.
+
+Press **⌥⌘T**, use the preview's filmstrip button, or choose **View → Hide/Show Filmstrip** to reclaim height independently. Drag the sidebar divider or use the standard sidebar button to reclaim width. Focus remembers an already hidden sidebar or filmstrip when it restores the layout.
 
 ### A fast keyboard pass
 

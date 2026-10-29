@@ -46,7 +46,7 @@ The [installation guide](docs/INSTALLATION.md) walks through installing Apple's 
 
 1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Choose keepers before copying → Start Culling**. Turn on **Include Subfolders** to combine the card’s folders, or expand the sidebar and choose one subfolder.
 2. Move through photos with the arrow keys. Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** to rate. Rejecting never deletes a photo.
-3. Press **Z** to switch between Fit and 100% for focus inspection; **[ / ]** rotate, and **B / N** always browse previous/next photos. Compare similar frames, then filter down to your keepers.
+3. Use **⇧⌘F** for Focus on Photo and **⌥⌘T** to hide the filmstrip. Press **Z** to switch between Fit and 100% for focus inspection; **[ / ]** rotate, and **B / N** always browse previous/next photos. Compare similar frames, then filter down to your keepers.
 4. Copy reviewed photos to your Photo and Backup folders, or continue organizing existing working copies. Add metadata, rename, and prepare delivery copies when ready.
 
 The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**. You can dismiss the introduction permanently and reopen the walkthrough whenever you need it.
