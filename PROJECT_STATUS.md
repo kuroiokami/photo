@@ -4,6 +4,16 @@ Last updated: 2026-10-29
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
+## Prepared identities and smaller indexing/selection costs — 2026-10-29
+
+Implemented [ADR 0046](docs/decisions/0046-prepared-identity-and-index-capacity.md): prepare file-backed IDs as native UTF-8 once without changing path bytes, URL/filename or canonical key compatibility; reserve metadata and six decision tables against the known inventory; avoid redundant ungrouped expansion/Set creation and symmetric-difference allocation. Grouping/deduplication, unknown gating, per-photo observation, snapshot isolation, filtering/focus/history, validation/source protection and persistence/decoding remain.
+
+[Quiet matched 10k controls](docs/PERFORMANCE.md#prepared-identities-and-indexing-capacity--2026-10-29) cover Unicode-heavy and ordinary ASCII names separately. Select All improves **378–393 → 61–64 ms** and **15–16 → 9.6–9.8 ms**, respectively. Maximum candidate decision publications are **0.15–0.58 ms**, compared with up to 64 ms in the Unicode controls; all four candidates record zero 2 ms overshoots, not a hard frame guarantee. Every original hash matches, selected counts are correct and metadata/decision errors are zero. Source hashing warms OS caches; no native FPS or general memory/RAW/media claim. Unicode selected-ready timing is about 1–2 ms slower after earlier allocation, while total folder-open model work falls; first Fit/RSS are retained without a speed/memory claim. Large Unicode selections and collection ordering still cause measurable gaps.
+
+Strict formatter/build/tests pass **266 registered tests, 264 executed/two optional RAW skips**; three new regressions exercise exact Unicode keys, 1,025-photo deltas/readiness/snapshots/history and physical-file grouping. Release products build. Native isolated signed **E63B1DB1-0FB7-3C7C-8D1F-6DB8FBA1376F** verifies 10k full-grid selection/inversion/deselection during/after indexing and unknown/ready controls, plus Unicode full-resolution JPEG group stars/flags, Undo/Redo, filtered removal/restoration/Clear and saved Reload. All three originals retain hashes; temporary shortcuts removed, sample Fit preview restored and only the isolated app quit. Full repository checks pass for **262 tracked files** (links/JSON/data policy, workflow lint and redacted history/worktree secret scans); all nine Python analyzer tests pass. Inspected exact-head CI, conversation audit, merge and installation evidence is maintained in [PR #45](https://github.com/kuroiokami/photo/pull/45). Preserve the unrelated development-plan wording edit.
+
+Next: remaining collection-wide selection/order/rebuild work; physical gesture/frame evidence; cold RAW, representative media, memory pressure/concurrent workflows and long-session/sleep-wake acceptance.
+
 ## Photo-first workspace and bounded model updates — 2026-10-28
 
 Implemented [ADR 0044](docs/decisions/0044-photo-first-workspace.md) and [ADR 0045](docs/decisions/0045-cooperative-publication-and-detail-navigation.md). Compact collection/culling rows, a smaller interactive filmstrip and a folder-focused sidebar give the preview substantially more room. Flags, stars, rotate/mirror, crop and IPTC remain visible. Filters and browsing options use explicit popovers; active filters/clear and selected-review exit remain visible. Focus on Photo **⇧⌘F** and filmstrip **⌥⌘T** restore prior panel choices. Native cancel/focus routing keeps Escape useful after comparison/inspection and gives crop/popovers priority.
@@ -482,6 +492,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-10-29: Prepared identity/storage and reduced large-selection costs; matched Unicode/ASCII controls and native/regression evidence in ADR 0046.
 
 - 2026-10-28: Give photos more space with compact controls/sidebar/filmstrip and Focus mode; isolate pan/pinch/linked channels, coalesce reports, add cooperative publication budgets and retain honest awake/sleep/overshoot evidence (ADRs 0044–0045).
 

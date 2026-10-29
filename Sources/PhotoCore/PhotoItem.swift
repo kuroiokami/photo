@@ -15,7 +15,12 @@ public struct PhotoItem: Identifiable, Hashable, Sendable {
 
   public init(fileURL: URL) {
     self.fileURL = fileURL
-    id = fileURL.standardizedFileURL.path
+    // Foundation paths may be foreign UTF-16 storage. Repeated Set/Dictionary
+    // access otherwise re-enters the bridged Unicode hashing path. Copy once
+    // without changing any scalar, spelling, normalization or filesystem URL.
+    var identity = fileURL.standardizedFileURL.path
+    identity.makeContiguousUTF8()
+    id = identity
     filename = fileURL.lastPathComponent
     resourceName = ""
   }

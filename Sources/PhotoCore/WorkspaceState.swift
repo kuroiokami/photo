@@ -18,9 +18,8 @@ public final class WorkspaceState {
   public private(set) var selectedIDs: Set<String> = [] {
     didSet {
       if selectedIDs != oldValue {
-        for id in oldValue.symmetricDifference(selectedIDs) {
-          thumbnailStates[id]?.selected = selectedIDs.contains(id)
-        }
+        for id in oldValue where !selectedIDs.contains(id) { thumbnailStates[id]?.selected = false }
+        for id in selectedIDs where !oldValue.contains(id) { thumbnailStates[id]?.selected = true }
         refreshSelectionPresentation()
       }
       publishSelectedPending()
@@ -100,6 +99,7 @@ public final class WorkspaceState {
   public var persistence: DecisionStore { decisionStore }
   public var operationPhotos: [PhotoItem] {
     let chosen = selectedIDs.isEmpty ? Set([selectedID].compactMap { $0 }) : selectedIDs
+    if !groupPairs { return chosen.compactMap { allByID[$0] } }
     let expanded = Set(
       chosen.flatMap { id in groupPairs ? familyMembers[id]?.map(\.id) ?? [id] : [id] })
     return expanded.compactMap { allByID[$0] }
@@ -511,6 +511,7 @@ public final class WorkspaceState {
   ) async {
     let trace = PhotoTrace.begin("MetadataIndex")
     defer { PhotoTrace.end(trace) }
+    metadata.reserveCapacity(allPhotos.count)
     let job = UUID()
     metadataJobs.insert(job)
     indexing = true
@@ -795,6 +796,14 @@ public final class WorkspaceState {
     decisionsLoading = true
     let session = sessionID
     let snapshot = allPhotos
+    // Avoid synchronized geometric growth/rehashing of these per-file tables
+    // inside a small publication. Account for this allocation in index timing.
+    imageEdits.reserveCapacity(snapshot.count)
+    decisions.reserveCapacity(snapshot.count)
+    saveStatus.reserveCapacity(snapshot.count)
+    decisionsReady.reserveCapacity(snapshot.count)
+    fileIdentities.reserveCapacity(snapshot.count)
+    sourceFields.reserveCapacity(snapshot.count)
     await DecisionSaveQueue.shared.flush()
     for start in stride(from: 0, to: snapshot.count, by: 16) {
       guard session == sessionID, !Task.isCancelled else { return }
