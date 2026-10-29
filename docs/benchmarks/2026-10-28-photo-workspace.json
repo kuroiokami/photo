@@ -56,8 +56,10 @@
   },
   "native": {
     "comparisonLinkedAndUnlinkedPan": true,
+    "compatibilityFollowupDate": "2026-10-29",
+    "compatibilityFollowupFocusZoomNavigatorCropKeyboard": true,
     "extensiveReleaseUUID": "C12E4BA1-2DDB-3A4F-9D18-2D24D7061014",
-    "finalReleaseUUID": "AC7C02AB-BDFE-3F32-8D23-750791D4AA09",
+    "finalReleaseUUID": "286446C0-3CA1-3A78-A565-2273DF5E7C44",
     "focusAndFilmstripRestoration": true,
     "generatedFullResolutionOriginals": 3,
     "modalAndPopoverEscapePriority": true,
@@ -68,6 +70,7 @@
     "samplePreviewRestored": true,
     "selectedReviewExitVisible": true,
     "selectionActionsReturnToKeyboard": true,
+    "selectionFollowupReleaseUUID": "AC7C02AB-BDFE-3F32-8D23-750791D4AA09",
     "temporaryShortcutRemoved": true,
     "treeParentChildNavigation": true
   },

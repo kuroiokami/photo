@@ -16,7 +16,7 @@ struct InspectionNavigatorView: View {
   let image: CGImage
   let edit: PhotoEdit
   let imageSize: CGSize
-  let navigate: (CGPoint) -> Void
+  let navigate: @MainActor (CGPoint) -> Void
   var body: some View {
     DetailNavigator(
       image: image, edit: edit, imageSize: imageSize, visible: viewport.visible, navigate: navigate)

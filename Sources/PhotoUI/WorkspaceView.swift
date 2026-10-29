@@ -91,6 +91,25 @@ public struct WorkspaceView: View {
   }
 
   public var body: some View {
+    workspacePresentation
+      .focusedSceneValue(\.workspaceActions, sceneActions)
+      .task(id: workspace.sessionID) {
+        // Retain the bounded thumbnail pool and separate Fit lane across folders.
+        let session = workspace.sessionID
+        await thumbnails.startSession(session)
+        await previews.startSession(session)
+      }
+      .task(id: "\(workspace.sessionID)-\(workspace.loadState)") {
+        guard workspace.loadState == .ready else { return }
+        let session = workspace.sessionID
+        async let metadata: Void = workspace.indexMetadata(
+          using: metadataReader, expectedSession: session)
+        async let decisions: Void = workspace.loadDecisions(expectedSession: session)
+        _ = await (metadata, decisions)
+      }
+  }
+
+  private var workspaceShell: some View {
     NavigationSplitView(columnVisibility: $layout.sidebar) {
       sidebar
         .disabled(showingWorkflow || preparingTrash || trashPlan != nil)
@@ -142,118 +161,120 @@ public struct WorkspaceView: View {
 
       }
     }
-    .sheet(item: $croppingPhoto) { photo in
-      CropEditor(
-        photo: photo, edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), pipeline: previews,
-        sessionID: workspace.sessionID
-      ) { crop in workspace.setCrop(crop, for: photo) }
-    }
-    .sheet(isPresented: $showingHelp) { CullingHelpView() }
-    .task {
-      if workspace.directory == nil, let saved = folderLibrary.selected {
-        await workflowModel.openFolder(saved)
+  }
+
+  private var workspaceLoadHandlers: some View {
+    workspaceShell
+      .sheet(item: $croppingPhoto) { photo in
+        CropEditor(
+          photo: photo, edit: workspace.imageEdits[photo.id] ?? PhotoEdit(), pipeline: previews,
+          sessionID: workspace.sessionID
+        ) { crop in workspace.setCrop(crop, for: photo) }
       }
-      await folderLibrary.restoreExpanded()
-    }
-    .onReceive(NotificationCenter.default.publisher(for: .photoSourceReviewChanged)) { _ in
-      if !workspace.isSourceReview, let directory = workspace.directory {
-        let session = workspace.sessionID
-        Task {
-          let needsReload =
-            workspace.includesSubfolders
-            ? true : (try? await workspace.persistence.sourceReview(for: directory)) != nil
-          if needsReload, workspace.sessionID == session {
-            await workflowModel.openFolder(directory)
+      .sheet(isPresented: $showingHelp) { CullingHelpView() }
+      .task {
+        if workspace.directory == nil, let saved = folderLibrary.selected {
+          await workflowModel.openFolder(saved)
+        }
+        await folderLibrary.restoreExpanded()
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .photoSourceReviewChanged)) { _ in
+        if !workspace.isSourceReview, let directory = workspace.directory {
+          let session = workspace.sessionID
+          Task {
+            let needsReload =
+              workspace.includesSubfolders
+              ? true : (try? await workspace.persistence.sourceReview(for: directory)) != nil
+            if needsReload, workspace.sessionID == session {
+              await workflowModel.openFolder(directory)
+            }
           }
         }
       }
-    }
-    .onChange(of: workspace.directory) {
-      trashNotice = ""
-      if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
-    }
-    .onChange(of: thumbnailLabels) {
-      UserDefaults.standard.set(thumbnailLabels.map(\.rawValue), forKey: "Photo.thumbnailLabels")
-    }
-    .onChange(of: workspace.sessionID) {
-      comparison.close()
-      croppingPhoto = nil
-    }
-    .onChange(of: workspace.selectedID) { comparison.resetViewports() }
-    .onChange(of: layout.focused) {
-      if showPreview && !layout.showsFilmstrip { previewFocused = true } else { gridFocused = true }
-    }
-    .onChange(of: layout.filmstrip) {
-      if showPreview && !layout.showsFilmstrip { previewFocused = true } else { gridFocused = true }
-    }
-    .onChange(of: showPreview) {
-      if !showPreview { layout.leaveFocus() }
-      comparison.resetViewports()
-      if pendingInspection && showPreview {
-        pendingInspection = false
-        comparison.toggleInspection()
+      .onChange(of: workspace.directory) {
+        trashNotice = ""
+        if let folder = workspace.directory { folderLibrary.rememberIfUncovered(folder) }
       }
-    }
-    .sheet(item: $trashPlan) { plan in
-      TrashConfirmationView(
-        plan: plan, store: workspace.persistence, decisions: workspace.decisions
-      ) { result in
-        workspace.removeTrashedPhotos(result.moved)
-        trashNotice =
-          "Moved \(result.moved.filter { PhotoFormats.supports($0) }.count) photos to Trash."
-          + (result.error.map { " Stopped: " + $0 } ?? " Restore with Finder → Trash → Put Back.")
+      .onChange(of: thumbnailLabels) {
+        UserDefaults.standard.set(thumbnailLabels.map(\.rawValue), forKey: "Photo.thumbnailLabels")
       }
-    }
-    .alert("Cannot Move to Trash", isPresented: $showingTrashError) {
-      Button("OK", role: .cancel) {}
-    } message: {
-      Text(trashNotice)
-    }
-    .focusedSceneValue(
-      \.workspaceActions,
-      WorkspaceActions(
-        workspace: workspace,
-        canDecide: !choosingFolder && !showingWorkflow && !showingHelp && !showingOptions
-          && !showingFilters && croppingPhoto == nil
-          && trashPlan == nil && !preparingTrash
-          && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
-        togglePreview: { showPreview.toggle() }, hidePreview: cancelBrowsing,
-        openFolder: openFolder, reload: reload,
-        clearThumbnails: {
-          Task {
-            await thumbnails.clearThumbnailCache()
-            thumbnailCacheGeneration += 1
-          }
-        },
-        workflow: { showWorkflow($0) }, help: { showingHelp = true },
-        canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
-          && !showingHelp && croppingPhoto == nil && trashPlan == nil && !preparingTrash,
-        comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
-        canCompare: workspace.photos.count > 1,
-        crop: { croppingPhoto = workspace.selectedPhoto }, copyCrop: copyCrop, pasteCrop: pasteCrop,
-        canPasteCrop: copiedCrop != nil,
-        inspect: toggleInspection, trash: prepareTrash,
-        canTrash: !workspace.isSourceReview && workspace.directory != nil
-          && workspace.decisionSelectionReady
-          && !workflowModel.busy,
-        toggleFocus: toggleFocus, focused: layout.focused,
-        toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip
-      )
+  }
+
+  private var workspacePresentation: some View {
+    workspaceLoadHandlers
+      .onChange(of: workspace.sessionID) {
+        comparison.close()
+        croppingPhoto = nil
+      }
+      .onChange(of: workspace.selectedID) { comparison.resetViewports() }
+      .onChange(of: layout.focused) {
+        if showPreview && !layout.showsFilmstrip {
+          previewFocused = true
+        } else {
+          gridFocused = true
+        }
+      }
+      .onChange(of: layout.filmstrip) {
+        if showPreview && !layout.showsFilmstrip {
+          previewFocused = true
+        } else {
+          gridFocused = true
+        }
+      }
+      .onChange(of: showPreview) {
+        if !showPreview { layout.leaveFocus() }
+        comparison.resetViewports()
+        if pendingInspection && showPreview {
+          pendingInspection = false
+          comparison.toggleInspection()
+        }
+      }
+      .sheet(item: $trashPlan) { plan in
+        TrashConfirmationView(
+          plan: plan, store: workspace.persistence, decisions: workspace.decisions
+        ) { result in
+          workspace.removeTrashedPhotos(result.moved)
+          trashNotice =
+            "Moved \(result.moved.filter { PhotoFormats.supports($0) }.count) photos to Trash."
+            + (result.error.map { " Stopped: " + $0 } ?? " Restore with Finder → Trash → Put Back.")
+        }
+      }
+      .alert("Cannot Move to Trash", isPresented: $showingTrashError) {
+        Button("OK", role: .cancel) {}
+      } message: {
+        Text(trashNotice)
+      }
+  }
+
+  private var sceneActions: WorkspaceActions {
+    WorkspaceActions(
+      workspace: workspace,
+      canDecide: !choosingFolder && !showingWorkflow && !showingHelp && !showingOptions
+        && !showingFilters && croppingPhoto == nil
+        && trashPlan == nil && !preparingTrash
+        && (!workflowModel.busy || workflowModel.backgroundable), columns: gridColumns,
+      togglePreview: { showPreview.toggle() }, hidePreview: cancelBrowsing,
+      openFolder: openFolder, reload: reload,
+      clearThumbnails: {
+        Task {
+          await thumbnails.clearThumbnailCache()
+          thumbnailCacheGeneration += 1
+        }
+      },
+      workflow: { showWorkflow($0) }, help: { showingHelp = true },
+      canReload: workspace.directory != nil && !choosingFolder && !showingWorkflow
+        && !showingHelp && croppingPhoto == nil && trashPlan == nil && !preparingTrash,
+      comparison: comparison, toggleComparison: toggleComparison, pinReference: pinCurrent,
+      canCompare: workspace.photos.count > 1,
+      crop: { croppingPhoto = workspace.selectedPhoto }, copyCrop: copyCrop, pasteCrop: pasteCrop,
+      canPasteCrop: copiedCrop != nil,
+      inspect: toggleInspection, trash: prepareTrash,
+      canTrash: !workspace.isSourceReview && workspace.directory != nil
+        && workspace.decisionSelectionReady
+        && !workflowModel.busy,
+      toggleFocus: toggleFocus, focused: layout.focused,
+      toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip
     )
-    .task(id: workspace.sessionID) {
-      // Retain the bounded thumbnail pool and separate Fit lane across folders.
-      let session = workspace.sessionID
-      await thumbnails.startSession(session)
-      await previews.startSession(session)
-    }
-    .task(id: "\(workspace.sessionID)-\(workspace.loadState)") {
-      guard workspace.loadState == .ready else { return }
-      let session = workspace.sessionID
-      async let metadata: Void = workspace.indexMetadata(
-        using: metadataReader, expectedSession: session)
-      async let decisions: Void = workspace.loadDecisions(expectedSession: session)
-      _ = await (metadata, decisions)
-    }
   }
 
   private var browsingContent: some View {
