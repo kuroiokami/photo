@@ -2,7 +2,7 @@
 
 Date: 2026-10-29
 
-Status: Implemented; local regressions and matched service controls pass. Native validation is pending Mac unlock; delivery evidence belongs in the tracker/PR.
+Status: Implemented; local regressions, matched service controls and scoped native validation pass. Native frame attribution remains open; delivery evidence belongs in the tracker/PR.
 
 ## Evidence and membership
 
@@ -26,4 +26,4 @@ One full map may be retained alongside a filtered map. This trades model memory 
 
 Eight new deterministic tests exercise filter changes during preparation, same-sort overtaking without obsolete retries, late metadata, cancellation/lane reuse, session replacement, decision-index rating completion, cache invalidation by rating/Undo, and companion-only grouped review. Existing arrivals/removal/filter/auto-advance/source protection/history tests pass. Internal gates are test-only injection, not a user API.
 
-Quiet Unicode/ASCII 10k ABBA controls retain complete anonymous reports, errors, hashes, memory, first preview/readiness and suspension. See PERFORMANCE.md. Native controls and app-attributed physical frame evidence remain pending unlock; model timings are not FPS or broad camera/media/40k/pressure acceptance.
+Quiet Unicode/ASCII 10k ABBA controls retain complete anonymous reports, errors, hashes, memory, first preview/readiness and suspension. See PERFORMANCE.md. Native sort/review/filter/index/history/Reload and hash/cleanup checks pass on healthy sessions. Accepted and candidate restored-folder thumbnails expose pre-existing issue #47, tracked separately with Reload as the verified workaround. Native captures retain similar/mixed CPU/potential-stall diagnostics; display/frame tables lack reliable app attribution, so actual FPS/physical-frame acceptance remains open. Model timings are not broad camera/media/40k/pressure acceptance.

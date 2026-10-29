@@ -3,9 +3,113 @@
   "candidateReleaseUUID": "647282D0-DE13-33F0-BA9A-F1C32B383D29",
   "date": "2026-10-29",
   "native": {
+    "captureScope": "One 20-second accepted / one 20-second healthy candidate, same 1280x820 point window and 10k generated collection, settled indexing, 4-page forward/reverse warmup then 6 forward/6 reverse one-page scrolls plus Select All/Deselect. Scripted accessibility input, not a physical gesture.",
+    "emptyFilterClearAndEndpointNavigation": true,
+    "excludedDiagnostic": {
+      "reason": "Initial candidate had pending restored-folder thumbnails, so this is not a valid warm-grid control; same startup defect reproduced in accepted release. Kept as diagnostic evidence, not silently discarded.",
+      "report": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "swiftUIFocus": 123.0,
+          "swiftUIPreferences": 202.0,
+          "swiftUIViewGraph": 2085.0,
+          "workspaceSelection": 37.0
+        },
+        "mainThreadSampleWeightMilliseconds": 5037.0,
+        "maximumPotentialStallMilliseconds": 267.493167,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 37,
+        "potentialStallUnionMilliseconds": 4365.526747,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 14,
+          "Microhang": 1,
+          "Potential Interaction Delay": 22
+        },
+        "schemaVersion": 2,
+        "stallDiagnosticsMeasured": true
+      }
+    },
+    "frameAttribution": {
+      "appFPSConclusion": null,
+      "directProcessColumnInFrameTables": false,
+      "displayedSurfaceRows": 1202,
+      "frameLifetimeRows": 1203,
+      "visualConnectionRows": 0
+    },
     "framePresentationMeasured": false,
+    "freshSessionWorkaround": "Reload Folder",
+    "healthyCaptures": {
+      "accepted": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "swiftUIFocus": 108.0,
+          "swiftUIPreferences": 197.0,
+          "swiftUIViewGraph": 1942.0,
+          "workspaceSelection": 37.0
+        },
+        "mainThreadSampleWeightMilliseconds": 2758.0,
+        "maximumPotentialStallMilliseconds": 258.281083,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 17,
+        "potentialStallUnionMilliseconds": 2579.302707,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 13,
+          "Microhang": 1,
+          "Potential Interaction Delay": 3
+        },
+        "schemaVersion": 2,
+        "stallDiagnosticsMeasured": true
+      },
+      "candidate": {
+        "framePresentationMeasured": false,
+        "inclusiveMainThreadSampleMilliseconds": {
+          "appKitBitmap": 1.0,
+          "swiftUIFocus": 103.0,
+          "swiftUIPreferences": 213.0,
+          "swiftUIViewGraph": 1948.0,
+          "workspaceSelection": 38.0
+        },
+        "mainThreadSampleWeightMilliseconds": 2772.0,
+        "maximumPotentialStallMilliseconds": 270.527583,
+        "notes": [
+          "Potential hangs are Instruments diagnostics, not confirmed dropped/presented frames.",
+          "Inclusive CPU categories overlap; their values must not be added together.",
+          "Compare identical inputs/window/cache/indexing conditions; scripted input can add accessibility/focus overhead."
+        ],
+        "potentialMainThreadStalls": 16,
+        "potentialStallUnionMilliseconds": 2492.265001,
+        "potentialStallsByType": {
+          "Brief Unresponsiveness": 13,
+          "Microhang": 1,
+          "Potential Interaction Delay": 2
+        },
+        "schemaVersion": 2,
+        "stallDiagnosticsMeasured": true
+      }
+    },
+    "largeGridFiles": 10000,
+    "onlyIsolatedAppQuit": true,
+    "originalSHA256Unchanged": true,
     "physicalGesturesMeasured": false,
-    "status": "pending-mac-unlock"
+    "ratingRepositionUndoRedoAndFilteredMembership": true,
+    "releaseUUID": "647282D0-DE13-33F0-BA9A-F1C32B383D29",
+    "sampleFitPreviewRestored": true,
+    "savedRatingReload": true,
+    "selectedOnlyReviewSortAndRestore": true,
+    "sortPreservesEndpointIdentity": true,
+    "startupIssue": "https://github.com/kuroiokami/photo/issues/47",
+    "startupIssueObservedInAcceptedAndCandidate": true,
+    "status": "limited-native-validation-passed",
+    "temporaryShortcutsRemoved": true,
+    "unicodeJPEGs": 3
   },
   "notes": [
     "Quiet sequential ABBA release processes on each 10000-file generated corpus; hashes warm filesystem caches; fresh disposable databases and unchanged FULL durability.",

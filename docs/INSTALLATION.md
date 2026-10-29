@@ -197,6 +197,10 @@ Look for `quitRequested` and `willTerminate` near the time Photo disappeared. He
 
 The currently reported intermittent idle exit has not yet been reproduced or tied to a matching crash report. Diagnostic logging helps investigate another occurrence; it is not a claim that every cause of unexpected termination has been fixed. See the [current tracker](../PROJECT_STATUS.md).
 
+### Thumbnails keep spinning after reopening a folder
+
+A restored folder can occasionally leave thumbnails pending while the large preview works. Choose **File → Reload Folder (⌘R)**. This has been reproduced in both the accepted and collection-update builds and is tracked in [issue #47](https://github.com/kuroiokami/photo/issues/47); its cause is still under investigation. Reload restored thumbnail loading in the recorded generated-folder checks.
+
 ## 10. Local data and uninstalling
 
 Protected source reviews use both `decisions.sqlite` and `source-protection.json` under Application Support/Photo. Back up both plus the `Operations` folder for saved reviewed-copy plans/recovery; deleting local Photo data removes reviews, source protection and recovery records. The app bundle is separate from this data.
