@@ -512,3 +512,15 @@ See [ADR 0043](decisions/0043-bulk-decision-transactions.md) and [performance ev
 - [ ] Broaden physical gesture/presented-frame, real-shoot/media, sleep/wake, pressure and concurrent-workflow acceptance.
 
 See [ADR 0044](decisions/0044-photo-first-workspace.md) and [ADR 0045](decisions/0045-cooperative-publication-and-detail-navigation.md).
+
+## Milestone — Prepared model identities and selection/index capacity (2026-10-29)
+
+Implementation and rationale: [ADR 0046](decisions/0046-prepared-identity-and-index-capacity.md). Preserve identity spelling/key compatibility and all source/save/selection semantics while moving expected table allocation out of small publications and removing redundant selection work.
+
+- [x] Profile an owned disposable helper; keep raw stacks outside Git.
+- [x] Preserve exact Unicode bytes, snapshot/history/readiness and grouped physical-file behavior in regressions.
+- [x] Repeat quiet Unicode/ASCII 10k ABBA controls; retain startup, RSS, original hashes, errors and actual remaining gaps.
+- [x] Native 10k selection plus disposable Unicode JPEG decisions/filter/history/Reload and cleanup.
+- [ ] Physical frames/gestures, representative RAW/media/40k/pressure and sustained concurrent/long-session acceptance remain separate work.
+
+Strict local/release, repository and inspected final-head CI/delivery evidence is maintained in the tracker and this change's PR; partial timing gains do not complete broader acceptance.

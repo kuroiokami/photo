@@ -4,6 +4,11 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Faster indexing and large selections
+
+- Prepare file-path IDs and model storage to reduce Unicode lookup/rehash pauses; keep exact identity and original bytes unchanged.
+- Reduce Select All and ungrouped selection work, with separate generated Unicode/ASCII measurements and existing selection/history behavior preserved.
+
 ### Photo workspace
 
 - Give the preview more space with compact culling controls, a shorter filmstrip and a folder-focused sidebar. Keep stars, flags and image edits directly accessible; move filters and browsing options into named popovers.
