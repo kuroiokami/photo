@@ -4,6 +4,11 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Collection updates
+
+- Prepare collection sorting, visibility and lookup indexes away from the UI thread, with stale-result/cancellation guards and selection preserved.
+- Reuse full-order indexes when clearing filters; keep immediate decision/filter/history behavior and source protection.
+
 ### Faster indexing and large selections
 
 - Prepare file-path IDs and model storage to reduce Unicode lookup/rehash pauses; keep exact identity and original bytes unchanged.

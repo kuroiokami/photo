@@ -26,7 +26,10 @@ public final class WorkspaceState {
     }
   }
   public private(set) var groupPairs = false {
-    didSet { refreshSelectionPresentation() }
+    didSet {
+      visibilityVersion &+= 1
+      refreshSelectionPresentation()
+    }
   }
   public private(set) var sourceReview: SourceReviewSession?
   public var isSourceReview: Bool { sourceReview != nil }
@@ -39,7 +42,9 @@ public final class WorkspaceState {
   }
   public private(set) var sourceReviewedIDs: Set<String> = []
   private var sourceFields: [String: SourceDecisionFields] = [:]
-  public private(set) var reviewIDs: Set<String>?
+  public private(set) var reviewIDs: Set<String>? {
+    didSet { visibilityVersion &+= 1 }
+  }
   public var reviewingSelection: Bool { reviewIDs != nil }
   /// Freeze membership independently of subsequent navigation/selection.
   public func reviewSelection() {
@@ -220,8 +225,12 @@ public final class WorkspaceState {
   public var autoAdvance = UserDefaults.standard.bool(forKey: "Photo.autoAdvance") {
     didSet { UserDefaults.standard.set(autoAdvance, forKey: "Photo.autoAdvance") }
   }
-  public private(set) var flagFilter: FlagFilter = .all
-  public private(set) var minimumRating = 0
+  public private(set) var flagFilter: FlagFilter = .all {
+    didSet { visibilityVersion &+= 1 }
+  }
+  public private(set) var minimumRating = 0 {
+    didSet { visibilityVersion &+= 1 }
+  }
   public var totalCount: Int { allPhotos.count }
   @ObservationIgnored private let decisionStore: DecisionStore
   private var undoStack: [WorkspaceChange] = []
@@ -254,7 +263,20 @@ public final class WorkspaceState {
   @ObservationIgnored private var metadataJobs: Set<UUID> = []
   public private(set) var collectionRevision = 0
   public private(set) var sort: PhotoSort = .filename
-  @ObservationIgnored private var allPhotos: [PhotoItem] = []
+  @ObservationIgnored private var allPhotos: [PhotoItem] = [] {
+    didSet { fullIndex = nil }
+  }
+  @ObservationIgnored private var fullIndex: [String: Int]?
+  @ObservationIgnored private var visibilityVersion = 0
+  @ObservationIgnored private var metadataVersion = 0
+  @ObservationIgnored private var sortRequest: UInt64 = 0
+  @ObservationIgnored private var sortWorker: Task<PreparedPhotoCollection?, Never>?
+  // Deterministic late-result injection; no public API or user-visible data.
+  @ObservationIgnored private var sortPreparationProbe: (@Sendable () async -> Void)?
+  func setSortPreparationProbe(_ probe: (@Sendable () async -> Void)?) {
+    sortPreparationProbe = probe
+  }
+
   public private(set) var selectedIndex: Int? {
     didSet {
       // Focus/order cannot change represented membership for explicit IDs.
@@ -302,6 +324,7 @@ public final class WorkspaceState {
     self.fileAccess = fileAccess
     self.decisionStore = decisionStore
     indicesByID = Self.makeIndex(photos)
+    fullIndex = indicesByID
     selectedIndex = photos.isEmpty ? nil : 0
     selectedIDs = Set([selectedID].compactMap { $0 })
     refreshFilenameRanks()
@@ -396,6 +419,7 @@ public final class WorkspaceState {
       folderLabels = loaded.folderLabels
       if recursive { sourceReview = loaded.context }
       allPhotos = loaded.photos
+      fullIndex = loaded.indices
       filenameRanks = loaded.filenameRanks
       filenameRankLocale = Locale.current.identifier
       familyMembers = loaded.families
@@ -659,6 +683,7 @@ public final class WorkspaceState {
     defer { PhotoTrace.end(trace) }
     if !updates.isEmpty {
       metadata.merge(updates) { _, new in new }
+      metadataVersion &+= 1
       for (id, metadata) in updates {
         if let value = thumbnailStates[id], value.metadata != metadata { value.metadata = metadata }
       }
@@ -678,6 +703,11 @@ public final class WorkspaceState {
   }
 
   public func setSort(_ sort: PhotoSort) async {
+    sortRequest &+= 1
+    let request = sortRequest
+    sortWorker?.cancel()
+    sortWorker = nil
+    defer { if request == sortRequest { sortWorker = nil } }
     self.sort = sort
     guard loadState == .ready else { return }
     guard sort == .filename || sort == .rating || !indexing else { return }
@@ -686,25 +716,52 @@ public final class WorkspaceState {
     let collection = collectionRevision
     if filenameRankLocale != Locale.current.identifier { refreshFilenameRanks() }
     let filenameRanks = filenameRanks
-    let metadata = metadata
-    let ratings = decisions.mapValues(\.rating)
+    let usesMetadata = sort != .filename && sort != .rating
+    let metadata = usesMetadata ? metadata : [:]
+    let decisions = sort == .rating ? decisions : [:]
     let revision = decisionRevision
-    let ordered = await Task.detached(priority: .userInitiated) {
-      sort.ordered(snapshot, metadata: metadata, ratings: ratings, filenameRanks: filenameRanks)
-    }.value
-    guard session == sessionID, self.sort == sort, !Task.isCancelled else { return }
-    if collection != collectionRevision {
-      await setSort(sort)
+    let metadataRevision = metadataVersion
+    let scope = visibilityVersion
+    let visibility = visibilitySnapshot
+    let probe = sortPreparationProbe
+    let worker = Task.detached(priority: .userInitiated) { () -> PreparedPhotoCollection? in
+      guard !Task.isCancelled else { return nil }
+      let ordered = sort.ordered(
+        snapshot, metadata: metadata, ratings: decisions.mapValues(\.rating),
+        filenameRanks: filenameRanks)
+      guard !Task.isCancelled else { return nil }
+      let visible = visibility.photos(in: ordered)
+      guard !Task.isCancelled else { return nil }
+      let fullIndex = Self.makeIndex(ordered)
+      let index = visible.count == ordered.count ? fullIndex : Self.makeIndex(visible)
+      await probe?()
+      guard !Task.isCancelled else { return nil }
+      return PreparedPhotoCollection(
+        ordered: ordered, visible: visible, fullIndex: fullIndex, index: index)
+    }
+    sortWorker = worker
+    let prepared = await withTaskCancellationHandler {
+      await worker.value
+    } onCancel: {
+      worker.cancel()
+    }
+    guard let prepared else { return }
+    guard session == sessionID, self.sort == sort, request == sortRequest, !Task.isCancelled else {
       return
     }
-    if sort == .rating, revision != decisionRevision {
+    if collection != collectionRevision || scope != visibilityVersion
+      || visibility.loading != decisionsLoading
+      || ((sort == .rating || visibility.filtersDecisions) && revision != decisionRevision)
+      || (usesMetadata && metadataRevision != metadataVersion)
+    {
       await setSort(sort)
       return
     }
     let selected = selectedID
-    allPhotos = ordered
-    photos = visiblePhotos(ordered)
-    indicesByID = Self.makeIndex(photos)
+    allPhotos = prepared.ordered
+    fullIndex = prepared.fullIndex
+    photos = prepared.visible
+    indicesByID = prepared.index
     selectedIndex = selected.flatMap { indicesByID[$0] } ?? (photos.isEmpty ? nil : 0)
   }
 
@@ -760,6 +817,9 @@ public final class WorkspaceState {
   }
 
   private func resetDecisions() {
+    sortWorker?.cancel()
+    sortWorker = nil
+    sortRequest &+= 1
     thumbnailStates = [:]
     pendingDecisions = [:]
     pendingMetadata = [:]
@@ -825,12 +885,11 @@ public final class WorkspaceState {
       }
     }
     guard session == sessionID, !Task.isCancelled else { return }
-    if sort == .rating {
-      allPhotos = sort.ordered(
-        allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
-        filenameRanks: filenameRanks)
-    }
     decisionsLoading = false
+    if sort == .rating {
+      await setSort(.rating)
+      guard session == sessionID, !Task.isCancelled else { return }
+    }
     rebuildVisible(preferred: selectedID ?? reloadSelection)
     reloadSelection = nil
   }
@@ -937,35 +996,34 @@ public final class WorkspaceState {
     }
   }
 
-  private func matches(_ photo: PhotoItem) -> Bool {
-    let decision = decisions[photo.id] ?? CullingDecision()
-    let representative = !groupPairs || (familyMembers[photo.id]?.first?.id ?? photo.id) == photo.id
-    let inReview =
-      reviewIDs.map { ids in
-        ids.contains(photo.id)
-          || (groupPairs && (familyMembers[photo.id]?.contains { ids.contains($0.id) } ?? false))
-      } ?? true
-    let knownDecision =
-      (flagFilter == .all && minimumRating == 0) || decisionsReady.contains(photo.id)
-    return representative && inReview && knownDecision && flagFilter.includes(decision.flag)
-      && decision.rating >= minimumRating
+  private var visibilitySnapshot: PhotoVisibility {
+    let filtersDecisions = flagFilter != .all || minimumRating > 0
+    return PhotoVisibility(
+      grouped: groupPairs, families: groupPairs ? familyMembers : [:], review: reviewIDs,
+      filter: flagFilter, minimumRating: minimumRating, loading: decisionsLoading,
+      decisions: filtersDecisions ? decisions : [:], ready: filtersDecisions ? decisionsReady : [])
   }
 
+  private func matches(_ photo: PhotoItem) -> Bool { visibilitySnapshot.contains(photo) }
+
   private func visiblePhotos(_ candidates: [PhotoItem]) -> [PhotoItem] {
-    if decisionsLoading && (flagFilter != .all || minimumRating > 0) { return [] }
-    return candidates.filter { matches($0) }
+    visibilitySnapshot.photos(in: candidates)
   }
 
   private func rebuildVisible(preferred: String?, fallback: [String] = []) {
-    photos =
-      decisionsLoading && (flagFilter != .all || minimumRating > 0)
-      ? [] : allPhotos.filter { matches($0) }
-    indicesByID = Self.makeIndex(photos)
+    let visible = visiblePhotos(allPhotos)
+    if visible.count == allPhotos.count {
+      if fullIndex == nil { fullIndex = Self.makeIndex(allPhotos) }
+      indicesByID = fullIndex!
+    } else {
+      indicesByID = Self.makeIndex(visible)
+    }
+    photos = visible
     selectedIndex =
       preferred.flatMap { indicesByID[$0] }
       ?? fallback.lazy.compactMap { self.indicesByID[$0] }.first
       ?? (photos.isEmpty ? nil : 0)
-    selectedIDs.formIntersection(Set(photos.map(\.id)))
+    selectedIDs = selectedIDs.filter { indicesByID[$0] != nil }
     if selectedIDs.isEmpty { selectedIDs = Set([selectedID].compactMap { $0 }) }
   }
 

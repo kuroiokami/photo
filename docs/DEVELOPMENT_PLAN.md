@@ -524,3 +524,17 @@ Implementation and rationale: [ADR 0046](decisions/0046-prepared-identity-and-in
 - [ ] Physical frames/gestures, representative RAW/media/40k/pressure and sustained concurrent/long-session acceptance remain separate work.
 
 Strict local/release, repository and inspected final-head CI/delivery evidence is maintained in the tracker and this change's PR; partial timing gains do not complete broader acceptance.
+
+## Milestone — Prepared collection updates (2026-10-29)
+
+Rationale and scope: [ADR 0047](decisions/0047-prepared-collection-updates.md).
+
+- [x] Profile actual membership/index/publication stacks on an owned disposable helper.
+- [x] Preserve scope/metadata/session/request/cancellation and index/history/grouped-review correctness in regressions.
+- [x] Quiet matched Unicode/ASCII 10k controls, with hashes, startup/RSS and actual remaining gaps.
+- [x] Native sort/filter/review/keyboard/history/Reload, original hashes and cleanup on healthy sessions.
+- [x] Attempt Animation Hitches capture; retain anonymous results and excluded startup diagnostic without an FPS claim.
+- [ ] App-attributed physical frames remain open; display tables lack mapping. Pre-existing restored-thumbnail issue #47 is tracked separately.
+- [ ] Physical gestures, diverse RAW/media/40k/pressure/concurrent/long-session acceptance remains separate work.
+
+Exact checks, remote CI, native limits and delivery evidence belong in the tracker/PR. Model improvements do not complete physical-frame acceptance.
