@@ -580,3 +580,25 @@ Earlier allocation has a startup tradeoff: selected-ready latency after opening 
 Strict local checks pass **266 registered Swift tests, 264 executed/two optional RAW skips**, including three new semantic regressions. Native isolated signed `E63B1DB1-0FB7-3C7C-8D1F-6DB8FBA1376F` verifies full-grid 10k Select All, inverse/deselect, unknown-group disabled actions and enabled controls after indexing. Three disposable 2400×1600 JPEGs with decomposed, Japanese and emoji filenames retain hashes after group stars/Pick, independent Undo/Redo, filtered group removal/Undo/Clear and persisted Reload. Both temporary shortcuts are removed; sample Fit preview restored and only the isolated app quit. No decision writes target the 10k corpus or personal photos.
 
 Remaining work includes ~61–64 ms Unicode large-selection work, ~94–102 ms whole-job scheduling gaps and collection order/rebuild costs, plus native physical gestures/presented frames and representative RAW/media/40k/pressure/long-session acceptance. The service corpus, two samples per mode and native scripted checks establish limited scope; they do not establish universal throughput, camera-card behavior or competitor parity.
+
+## Prepared collection updates — 2026-10-29
+
+[ADR 0047](decisions/0047-prepared-collection-updates.md) moves membership/index construction and rating-map preparation into the existing background sort path, rejects superseded/stale/cancelled results, reuses a full-order index when clearing filters and short-circuits unrestricted visibility. Immediate decisions, filtering, selection fallback and history semantics remain; file I/O/validation, original-image bytes, source protection, durability, decode/cache budgets and genuine-pixel inspection are unchanged.
+
+[Eight complete controls](benchmarks/2026-10-29-collection-updates.json) compare accepted `11290c4` with final release `647282D0-DE13-33F0-BA9A-F1C32B383D29` in quiet sequential baseline/candidate/candidate/baseline order for each 10k generated-file corpus. Databases/processes are fresh; hashing warms filesystem caches. No builds/tests/native input overlap controls; no material clock suspension occurs. Sampled/preliminary runs are excluded. The fresh baseline is faster than the preceding session, so compare these matched controls rather than historical absolute timings.
+
+| Model/service metric | Unicode baseline | Unicode candidate | ASCII baseline | ASCII candidate |
+| --- | --- | --- | --- | --- |
+| ISO order and publication, ms | 40.4–40.7 | **34.5–34.6** | 6.7–6.9 | **5.3–5.5** |
+| Rating order and publication, ms | 50.2–51.0 | **33.4–33.6** | 7.5–7.6 | **4.6–4.7** |
+| Pick filtering after Select All, ms | 17.7–18.2 | 17.4–17.7 | 3.2–3.5 | 2.6–2.8 |
+| Largest whole-job actor gap, ms | 61.9–68.1 | **51.7–54.5** | 18.5–21.7 | 15.1–18.8 |
+| Select All, ms | 40.5–40.8 | 40.3–40.8 | 6.4–6.6 | 6.4–6.5 |
+
+Medians of two samples show rating order about **34% faster for Unicode / 38% for ASCII**, and ISO order about **15% / 22%**. Unicode pick-filter cost is similar; releasing a large selection still contributes to it. Whole-job heartbeat gaps remain, and a 10 ms service heartbeat is not presented-frame latency. Every original hash matches; all runs return 10,000 selected files and zero metadata/decision errors. Generated EXIF/star values are tied, so diverse-metadata correctness comes from regressions, not a real-camera sort-throughput claim.
+
+Metadata/decision indexing stays broadly similar (Unicode about 1.54–1.56 / 6.00–6.16 s; ASCII 1.14–1.16 / 5.56–5.63 s). First Fit is 39.2–40.3 → 35.2–39.1 ms for Unicode, 36.3–38.2 → 36.1–36.9 ms for ASCII; selected readiness varies 7–13 / 5–6 ms. No first-preview or general throughput claim. Sampled Unicode RSS overlaps roughly 503–506 MiB; ASCII baseline 478–488 / candidate 489–491 MiB retains an earlier/higher memory result. The full-order cache can remain with a filtered subset; no memory-reduction or peak-RSS bound is claimed.
+
+Strict local checks pass **274 registered Swift tests, 272 executed/two optional RAW skips**, including eight new late-result/cancellation/index/history/grouped-review regressions; release products build. Native checks and actual app-attributed frame capture are **pending Mac unlock**. Installed full Xcode supplies Animation Hitches and Time Profiler templates; the locked UI has not been bypassed. No physical gesture/FPS, broad-camera/card/network, 40k/pressure/concurrent/long-session claim.
+
+Remaining costs include large selection/summary publication, immediate bulk rating/Undo resorting, first locale collation, actor gaps and native rendering. These changes do not complete broader acceptance.

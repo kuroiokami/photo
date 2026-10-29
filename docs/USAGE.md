@@ -175,7 +175,7 @@ Restore through **Finder → Trash → select the files → Put Back**; include 
 
 Open **Filters** to combine a flag filter with a minimum-star filter. The header shows visible and total counts. **Clear Filters** removes both restrictions; a selected-review set is ended separately.
 
-Sort by filename, capture time, ISO, shutter speed, aperture, focal length or rating. Numeric EXIF values sort numerically; missing values go last with filename ties. EXIF sorts wait for indexing rather than repeatedly shuffling the collection. Selection follows identity after reordering. Rating sort puts highest stars first.
+Sort by filename, capture time, ISO, shutter speed, aperture, focal length or rating. Photo keeps the current collection visible while preparing a new order in the background, then keeps your selection with the same files. If you change the sort again, the newest choice wins. Numeric EXIF values sort numerically; missing values go last with filename ties. EXIF sorts wait for indexing rather than repeatedly shuffling the collection. Selection follows identity after reordering. Rating sort puts highest stars first.
 
 The **shooting-information** button displays capture time, camera/lens, shutter, aperture, ISO, focal length and dimensions. A compact exposure strip remains near preview decisions.
 

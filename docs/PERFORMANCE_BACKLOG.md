@@ -52,3 +52,5 @@ Foreground-first nearby Fit preparation is implemented in [ADR 0037](decisions/0
 The user clarified the reported symptom: Photo still has a Dock icon but no window appears. [ADR 0040](decisions/0040-workspace-window-recovery.md) adds explicit workspace recovery and a menu/keyboard fallback. No matching process crash was established. ADR 0039 diagnostics remain useful if it recurs; short soaks do not establish overnight/sleep/wake/pressure acceptance.
 
 ADR 0046 prepares exact photo-ID UTF-8 storage, sizes indexing tables against inventory and removes redundant selection-set work. Matched Unicode/ASCII 10k controls improve Select All to ~61–64 / 9.6–9.8 ms; Unicode collection-order/rebuild gaps and physical-frame/broad-media acceptance remain open. See the tracker and retained reports.
+
+ADR 0047 implements immutable membership evaluation, guarded/cancellable background sort/index preparation and reusable full-order indexes. Unicode/ASCII 10k rating-order controls improve about 34%/38%; Unicode filtering and large selection still cost time. Native/frame validation is pending Mac unlock, and immediate bulk rating/history/locale work remains open.

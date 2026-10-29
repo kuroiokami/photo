@@ -4,6 +4,16 @@ Last updated: 2026-10-29
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
+## Prepared collection updates — 2026-10-29
+
+Implemented [ADR 0047](docs/decisions/0047-prepared-collection-updates.md): immutable visibility inputs/unrestricted fast path; off-main membership, rating-map and full/visible index preparation; request/session/inventory/scope/decision/metadata guards and cancellation; reusable full-order index invalidated on every inventory/order mutation; selected-ID intersection without a full visible-ID Set. Rating order at decision-index completion uses the worker. Selection, grouping/review, unknown gating, filter fallback, auto-advance, snapshots/history and original/source/save guarantees remain.
+
+[Quiet Unicode/ASCII 10k ABBA controls](docs/PERFORMANCE.md#prepared-collection-updates--2026-10-29) show rating order **50–51 → 33–34 ms / 7.5 → 4.6–4.7 ms**, ISO order **40–41 → 34–35 ms / 6.7–6.9 → 5.3–5.5 ms**, and Unicode maximum model heartbeat gap **62–68 → 52–54 ms**. Unicode pick filtering and Select All remain similar. All hashes/counts match, metadata/decision errors are zero and no material clock suspension occurs. These are service/model timings, not presented FPS. Retained RSS includes a higher ASCII candidate range and a full-index cache tradeoff; no memory or first-preview guarantee.
+
+Strict local checks pass **274 registered tests, 272 executed/two optional RAW skips**, with eight new deterministic stale filter/group/metadata/session, newer-request, cancellation, rating-index and cache/history regressions. Release products build. **Native sorting/filtering/keyboard checks and app-attributed frame capture are pending Mac unlock.** The user has been asked asynchronously; code/model work continues independently. Full repository checks pass for **266 tracked files**, including links/JSON/data policy, workflow lint and redacted history/worktree secret scans; all nine Python analyzer tests pass. Inspected remote CI/native/delivery evidence will be recorded in the draft PR. Preserve the unrelated development-plan wording edit.
+
+Next: complete native validation when unlocked; then remaining selection/summary and immediate bulk rating/history costs, physical gesture/frame evidence, representative RAW/media/40k/pressure/concurrent/long-session acceptance.
+
 ## Prepared identities and smaller indexing/selection costs — 2026-10-29
 
 Implemented [ADR 0046](docs/decisions/0046-prepared-identity-and-index-capacity.md): prepare file-backed IDs as native UTF-8 once without changing path bytes, URL/filename or canonical key compatibility; reserve metadata and six decision tables against the known inventory; avoid redundant ungrouped expansion/Set creation and symmetric-difference allocation. Grouping/deduplication, unknown gating, per-photo observation, snapshot isolation, filtering/focus/history, validation/source protection and persistence/decoding remain.
@@ -492,6 +502,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-10-29: Prepared collection sorting/membership/indexes with cancellation and stale-result guards; matched controls and regressions pass; native/frame capture pending unlock.
 
 - 2026-10-29: Prepared identity/storage and reduced large-selection costs; matched Unicode/ASCII controls and native/regression evidence in ADR 0046.
 
