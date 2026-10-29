@@ -32,7 +32,7 @@ struct WorkspaceScaleBenchmark {
     let residentMiB: Double
   }
   struct Report: Encodable {
-    let schemaVersion = 2
+    let schemaVersion = 3
     let fileCount: Int
     let includesSubfolders: Bool
     let originalsUnchanged: Bool
@@ -42,6 +42,7 @@ struct WorkspaceScaleBenchmark {
     let metadataIndexMilliseconds: Double
     let decisionIndexMilliseconds: Double
     let metadataPublications: Int
+    let publicationWork: WorkspacePublicationMetrics
     let decisionPublications: Int
     let metadataFailures: Int
     let decisionErrors: Int
@@ -52,6 +53,7 @@ struct WorkspaceScaleBenchmark {
     let isoSortMilliseconds: Double
     let ratingSortMilliseconds: Double
     let pickFilterMilliseconds: Double
+    let maximumClockSuspensionMilliseconds: Double
     let maximumMainActorGapMilliseconds: Double
     let mainActorSamples: Int
     let sampledPeakResidentMiB: Double
@@ -66,6 +68,7 @@ struct WorkspaceScaleBenchmark {
   }
   private final class Heartbeat {
     var maximum = 0.0
+    var suspension = 0.0
     var samples = 0
   }
   static func run(folder: URL, includingSubfolders: Bool = false) async throws -> Report {
@@ -87,11 +90,19 @@ struct WorkspaceScaleBenchmark {
     let heartbeat = Heartbeat()
     let beats = Task {
       var previous = ContinuousClock.now
+      var previousAwake = SuspendingClock.now
       while !Task.isCancelled {
         do { try await Task.sleep(for: .milliseconds(10)) } catch { break }
-        heartbeat.maximum = max(heartbeat.maximum, elapsed(previous))
+        let wall = elapsed(previous)
+        let duration = previousAwake.duration(to: .now)
+        let awake =
+          Double(duration.components.seconds) * 1000 + Double(duration.components.attoseconds)
+          / 1e15
+        heartbeat.suspension = max(heartbeat.suspension, max(0, wall - awake))
+        heartbeat.maximum = max(heartbeat.maximum, wall)
         heartbeat.samples += 1
         previous = .now
+        previousAwake = .now
       }
     }
     defer { beats.cancel() }
@@ -207,12 +218,14 @@ struct WorkspaceScaleBenchmark {
       selectedReadyDuringIndexingMilliseconds: readyTime, metadataIndexMilliseconds: metadataTime,
       decisionIndexMilliseconds: decisionTime,
       metadataPublications: state.publicationMetrics.metadata,
+      publicationWork: state.publicationMetrics,
       decisionPublications: state.publicationMetrics.decisions,
       metadataFailures: urls.count - state.metadata.count,
       decisionErrors: state.saveStatus.values.filter { $0 != "Saved" }.count,
       navigation: navigation, cachedFit: Latency(cached), selectAllMilliseconds: selectionTime,
       selectedFileCount: count, isoSortMilliseconds: isoTime, ratingSortMilliseconds: ratingTime,
-      pickFilterMilliseconds: filterTime, maximumMainActorGapMilliseconds: heartbeat.maximum,
+      pickFilterMilliseconds: filterTime, maximumClockSuspensionMilliseconds: heartbeat.suspension,
+      maximumMainActorGapMilliseconds: heartbeat.maximum,
       mainActorSamples: heartbeat.samples,
       sampledPeakResidentMiB: Double(await sampler.peak) / 1_048_576,
       memory: memory, fitCacheMiB: Double(await previews.cachedByteCount) / 1_048_576,

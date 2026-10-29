@@ -4,6 +4,12 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+### Photo workspace
+
+- Give the preview more space with compact culling controls, a shorter filmstrip and a folder-focused sidebar. Keep stars, flags and image edits directly accessible; move filters and browsing options into named popovers.
+- Add Focus on Photo (⇧⌘F) and Hide/Show Filmstrip (⌥⌘T), preserving previous panel choices. Keep source protection, save/recovery status and inspection commands accessible.
+- Bound/adapt background model publications and yield between them. Isolate navigator/comparison pane updates and coalesce native callback bursts without changing genuine-pixel scaling or RAW decoding.
+
 ### Window recovery
 
 - Restore an existing workspace on a macOS reopen request, including minimized and completely offscreen windows; open a workspace after the last window closes. Add **Window → Show Photo Window (⌘0)** and local reopen events. The reported Dock-icon/no-window symptom is distinct from a confirmed crash.

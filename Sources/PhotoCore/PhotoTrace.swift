@@ -32,7 +32,9 @@ public enum PhotoTrace {
 }
 
 /// Counts publication operations, not SwiftUI body evaluations or rendered frames.
-public struct WorkspacePublicationMetrics: Sendable {
+public struct WorkspacePublicationMetrics: Codable, Sendable {
   public internal(set) var metadata = 0
   public internal(set) var decisions = 0
+  public internal(set) var metadataWork = PublicationWork()
+  public internal(set) var decisionWork = PublicationWork()
 }

@@ -1,8 +1,20 @@
 # Project tracker
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
+
+## Photo-first workspace and bounded model updates — 2026-10-28
+
+Implemented [ADR 0044](docs/decisions/0044-photo-first-workspace.md) and [ADR 0045](docs/decisions/0045-cooperative-publication-and-detail-navigation.md). Compact collection/culling rows, a smaller interactive filmstrip and a folder-focused sidebar give the preview substantially more room. Flags, stars, rotate/mirror, crop and IPTC remain visible. Filters and browsing options use explicit popovers; active filters/clear and selected-review exit remain visible. Focus on Photo **⇧⌘F** and filmstrip **⌥⌘T** restore prior panel choices. Native cancel/focus routing keeps Escape useful after comparison/inspection and gives crop/popovers priority.
+
+Model publications cap background work at 16 records, adapt toward 2 ms and yield/drain before final order/readiness. Selected updates remain immediate. Per-photo information and save/retry regions stay local. Pan/pinch geometry, native callback bursts and comparison-pane requests are isolated from image/loading state; rendered parent-isolation, channel and teardown tests pass. This is cooperative scheduling, not a hard frame deadline.
+
+[Awake ABBA controls and native geometry evidence](docs/PERFORMANCE.md#photo-first-workspace-and-cooperative-updates--2026-10-28) use generated inputs only. At the same native window, approximate canvas height grows **231 → 472 points**, or **681 in Focus**. Actual hosting tests verify useful normal/Focus canvases at 1200×800 and 960×640. 10k model throughput is similar: metadata about 3.2 s and decisions 10.7 s in both modes. Every original hash matches and no metadata/decision errors occur. Real publication overshoots reach about **11 ms metadata / 64 ms decisions**; the separate Select All operation remains about **0.4 s**. Do not claim native FPS, a strict 2 ms bound, broad media/large-shoot acceptance or that every optimization is finished. Sleep-contaminated initial controls are excluded; new clock-difference telemetry helps detect suspension.
+
+Strict local checks pass **263 registered Swift tests, 261 executed/two optional RAW skips**, with eight new meaningful regressions. Release products build. Native isolated checks verify photo-space/Focus, keyboard and group decisions, settings/filter behavior, navigator/linked/unlinked inspection, crop/rotation/modal cancellation, filmstrip choices and folder-tree navigation on hash-verified disposable JPEGs. Extensive native release `C12E4BA1-2DDB-3A4F-9D18-2D24D7061014` passes; selection follow-up `AC7C02AB-BDFE-3F32-8D23-750791D4AA09` repeats selection/review return to keyboard culling, Focus/Escape and sample cleanup. The temporary shortcut is removed and only the isolated app quit. All three full-resolution originals retain SHA256. Full repository checks pass for **259 tracked files** (links/JSON/data policy, workflow lint and redacted history/worktree secret scans), and all nine Python analyzer tests pass. Exact-head CI, conversation audit, merge and installation evidence is maintained in [PR #44](https://github.com/kuroiokami/photo/pull/44) after inspection. Initial macOS CI exposes older-compiler inference limits in the workspace body and implicit actor conversion at the navigator boundary. Smaller opaque view sections preserve modifier order; the callback now explicitly declares MainActor isolation. Final compatibility release `286446C0-3CA1-3A78-A565-2273DF5E7C44` repeats strict local checks and native Focus/Escape, genuine JPEG 100%, navigator pan (50 → 62% vertically), crop/modal cancellation, filmstrip toggle and next-photo keyboard navigation. The temporary shortcut is removed, sample Fit preview restored, only the isolated app quit and all three original hashes match. The CI retry compiles and passes all new workspace regressions; an existing metadata idle-lease test exhausts its six-second wall-clock limit during a roughly 28-second loaded scheduling interval. It now allows 100 polling opportunities while retaining zero-source/cache-preservation/weak-deallocation assertions; production code is unchanged. Exact-head CI and delivery evidence belong in PR #44. Preserve the unrelated development-plan wording edit.
+
+Next: profile actual publication overshoots/collection-wide allocation and large selection, collect physical gesture/presented-frame evidence, and broaden real shoots/media/RAW startup, pressure, concurrent workflows and long-session/sleep-wake acceptance.
 
 ## Bounded bulk decision saves — 2026-10-27
 
@@ -14,7 +26,7 @@ Formatter/strict build/tests pass **255 registered Swift tests, 253 executed/two
 
 Guides, changelog, checklist, milestones, benchmark/reproduction notes and architecture rationale are updated. Full repository checks pass for **251 tracked files**, including local links/JSON/data policy, workflow lint and redacted history/working-tree secret scans; all nine Python analyzer tests pass. Delivery: [PR #43](https://github.com/kuroiokami/photo/pull/43); its description records inspected final-head CI, conversation audit and merge/install evidence after completion. Preserve the unrelated development-plan wording edit.
 
-Next: time-budgeted UI publication and detail pan/zoom observation. Cold RAW metadata initialization, cross-window/result sharing, representative shoots/media, physical frames, pressure and long-session/sleep-wake acceptance remain open.
+Historical follow-up: cooperative publication and detail pan/pinch isolation are now implemented in ADR 0045; hard frame guarantees and broader acceptance remain open. Cold RAW metadata initialization, cross-window/result sharing, representative shoots/media, physical frames, pressure and long-session/sleep-wake acceptance remain open.
 
 ## Validated metadata read reuse — 2026-10-27
 
@@ -470,6 +482,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-10-28: Give photos more space with compact controls/sidebar/filmstrip and Focus mode; isolate pan/pinch/linked channels, coalesce reports, add cooperative publication budgets and retain honest awake/sleep/overshoot evidence (ADRs 0044–0045).
 
 - 2026-10-27: Batch rating/flag and Undo/Redo saves in bounded durable transactions, recover exact XMP publications with metadata baselines, and retain measured ordinary/protected-review controls plus native group/restart acceptance (ADR 0043).
 

@@ -239,8 +239,11 @@ struct MetadataReuseTests {
     weakReader = reader
     _ = try await reader?.metadata(for: file)
     #expect(await reader?.statistics.retainedSources == 1)
-    let deadline = ContinuousClock.now.advanced(by: .seconds(6))
-    while await reader?.statistics.retainedSources == 1, ContinuousClock.now < deadline {
+    // A loaded CI executor can resume the test after its entire wall-clock
+    // deadline, before the background lease gets a turn. Allow bounded polling
+    // opportunities instead; keep the idle release/cache/deallocation assertions.
+    for _ in 0..<100 {
+      if await reader?.statistics.retainedSources == 0 { break }
       try await Task.sleep(for: .milliseconds(100))
     }
     #expect(await reader?.statistics.retainedSources == 0)
