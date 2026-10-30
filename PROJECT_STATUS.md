@@ -1,8 +1,16 @@
 # Project tracker
 
-Last updated: 2026-10-29
+Last updated: 2026-10-30
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
+
+## Restored-folder thumbnail session repair — 2026-10-30
+
+Implemented [ADR 0048](docs/decisions/0048-explicit-workspace-image-sessions.md). Once the workspace starts an image session, unseen late sample/old-view requests cannot adopt another session and retire the active folder. Mount image tasks only after thumbnail and Fit session setup completes; cancel/stale guards prevent obsolete readiness. Standalone implicit pipeline clients retain their behavior. Workers/cache budgets, decoding, detail, decisions/source protection and original bytes are unchanged.
+
+The new deterministic test fails on the accepted code with four issues and passes after the repair. Seven scheduling regressions and strict local checks pass: **275 registered tests, 273 executed/two optional RAW skips**. Release build/signature checks pass. Native isolated release `A5A0E9D5-0F2F-3FDC-A082-710DAA6A6FB0` passes three verified fresh-process automatic restorations of a generated 10k Unicode JPEG collection without Reload. Each shows loaded Fit and filmstrip images during indexing. Full Contact Sheet End loads/selects the last thumbnail; Home/Space returns to loaded Fit. Temporary shortcut removed, sample image restored, only the isolated app quit and all 10k source aggregate hashes match across the remaining restoration checks. Native automation initially returns unusually slowly; tool durations are not app latency/FPS evidence. Broader camera/media/sleep-wake acceptance remains open. Remote CI and delivery evidence will be recorded in the fix PR; no scrolling/FPS gain is claimed. Preserve the unrelated development-plan edit.
+
+Next: remaining bulk-selection/rating/history costs; broad camera/media/frame/long-session acceptance and release packaging remain open.
 
 ## Prepared collection updates — 2026-10-29
 
@@ -503,6 +511,7 @@ Preserve the user's pre-existing unstaged `native rightmacOS` edit in the develo
 
 ## Change log
 
+- 2026-10-30: Repair explicit image-session ownership and readiness; negative-control scheduling regression and three native automatic 10k restorations pass without Reload.
 - 2026-10-29: Prepared collection sorting/membership/indexes with cancellation and stale-result guards; matched controls/regressions and scoped native checks pass; frame attribution remains unavailable and pre-existing startup issue #47 is tracked.
 
 - 2026-10-29: Prepared identity/storage and reduced large-selection costs; matched Unicode/ASCII controls and native/regression evidence in ADR 0046.

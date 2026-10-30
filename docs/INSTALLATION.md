@@ -199,7 +199,7 @@ The currently reported intermittent idle exit has not yet been reproduced or tie
 
 ### Thumbnails keep spinning after reopening a folder
 
-A restored folder can occasionally leave thumbnails pending while the large preview works. Choose **File → Reload Folder (⌘R)**. This has been reproduced in both the accepted and collection-update builds and is tracked in [issue #47](https://github.com/kuroiokami/photo/issues/47); its cause is still under investigation. Reload restored thumbnail loading in the recorded generated-folder checks.
+Earlier development builds could leave restored-folder thumbnails pending while the large preview worked. The session repair fixes the reproduced startup race; three generated 10k-folder relaunch checks load without Reload. Update and reopen Photo. **File → Reload Folder (⌘R)** remains a useful recovery step on older builds. See [issue #47](https://github.com/kuroiokami/photo/issues/47) and [ADR 0048](decisions/0048-explicit-workspace-image-sessions.md) for scope and validation.
 
 ## 10. Local data and uninstalling
 

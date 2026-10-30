@@ -63,6 +63,29 @@ struct PreviewSchedulingTests {
     } catch { #expect(error is CancellationError) }
   }
 
+  @Test func unseenLateRequestsCannotRetireAnExplicitWorkspaceSession() async throws {
+    let gate = try GatedPreviewDecoder()
+    await gate.releaseAll()
+    let pipeline = ImagePipeline(byteLimit: 4096, maximumConcurrentLoads: 1) {
+      await gate.load($0, size: $1)
+    }
+    let current = UUID()
+    await pipeline.startSession(current)
+    _ = try await pipeline.preview(for: file("current"), maximumPixelSize: 32, sessionID: current)
+    // A sample/previous-view task may arrive for the first time after restoration.
+    // It has never been retired; rejecting only known retired IDs is insufficient.
+    for stale in [UUID(), nil] {
+      await #expect(throws: CancellationError.self) {
+        try await pipeline.preview(for: file("late"), maximumPixelSize: 32, sessionID: stale)
+      }
+    }
+    #expect(
+      pipeline.immediateCachedPreview(
+        for: file("current"), maximumPixelSize: 32, sessionID: current) != nil)
+    _ = try await pipeline.preview(for: file("next"), maximumPixelSize: 32, sessionID: current)
+    #expect(await gate.names == ["current.jpg", "next.jpg"])
+  }
+
   @Test func cancelledRunningWorkKeepsItsSlotUntilTheDecoderReturns() async throws {
     let gate = try GatedPreviewDecoder()
     let pipeline = ImagePipeline(byteLimit: 4096, maximumConcurrentLoads: 2) {

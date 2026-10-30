@@ -538,3 +538,12 @@ Rationale and scope: [ADR 0047](decisions/0047-prepared-collection-updates.md).
 - [ ] Physical gestures, diverse RAW/media/40k/pressure/concurrent/long-session acceptance remains separate work.
 
 Exact checks, remote CI, native limits and delivery evidence belong in the tracker/PR. Model improvements do not complete physical-frame acceptance.
+
+## Milestone — Restored-folder image sessions (2026-10-30)
+
+- [x] Reproduce unseen stale requests retiring the current pipeline session in a deterministic regression.
+- [x] Explicit workspace session ownership and guarded readiness before mounting image tasks, preserving standalone clients and cancellation/cache/source guarantees.
+- [x] Strict local checks and all scheduling regressions.
+- [x] Three native automatic 10k restorations without Reload, loaded grid endpoint/Fit, source hashes and shortcut/sample cleanup. Exact remote checks and delivery evidence belong in the fix PR.
+
+See [ADR 0048](decisions/0048-explicit-workspace-image-sessions.md) and the current tracker. No FPS gain is inferred.

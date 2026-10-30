@@ -106,6 +106,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
   private var nearbyHead = 0
   private let loader: (@Sendable (URL, Int) async throws -> PhotoPreview)?
   private var session: UUID?
+  private var explicitlyManagedSession = false
   private var retiredSessions: Set<UUID> = []
   private var generation = 0
   private var jobs: [Request: Load] = [:]
@@ -204,7 +205,13 @@ public actor ImagePipeline: PhotoPreviewLoading {
     priority: PreviewLoadPriority, speculative: Bool
   ) async throws -> PhotoPreview {
     try Task.checkCancellation()
-    guard prepareSession(sessionID) else { throw CancellationError() }
+    // Once a workspace owns session changes, unseen late view requests must
+    // not adopt their old session and retire the current folder.
+    if explicitlyManagedSession {
+      guard session == sessionID else { throw CancellationError() }
+    } else {
+      guard prepareSession(sessionID) else { throw CancellationError() }
+    }
     let size = min(max(maximumPixelSize, 1), 2560)
     let request = Request(file: file, size: size, session: sessionID)
     if priority == .selected, preparationWorker != nil {
@@ -512,6 +519,7 @@ public actor ImagePipeline: PhotoPreviewLoading {
   }
   public func startSession(_ sessionID: UUID?) {
     guard !Task.isCancelled else { return }
+    explicitlyManagedSession = true
     prepareSession(sessionID)
   }
   public func cacheStatistics() -> (sourceDecodes: Int, diskHits: Int, memoryBytes: Int) {

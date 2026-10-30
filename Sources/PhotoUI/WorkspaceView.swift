@@ -12,6 +12,7 @@ private typealias WorkflowModelStorage = SwiftUI.State<WorkflowModel>
 private typealias BoolStorage = SwiftUI.State<Bool>
 private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
+private typealias ImageSessionStorage = SwiftUI.State<UUID?>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
 private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
 private typealias TileFramesStorage = SwiftUI.State<PhotoTileGeometry>
@@ -57,6 +58,7 @@ public struct WorkspaceView: View {
     maximumConcurrentLoads: 2)
   @PipelineStorage private var previews = ImagePipeline(
     byteLimit: 64 * 1024 * 1024, preparesNearby: true)
+  @ImageSessionStorage private var readyImageSession: UUID?
   @DetailPipelineStorage private var detailPipeline = DetailPipeline()
   @GridFocus private var gridFocused: Bool
   @GridFocus private var previewFocused: Bool
@@ -98,6 +100,8 @@ public struct WorkspaceView: View {
         let session = workspace.sessionID
         await thumbnails.startSession(session)
         await previews.startSession(session)
+        guard !Task.isCancelled, workspace.sessionID == session else { return }
+        readyImageSession = session
       }
       .task(id: "\(workspace.sessionID)-\(workspace.loadState)") {
         guard workspace.loadState == .ready else { return }
@@ -285,25 +289,35 @@ public struct WorkspaceView: View {
       }
       if workspace.isSourceReview { WorkspaceRegion { sourceReviewBanner } }
       Divider()
-      VStack(spacing: 0) {
-        if showPreview && !workspace.photos.isEmpty {
-          WorkspaceRegion { previewPane }.frame(maxWidth: .infinity, maxHeight: .infinity)
-          if layout.showsFilmstrip { Divider() }
-        }
-        if !showPreview || workspace.photos.isEmpty || layout.showsFilmstrip {
-          WorkspaceRegion { contactSheet }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(
-              height: showPreview && !workspace.photos.isEmpty
-                ? WorkspaceLayout.filmstripHeight(
-                  edge: thumbnailEdge, labels: thumbnailLabels.count,
-                  folders: workspace.includesSubfolders) : nil)
-        }
+      if readyImageSession == workspace.sessionID {
+        photoContent
+      } else {
+        ProgressView("Opening photos…").frame(maxWidth: .infinity, maxHeight: .infinity)
       }
       Divider()
       WorkspaceRegion { statusBar }
     }.background(Color(nsColor: .underPageBackgroundColor))
       .onExitCommand(perform: cancelBrowsing)
+  }
+
+  // Mount image tasks only after both pipelines belong to the current folder.
+  // Restored-folder requests can otherwise race the initial sample session.
+  private var photoContent: some View {
+    VStack(spacing: 0) {
+      if showPreview && !workspace.photos.isEmpty {
+        WorkspaceRegion { previewPane }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        if layout.showsFilmstrip { Divider() }
+      }
+      if !showPreview || workspace.photos.isEmpty || layout.showsFilmstrip {
+        WorkspaceRegion { contactSheet }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .frame(
+            height: showPreview && !workspace.photos.isEmpty
+              ? WorkspaceLayout.filmstripHeight(
+                edge: thumbnailEdge, labels: thumbnailLabels.count,
+                folders: workspace.includesSubfolders) : nil)
+      }
+    }
   }
 
   private var sidebar: some View {
