@@ -31,6 +31,7 @@ struct CullingHelpView: View {
             row("Space · Escape", "Toggle preview · Exit Focus / show contact sheet")
             row("⇧⌘F · ⌥⌘T", "Focus on Photo · Hide/show filmstrip")
             row("⇧⌘X · ⌘Delete", "Select visible rejects · Review and move selection to Trash")
+            row("Hold W", "Quick Preview; release to return. Z loads genuine 100% detail.")
             row("C · G · L · O", "Compare · Pin current · Link zoom/pan · Single image")
             row("⌘G · M", "Ingest · Bulk Rename")
             row("I / ⌘I / ⌘K", "IPTC & Keywords")

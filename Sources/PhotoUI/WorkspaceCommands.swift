@@ -29,6 +29,8 @@ struct WorkspaceActions {
   var focused = false
   var toggleFilmstrip: @MainActor () -> Void = {}
   var filmstripVisible = true
+  var toggleQuickPreview: @MainActor () -> Void = {}
+  var quickPreviewVisible = false
 
 }
 
@@ -269,6 +271,11 @@ public struct WorkspaceCommands: Commands {
         actions?.canDecide != true)
     }
     CommandGroup(after: .toolbar) {
+      Button(
+        actions?.quickPreviewVisible == true ? "Close Quick Preview" : "Quick Preview (hold W)"
+      ) {
+        actions?.toggleQuickPreview()
+      }.disabled(actions?.canDecide != true || actions?.workspace.selectedPhoto == nil)
       Button(actions?.focused == true ? "Exit Focus on Photo" : "Focus on Photo") {
         actions?.toggleFocus()
       }

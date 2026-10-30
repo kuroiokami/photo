@@ -630,3 +630,21 @@ All 16 sample cases pass values/focus/history checks. Full reports include ratin
 The [headless current-build report](benchmarks/2026-10-30-raw-culling-checks.json) reads the SHA-verified public Canon EOS R CR3 and nine supplied Sony ARWs across subfolders, with scratch databases and original hashes. Canon first Fit during indexing is **35.5 ms**, metadata completion **459.5 ms** and selected decisions ready **8.4 ms**. Sony parent-folder browsing produces first Fit **113.6 ms**, metadata completion **100.7 ms** and selected decisions ready **5.6 ms**. Both report zero decision/metadata errors, unchanged originals and less than 1 ms measured clock suspension. Sampled process peaks are 38.4 / 93.0 MiB for these small routes, not large-shoot budgets or peak guarantees. Metadata and Fit are independent; cold Canon EXIF work remains to investigate. No new RAW parser/backend is shipped here.
 
 These are single current-build observations. Hashing warms the OS cache; no controlled cold-media or historical gain is inferred. They do not complete physical frames, broader cameras, removable/network media, 10k/40k mixed shoots, pressure, concurrent ingest or sustained sleep/wake acceptance. Raw traces/reports and personal filenames remain outside Git.
+
+## Adaptive thumbnail sizes and disk codec experiment — 2026-10-30
+
+[All eight controls](benchmarks/2026-10-30-thumbnail-strategies.json) use 16 generated 1600×1067 opaque RGB JPEGs, the same optimized pipeline and PNG/JPEG/JPEG/PNG order at each 240/480 size. Hashing warms OS caches; new RAM caches measure disk hits. Builds and native automation are outside these controls. Every case decodes 16 sources, subsequently hits all 16 disk records, preserves source/dimension metadata and leaves original hashes unchanged.
+
+| Retained/disk measure, 16 images | 240-pixel class | 480-pixel class |
+| --- | ---: | ---: |
+| Retained decoded bytes, either codec | 2,457,600 | 9,830,400 |
+| PNG disk bytes | 622,330 | 2,237,197 |
+| Experimental JPEG quality 0.90 disk bytes | 143,248 | 373,444 |
+| JPEG mean absolute sRGB RGBA channel error | 1.115 | 0.739 |
+| JPEG maximum individual channel error | 138 | 147 |
+
+PNG pixel errors are zero. JPEG is smaller, but localized errors are significant and these generated graphics do not establish photographic focus/color acceptance. Production stays PNG; JPEG is an opt-in developer experiment with separate versioned keys, format validation and PNG fallback for alpha/high-depth/non-RGB data. Initial-ready p95 is about 3.3–5.2 ms across these observations; disk-hit p95 spans 0.30–0.53 ms. The small service timings do not establish a native scrolling improvement or a codec latency advantage. Retained decoded bytes are not process RSS.
+
+The app requests stable 160/240/320/480 classes from thumbnail point size × display scale, capped at the existing 480 limit. An adequate cached larger image can satisfy a smaller request; a smaller cached image remains visible while a larger request finishes. Lookup probes only the fixed class list and retains file/session/generation identity and the RAM budget. Fit/detail behavior and source protection remain separate.
+
+For backend stage measurements, cancellation and peak RSS, see the [RAW backend review](RAW_BACKEND_REVIEW.md). Native disposable checks cover crop locks/numeric edits/Free/Apply/Undo, menu Quick Preview/Escape/genuine-detail handoff, thumbnail resizing from 110 to 240 points, scrolling and the last of 65 JPEGs. These are functional checks, not physical frame-time or broad accessibility acceptance.

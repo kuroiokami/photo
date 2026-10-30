@@ -3,17 +3,32 @@ import PhotoCore
 import PhotoImaging
 import SwiftUI
 
-private typealias ImageStorage = SwiftUI.State<PhotoPreview?>
-private typealias ErrorStorage = SwiftUI.State<String?>
+private typealias ImageStorage = SwiftUI.State<DisplayedPreview?>
+private typealias ErrorStorage = SwiftUI.State<ImageFailure?>
 private typealias RetryStorage = SwiftUI.State<Int>
 
-private struct ImageRequestIdentity: Equatable {
+struct ImageRequestIdentity: Equatable {
   let photoID: String
   let pipeline: ObjectIdentifier
   let session: UUID?
   let maximumPixelSize: Int
   let cacheGeneration: Int
   let retry: Int
+  func sameImage(as other: Self) -> Bool {
+    photoID == other.photoID && pipeline == other.pipeline && session == other.session
+      && cacheGeneration == other.cacheGeneration
+  }
+
+}
+
+private struct DisplayedPreview {
+  let identity: ImageRequestIdentity
+  let preview: PhotoPreview
+  let pixelSize: Int
+}
+private struct ImageFailure {
+  let identity: ImageRequestIdentity
+  let message: String
 }
 
 struct PhotoImageView: View {
@@ -26,9 +41,24 @@ struct PhotoImageView: View {
   var sessionID: UUID?
   var cacheGeneration = 0
   var onLoaded: ((PhotoPreview) -> Void)?
-  @ImageStorage private var preview: PhotoPreview?
-  @ErrorStorage private var error: String?
+  @ImageStorage private var displayed: DisplayedPreview?
+  @ErrorStorage private var failure: ImageFailure?
   @RetryStorage private var retry = 0
+
+  private var request: ImageRequestIdentity {
+    ImageRequestIdentity(
+      photoID: photo.id, pipeline: ObjectIdentifier(pipeline), session: sessionID,
+      maximumPixelSize: maximumPixelSize, cacheGeneration: cacheGeneration, retry: retry)
+  }
+  private var preview: PhotoPreview? {
+    displayed.flatMap { $0.identity.sameImage(as: request) ? $0.preview : nil }
+  }
+  private var error: String? {
+    failure.flatMap { $0.identity.sameImage(as: request) ? $0.message : nil }
+  }
+  private func show(_ value: PhotoPreview, pixelSize: Int) {
+    displayed = DisplayedPreview(identity: request, preview: value, pixelSize: pixelSize)
+  }
 
   var body: some View {
     ZStack {
@@ -68,9 +98,7 @@ struct PhotoImageView: View {
       }
     }
     .task(
-      id: ImageRequestIdentity(
-        photoID: photo.id, pipeline: ObjectIdentifier(pipeline), session: sessionID,
-        maximumPixelSize: maximumPixelSize, cacheGeneration: cacheGeneration, retry: retry),
+      id: request,
       priority: detailed || prioritize ? .userInitiated : .utility
     ) { await load() }
     .onChange(of: prioritize) {
@@ -80,13 +108,16 @@ struct PhotoImageView: View {
           for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
       }
     }
-    .onDisappear { preview = nil }
+    .onDisappear { displayed = nil }
   }
 
   private var immediatePreview: PhotoPreview? {
     guard let url = photo.fileURL ?? SampleResources.url(for: photo) else { return nil }
     return pipeline.immediateCachedPreview(
       for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID)
+      ?? pipeline.bestCachedThumbnail(
+        for: url, maximumPixelSize: maximumPixelSize,
+        sessionID: sessionID)?.preview
   }
 
   @MainActor
@@ -98,7 +129,7 @@ struct PhotoImageView: View {
 
   @MainActor
   private func loadResult(_ trace: PhotoTrace.Interval) async {
-    error = nil
+    failure = nil
     do {
       let url: URL
       if let fileURL = photo.fileURL {
@@ -112,19 +143,38 @@ struct PhotoImageView: View {
         for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID
       ) {
         try Task.checkCancellation()
-        preview = cached
+        show(cached, pixelSize: maximumPixelSize)
         PhotoTrace.event("RAMResultPublished", in: trace)
         onLoaded?(cached)
         return
       }
-      preview = nil
+      try Task.checkCancellation()
+      if let retained = displayed, retained.identity.sameImage(as: request),
+        retained.pixelSize >= maximumPixelSize
+      {
+        onLoaded?(retained.preview)
+        return
+      }
+      if let cached = pipeline.bestCachedThumbnail(
+        for: url,
+        maximumPixelSize: maximumPixelSize, sessionID: sessionID)
+      {
+        show(cached.preview, pixelSize: cached.requestedPixelSize)
+        if cached.requestedPixelSize >= maximumPixelSize {
+          onLoaded?(cached.preview)
+          return
+        }
+      } else if preview == nil {
+        displayed = nil
+      }
+      // A valid smaller preview stays visible until the larger one is ready.
       // Only cold previews need the arrow-repeat debounce. Cached images are immediate.
       if detailed { try await Task.sleep(for: .milliseconds(35)) }
       let result = try await pipeline.preview(
         for: url, maximumPixelSize: maximumPixelSize, sessionID: sessionID,
         priority: detailed || prioritize ? .selected : .visible)
       try Task.checkCancellation()
-      preview = result
+      show(result, pixelSize: maximumPixelSize)
       PhotoTrace.event("ImageResultPublished", in: trace)
       onLoaded?(result)
     } catch is CancellationError {
@@ -132,8 +182,8 @@ struct PhotoImageView: View {
       // A disappearing cell or superseded preview must not publish stale state.
     } catch {
       guard !Task.isCancelled else { return }
-      preview = nil
-      self.error = error.localizedDescription
+      if preview == nil { displayed = nil }
+      failure = ImageFailure(identity: request, message: error.localizedDescription)
     }
   }
 }

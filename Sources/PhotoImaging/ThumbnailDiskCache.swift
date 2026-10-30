@@ -6,6 +6,9 @@ import ImageIO
 import PhotoCore
 import UniformTypeIdentifiers
 
+/// Experimental JPEG is opt-in for benchmarks. The app keeps lossless PNG.
+public enum ThumbnailDiskEncoding: String, Sendable { case png, jpeg }
+
 /// Best-effort derived data. Publication may block on filesystem work, but
 /// reads only take the short admission lock to record bounded recency hints.
 public final class ThumbnailDiskCache: @unchecked Sendable {
@@ -19,12 +22,14 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
     let width: Int
     let height: Int
     let pixels: Data
+    var encoding: String? = nil
   }
   private struct Entry {
     let url: URL
     let size: Int
     var accessed: Date
   }
+  private let format: ThumbnailDiskEncoding
   private let directory: URL
   private let limit: Int
   private let lock = NSLock()
@@ -48,9 +53,10 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
   private var bytes = 0
   public init(
     directory: URL, byteLimit: Int = 512 * 1024 * 1024,
-    pendingByteLimit: Int = 32 * 1024 * 1024
+    pendingByteLimit: Int = 32 * 1024 * 1024, encoding: ThumbnailDiskEncoding = .png
   ) {
     self.directory = directory
+    format = encoding
     limit = max(0, byteLimit)
     pendingLimit = max(0, pendingByteLimit)
   }
@@ -64,7 +70,8 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
     var info = stat()
     guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { return nil }
     return [
-      "v1", url.standardizedFileURL.path, String(size), String(info.st_dev),
+      format == .png ? "v1" : "v2jpeg", url.standardizedFileURL.path, String(size),
+      String(info.st_dev),
       String(info.st_ino), String(info.st_size), String(info.st_mtimespec.tv_sec),
       String(info.st_mtimespec.tv_nsec), String(info.st_ctimespec.tv_sec),
       String(info.st_ctimespec.tv_nsec),
@@ -122,10 +129,12 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
       let count = attributes[.size] as? Int, count <= 4 * 1024 * 1024,
       let data = try? Data(contentsOf: url),
       let record = try? PropertyListDecoder().decode(Record.self, from: data),
-      record.version == 1, record.width > 0, record.height > 0,
+      record.version == 1 || record.version == 2, record.width > 0, record.height > 0,
       let kind = PreviewSource(rawValue: record.source), kind != .raw,
       let source = CGImageSourceCreateWithData(record.pixels as CFData, nil),
-      CGImageSourceGetType(source) as String? == UTType.png.identifier,
+      let type = CGImageSourceGetType(source) as String?,
+      (record.version == 1 && record.encoding == nil && type == UTType.png.identifier)
+        || (record.version == 2 && record.encoding == "jpeg" && type == UTType.jpeg.identifier),
       let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
       let width = properties[kCGImagePropertyPixelWidth] as? Int,
       let height = properties[kCGImagePropertyPixelHeight] as? Int,
@@ -157,21 +166,28 @@ public final class ThumbnailDiskCache: @unchecked Sendable {
     else { return }
     let trace = PhotoTrace.begin("ThumbnailCacheWrite")
     defer { PhotoTrace.end(trace) }
-    // Lossless pixels retain alpha and color profiles; no edits or source EXIF
-    // are baked into the cache. This is deliberately thumbnail-sized only.
+    // JPEG is an opt-in experiment for opaque 8-bit RGB thumbnails only.
+    // Preserve alpha/high-depth/other color models through the PNG path.
+    let opaque = [CGImageAlphaInfo.none, .noneSkipFirst, .noneSkipLast].contains(
+      preview.image.alphaInfo)
+    let jpeg =
+      format == .jpeg && opaque && preview.image.bitsPerComponent == 8
+      && preview.image.colorSpace?.model == .rgb
     let pixels = NSMutableData()
     guard
       let writer = CGImageDestinationCreateWithData(
-        pixels, UTType.png.identifier as CFString, 1, nil)
+        pixels, (jpeg ? UTType.jpeg : UTType.png).identifier as CFString, 1, nil)
     else { return }
-    CGImageDestinationAddImage(writer, preview.image, nil)
+    CGImageDestinationAddImage(
+      writer, preview.image,
+      jpeg ? [kCGImageDestinationLossyCompressionQuality: 0.90] as CFDictionary : nil)
     guard CGImageDestinationFinalize(writer),
       let data = try? encoding.withLock({
         try encoder.encode(
           Record(
-            version: 1,
+            version: jpeg ? 2 : 1,
             source: preview.sourceKind.rawValue, width: preview.originalWidth,
-            height: preview.originalHeight, pixels: pixels as Data))
+            height: preview.originalHeight, pixels: pixels as Data, encoding: jpeg ? "jpeg" : nil))
       }), data.count <= limit,
       data.count <= 4 * 1024 * 1024
     else { return }
