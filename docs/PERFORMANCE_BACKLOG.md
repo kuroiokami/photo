@@ -56,3 +56,5 @@ ADR 0046 prepares exact photo-ID UTF-8 storage, sizes indexing tables against in
 ADR 0047 implements immutable membership evaluation, guarded/cancellable background sort/index preparation and reusable full-order indexes. Unicode/ASCII 10k rating-order controls improve about 34%/38%; Unicode filtering and large selection still cost time. Scoped native checks pass on healthy sessions; captured display events lack app-frame attribution. Pre-existing restored-thumbnail issue #47 and immediate bulk rating/history/locale work remain open.
 
 ADR 0048 repairs restored-folder thumbnail session ownership. The accepted-code negative control fails; three native 10k automatic restorations now load without Reload. Broad storage/camera/sleep-wake acceptance remains open.
+
+ADR 0049 prepares Rating comparator keys, avoids unchanged-star reorders and repeated target/selection work, and reuses visible Select All targets. Matched generated 10k/40k controls reduce rating-history and selection costs; large synchronous Unicode actions, first-selected lookup, cold metadata/XML and broad physical-frame/media acceptance remain open.

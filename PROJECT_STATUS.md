@@ -4,6 +4,16 @@ Last updated: 2026-10-30
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
+## Bulk rating/history and selection work — 2026-10-30
+
+Implemented [ADR 0049](docs/decisions/0049-prepared-rating-keys-and-bulk-actions.md): prepare integer rating/native filename keys once per photo, skip unchanged-star reorders (checking live values on history restoration), capture decision targets once, avoid rebuilding an unchanged selection Set and reuse visible rows for Select All summaries. Incomplete ranks keep the native fallback; grouping/source/history/filter/focus and SQLite/XMP durability remain.
+
+[Matched generated controls](docs/benchmarks/2026-10-30-bulk-actions.json) retain all four baseline/candidate/candidate/baseline runs. Unicode rating Undo **323–325 → 55–56 ms at 10k**, **1,451–1,456 → 247–250 ms at 40k**; ASCII **34 → 9.5–9.8 ms / 153–159 → 43 ms**. Unicode flag **90–94 → 60 ms / 384–386 → 267 ms**, Select All **31–32 → 25–26 ms / 131–132 → 112 ms**. Every values/focus/history check passes. These are in-memory synchronous model actions, not file-save completion or native FPS. Transient key records add allocation; RSS/peak memory is unmeasured and large batches still pause.
+
+Strict checks pass **277 registered tests, 275 executed/two optional RAW skips**. Two new diverse-order/fallback and filtered bulk-history regressions pass alongside prior source/snapshot/group/durability tests. Optimized Photo/PhotoBench builds and strict signatures pass. Isolated signed release `987347F9-2D04-3D38-BAEC-70543B300E46` verifies 65 selected Unicode JPEGs in Rating order: independent stars/flags, flag and rating Undo/Redo, Picks/min-four-star removal by rejection, Undo restoration, Redo removal and Clear Filters. All 65 original hashes match; all sidecars contain Rating 4 plus independent reject fields pick -1/good false. A native automation timeout was recovered through fresh state and separate actions. The Mac locked before normal Quit/restart and shortcut cleanup; an asynchronous unlock request is pending. Do not claim restart/cleanup complete. Exact remote/delivery evidence belongs in the bulk-action PR. Preserve the unrelated plan edit.
+
+Next: finish native restart/cleanup after unlock; remaining cold RAW/XML/cache work, first-selected lookup and real camera/media/physical-frame/pressure/concurrent/long-session acceptance, followed by installable release packaging.
+
 ## Restored-folder thumbnail session repair — 2026-10-30
 
 Implemented [ADR 0048](docs/decisions/0048-explicit-workspace-image-sessions.md). Once the workspace starts an image session, unseen late sample/old-view requests cannot adopt another session and retire the active folder. Mount image tasks only after thumbnail and Fit session setup completes; cancel/stale guards prevent obsolete readiness. Standalone implicit pipeline clients retain their behavior. Workers/cache budgets, decoding, detail, decisions/source protection and original bytes are unchanged.
@@ -511,6 +521,7 @@ Preserve the user's pre-existing unstaged `native rightmacOS` edit in the develo
 
 ## Change log
 
+- 2026-10-30: Prepare Rating keys and reduce repeated bulk selection/history work; matched generated 10k/40k controls and strict regressions pass.
 - 2026-10-30: Repair explicit image-session ownership and readiness; negative-control scheduling regression and three native automatic 10k restorations pass without Reload.
 - 2026-10-29: Prepared collection sorting/membership/indexes with cancellation and stale-result guards; matched controls/regressions and scoped native checks pass; frame attribution remains unavailable and pre-existing startup issue #47 is tracked.
 

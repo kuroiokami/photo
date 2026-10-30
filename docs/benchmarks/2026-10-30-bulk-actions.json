@@ -1,0 +1,265 @@
+{
+  "baselineCoreCommit": "2f17b490ebaac77b76a77cb857b547a9c846edd9",
+  "framePresentationMeasured": false,
+  "harnessSHA256": "3ac2decf6d64be870a629e9c4afac5a8fa9c0d5aed1ac49ac71b874e7f81060f",
+  "memoryMeasured": false,
+  "native": {
+    "automationTimeoutRecovered": true,
+    "bulkStarsAndFlagsIndependent": true,
+    "filteredGroupRemovalRestorationAndClear": true,
+    "finalBlocker": "Mac locked; requested manual unlock for restart/cleanup.",
+    "flagAndRatingUndoRedo": true,
+    "generatedJPEGs": 65,
+    "originalSHA256Unchanged": true,
+    "releaseUUID": "987347F9-2D04-3D38-BAEC-70543B300E46",
+    "restartVerified": false,
+    "sidecarsContainExpectedIndependentStarsAndReject": true,
+    "temporaryShortcutRemoved": false
+  },
+  "nativeStatus": "workflow-and-sidecar-checks-pass-restart-cleanup-await-unlock",
+  "order": [
+    "baseline1",
+    "candidate1",
+    "candidate2",
+    "baseline2"
+  ],
+  "runs": {
+    "baseline1": {
+      "notes": [
+        "Synthetic in-memory sample IDs; no image decoding or photo/sidecar/database-record writes.",
+        "Identical public workspace actions, varied initial 0\u20135 stars, full selection and Rating order. Timings cover synchronous model/UI-actor work, not persistence completion or displayed frames.",
+        "Selection includes the first summary query. Each action checks focus, independent values and history outside the timed region.",
+        "10k/40k are generated stress controls, not representative camera/media, memory-pressure, physical gesture or long-session acceptance."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "flagMilliseconds": 14.697958,
+          "photos": 10000,
+          "ratingMilliseconds": 18.47625,
+          "redoFlagMilliseconds": 9.324625,
+          "redoRatingMilliseconds": 13.401625,
+          "selectAllMilliseconds": 4.025959,
+          "undoFlagMilliseconds": 9.302291,
+          "undoRatingMilliseconds": 34.335333,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 68.850583,
+          "photos": 40000,
+          "ratingMilliseconds": 82.022292,
+          "redoFlagMilliseconds": 43.700917,
+          "redoRatingMilliseconds": 60.501208,
+          "selectAllMilliseconds": 22.583209,
+          "undoFlagMilliseconds": 45.432458,
+          "undoRatingMilliseconds": 153.150333,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 93.96525,
+          "photos": 10000,
+          "ratingMilliseconds": 128.663833,
+          "redoFlagMilliseconds": 71.31825,
+          "redoRatingMilliseconds": 106.042125,
+          "selectAllMilliseconds": 32.332875,
+          "undoFlagMilliseconds": 72.114417,
+          "undoRatingMilliseconds": 323.353708,
+          "unicode": true
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 384.21075,
+          "photos": 40000,
+          "ratingMilliseconds": 533.609875,
+          "redoFlagMilliseconds": 300.817541,
+          "redoRatingMilliseconds": 465.649916,
+          "selectAllMilliseconds": 131.281042,
+          "undoFlagMilliseconds": 296.858,
+          "undoRatingMilliseconds": 1456.109375,
+          "unicode": true
+        }
+      ],
+      "schemaVersion": 1
+    },
+    "baseline2": {
+      "notes": [
+        "Synthetic in-memory sample IDs; no image decoding or photo/sidecar/database-record writes.",
+        "Identical public workspace actions, varied initial 0\u20135 stars, full selection and Rating order. Timings cover synchronous model/UI-actor work, not persistence completion or displayed frames.",
+        "Selection includes the first summary query. Each action checks focus, independent values and history outside the timed region.",
+        "10k/40k are generated stress controls, not representative camera/media, memory-pressure, physical gesture or long-session acceptance."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "flagMilliseconds": 14.8615,
+          "photos": 10000,
+          "ratingMilliseconds": 18.474791,
+          "redoFlagMilliseconds": 9.270125,
+          "redoRatingMilliseconds": 13.177125,
+          "selectAllMilliseconds": 3.988834,
+          "undoFlagMilliseconds": 9.311667,
+          "undoRatingMilliseconds": 33.886375,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 68.239792,
+          "photos": 40000,
+          "ratingMilliseconds": 83.102209,
+          "redoFlagMilliseconds": 43.357542,
+          "redoRatingMilliseconds": 63.022875,
+          "selectAllMilliseconds": 20.965792,
+          "undoFlagMilliseconds": 44.974417,
+          "undoRatingMilliseconds": 158.837041,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 90.151,
+          "photos": 10000,
+          "ratingMilliseconds": 129.422667,
+          "redoFlagMilliseconds": 70.2595,
+          "redoRatingMilliseconds": 106.470375,
+          "selectAllMilliseconds": 30.84975,
+          "undoFlagMilliseconds": 68.991542,
+          "undoRatingMilliseconds": 325.108417,
+          "unicode": true
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 386.109375,
+          "photos": 40000,
+          "ratingMilliseconds": 552.198166,
+          "redoFlagMilliseconds": 295.773125,
+          "redoRatingMilliseconds": 457.075417,
+          "selectAllMilliseconds": 131.914416,
+          "undoFlagMilliseconds": 298.283834,
+          "undoRatingMilliseconds": 1450.853125,
+          "unicode": true
+        }
+      ],
+      "schemaVersion": 1
+    },
+    "candidate1": {
+      "notes": [
+        "Synthetic in-memory sample IDs; no image decoding or photo/sidecar/database-record writes.",
+        "Identical public workspace actions, varied initial 0\u20135 stars, full selection and Rating order. Timings cover synchronous model/UI-actor work, not persistence completion or displayed frames.",
+        "Selection includes the first summary query. Each action checks focus, independent values and history outside the timed region.",
+        "10k/40k are generated stress controls, not representative camera/media, memory-pressure, physical gesture or long-session acceptance."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "flagMilliseconds": 11.12825,
+          "photos": 10000,
+          "ratingMilliseconds": 12.216333,
+          "redoFlagMilliseconds": 6.770542,
+          "redoRatingMilliseconds": 7.900167,
+          "selectAllMilliseconds": 2.988292,
+          "undoFlagMilliseconds": 6.851292,
+          "undoRatingMilliseconds": 9.797917,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 54.548375,
+          "photos": 40000,
+          "ratingMilliseconds": 55.749,
+          "redoFlagMilliseconds": 33.168459,
+          "redoRatingMilliseconds": 35.81675,
+          "selectAllMilliseconds": 16.051084,
+          "undoFlagMilliseconds": 34.10275,
+          "undoRatingMilliseconds": 43.044875,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 59.95275,
+          "photos": 10000,
+          "ratingMilliseconds": 70.00775,
+          "redoFlagMilliseconds": 46.82725,
+          "redoRatingMilliseconds": 53.389625,
+          "selectAllMilliseconds": 25.589083,
+          "undoFlagMilliseconds": 47.114,
+          "undoRatingMilliseconds": 55.150666,
+          "unicode": true
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 266.712709,
+          "photos": 40000,
+          "ratingMilliseconds": 304.675042,
+          "redoFlagMilliseconds": 213.05725,
+          "redoRatingMilliseconds": 239.062292,
+          "selectAllMilliseconds": 112.164458,
+          "undoFlagMilliseconds": 216.207042,
+          "undoRatingMilliseconds": 246.6895,
+          "unicode": true
+        }
+      ],
+      "schemaVersion": 1
+    },
+    "candidate2": {
+      "notes": [
+        "Synthetic in-memory sample IDs; no image decoding or photo/sidecar/database-record writes.",
+        "Identical public workspace actions, varied initial 0\u20135 stars, full selection and Rating order. Timings cover synchronous model/UI-actor work, not persistence completion or displayed frames.",
+        "Selection includes the first summary query. Each action checks focus, independent values and history outside the timed region.",
+        "10k/40k are generated stress controls, not representative camera/media, memory-pressure, physical gesture or long-session acceptance."
+      ],
+      "samples": [
+        {
+          "correct": true,
+          "flagMilliseconds": 11.187292,
+          "photos": 10000,
+          "ratingMilliseconds": 12.122959,
+          "redoFlagMilliseconds": 6.84575,
+          "redoRatingMilliseconds": 7.538834,
+          "selectAllMilliseconds": 3.017542,
+          "undoFlagMilliseconds": 6.844125,
+          "undoRatingMilliseconds": 9.475583,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 56.47375,
+          "photos": 40000,
+          "ratingMilliseconds": 55.75125,
+          "redoFlagMilliseconds": 33.477375,
+          "redoRatingMilliseconds": 35.035291,
+          "selectAllMilliseconds": 16.53225,
+          "undoFlagMilliseconds": 38.264709,
+          "undoRatingMilliseconds": 43.06675,
+          "unicode": false
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 60.378166,
+          "photos": 10000,
+          "ratingMilliseconds": 70.867917,
+          "redoFlagMilliseconds": 47.676791,
+          "redoRatingMilliseconds": 53.747791,
+          "selectAllMilliseconds": 25.464916,
+          "undoFlagMilliseconds": 47.745208,
+          "undoRatingMilliseconds": 55.606542,
+          "unicode": true
+        },
+        {
+          "correct": true,
+          "flagMilliseconds": 266.591042,
+          "photos": 40000,
+          "ratingMilliseconds": 309.943625,
+          "redoFlagMilliseconds": 216.51875,
+          "redoRatingMilliseconds": 239.555584,
+          "selectAllMilliseconds": 112.10925,
+          "undoFlagMilliseconds": 216.3965,
+          "undoRatingMilliseconds": 249.908833,
+          "unicode": true
+        }
+      ],
+      "schemaVersion": 1
+    }
+  },
+  "schemaVersion": 1
+}

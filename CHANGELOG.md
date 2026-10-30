@@ -4,6 +4,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Reduce Rating-order bulk decision/Undo costs and repeated Select All work while preserving native filename ordering, filters and selection.
+
 - Fix restored-folder thumbnails remaining pending when late sample-view image requests invalidate the active session.
 
 ### Collection updates
