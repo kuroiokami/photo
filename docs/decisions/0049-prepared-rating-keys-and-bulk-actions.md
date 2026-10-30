@@ -2,7 +2,7 @@
 
 Date: 2026-10-30
 
-Status: Implemented; strict local regressions and matched generated controls pass; native acceptance pending.
+Status: Implemented; strict local regressions and matched generated controls pass; scoped native functional/hash/XMP acceptance passes; locked-screen restart/cleanup unverified.
 
 ## Decision
 

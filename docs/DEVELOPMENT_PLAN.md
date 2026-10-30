@@ -553,7 +553,8 @@ See [ADR 0048](decisions/0048-explicit-workspace-image-sessions.md) and the curr
 - [x] Prepared integer Rating keys with complete ranks and native fallback; diverse Unicode/tied/missing/arbitrary-rating correctness.
 - [x] Preserve flag/star independence, live-value history, grouped targets and filtered selection while removing repeated expansion, unchanged Set copies and Select All ID lookup.
 - [x] Strict local checks and identical optimized generated 10k/40k ASCII/Unicode ABBA action controls, retaining remaining pauses and allocation limits.
-- [ ] Native history/filter/restart/source hashes and exact remote/delivery evidence.
+- [x] Native batch history/filter and original/XMP values verified; exact remote/delivery evidence in PR #49.
+- [ ] Normal native Quit/restart and isolated shortcut cleanup remain unverified while the Mac is locked.
 - [ ] Broad real-camera/media/physical gesture/frame, pressure, concurrent and long-session acceptance.
 
 See [ADR 0049](decisions/0049-prepared-rating-keys-and-bulk-actions.md). No synchronous action is made asynchronous and no save/source protection is weakened.

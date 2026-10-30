@@ -7,16 +7,16 @@
     "automationTimeoutRecovered": true,
     "bulkStarsAndFlagsIndependent": true,
     "filteredGroupRemovalRestorationAndClear": true,
-    "finalBlocker": "Mac locked; requested manual unlock for restart/cleanup.",
     "flagAndRatingUndoRedo": true,
     "generatedJPEGs": 65,
     "originalSHA256Unchanged": true,
+    "pendingNativeChecks": "Mac locked; requested manual unlock for restart/cleanup.",
     "releaseUUID": "987347F9-2D04-3D38-BAEC-70543B300E46",
     "restartVerified": false,
     "sidecarsContainExpectedIndependentStarsAndReject": true,
     "temporaryShortcutRemoved": false
   },
-  "nativeStatus": "workflow-and-sidecar-checks-pass-restart-cleanup-await-unlock",
+  "nativeStatus": "functional-and-sidecar-checks-pass-restart-cleanup-unverified-lock",
   "order": [
     "baseline1",
     "candidate1",
