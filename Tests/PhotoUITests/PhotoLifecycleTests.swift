@@ -5,9 +5,12 @@ import Testing
 
 @MainActor
 struct PhotoLifecycleTests {
-  private enum Timeout: Error { case waiting }
-  @Test func lifecycleSamplingIsIdempotentAndStopsAfterTermination() async throws {
+  @Test(.timeLimit(.minutes(1))) func lifecycleSamplingIsIdempotentAndStopsAfterTermination()
+    async throws
+  {
     var events: [PhotoLifecycle.Event] = []
+    let heartbeat = AsyncStream<Bool>.makeStream(bufferingPolicy: .bufferingNewest(1))
+    defer { heartbeat.continuation.finish() }
     let lifecycle = PhotoLifecycle(
       interval: .milliseconds(5),
       sample: { event in
@@ -15,16 +18,19 @@ struct PhotoLifecycleTests {
           event: event, processID: 1, buildUUID: nil, uptimeSeconds: 0,
           residentBytes: nil, physicalFootprintBytes: nil, active: false, windowCount: 0,
           automaticTerminationSupported: false, pendingDecisions: false, pendingFileWork: false)
-      }, emit: { events.append($0.event) })
+      },
+      emit: {
+        events.append($0.event)
+        if $0.event == .heartbeat { heartbeat.continuation.yield(true) }
+      })
     defer { lifecycle.stop() }
     lifecycle.record(.launch)
     lifecycle.start(observeSystem: false)
     lifecycle.start(observeSystem: false)
-    let until = ContinuousClock.now.advanced(by: .seconds(2))
-    while !events.contains(.heartbeat) {
-      guard ContinuousClock.now < until else { throw Timeout.waiting }
-      try await Task.sleep(for: .milliseconds(1))
-    }
+    // Observe the background task's event, not a two-second scheduling promise
+    // under a concurrent suite. The test trait still bounds a missing heartbeat.
+    var observer = heartbeat.stream.makeAsyncIterator()
+    #expect(await observer.next() == true)
     lifecycle.record(.quitRequested)
     lifecycle.record(.waitingForSaves)
     lifecycle.record(.willTerminate)
