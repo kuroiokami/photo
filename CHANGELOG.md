@@ -4,6 +4,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Fix restored-folder thumbnails remaining pending when late sample-view image requests invalidate the active session.
+
 ### Collection updates
 
 - Prepare collection sorting, visibility and lookup indexes away from the UI thread, with stale-result/cancellation guards and selection preserved.

@@ -1,6 +1,6 @@
 # Performance implementation checklist
 
-Last updated: 2026-10-28. This tracks the reviewed optimization suggestions against implemented code. **Partial** means the full suggestion has not shipped. The [project tracker](../PROJECT_STATUS.md) records current validation/delivery; [performance evidence](PERFORMANCE.md) separates service timings from native interaction measurements.
+Last updated: 2026-10-30. This tracks the reviewed optimization suggestions against implemented code. **Partial** means the full suggestion has not shipped. The [project tracker](../PROJECT_STATUS.md) records current validation/delivery; [performance evidence](PERFORMANCE.md) separates service timings from native interaction measurements.
 
 | Suggestion | Status | Implementation or remaining work |
 | --- | --- | --- |
@@ -54,3 +54,5 @@ The user clarified the reported symptom: Photo still has a Dock icon but no wind
 ADR 0046 prepares exact photo-ID UTF-8 storage, sizes indexing tables against inventory and removes redundant selection-set work. Matched Unicode/ASCII 10k controls improve Select All to ~61–64 / 9.6–9.8 ms; Unicode collection-order/rebuild gaps and physical-frame/broad-media acceptance remain open. See the tracker and retained reports.
 
 ADR 0047 implements immutable membership evaluation, guarded/cancellable background sort/index preparation and reusable full-order indexes. Unicode/ASCII 10k rating-order controls improve about 34%/38%; Unicode filtering and large selection still cost time. Scoped native checks pass on healthy sessions; captured display events lack app-frame attribution. Pre-existing restored-thumbnail issue #47 and immediate bulk rating/history/locale work remain open.
+
+ADR 0048 repairs restored-folder thumbnail session ownership. The accepted-code negative control fails; three native 10k automatic restorations now load without Reload. Broad storage/camera/sleep-wake acceptance remains open.
