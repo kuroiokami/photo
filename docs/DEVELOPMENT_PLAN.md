@@ -185,7 +185,8 @@ This scope implements normal-ingest arrivals, not continuous source watching or 
 - [x] Complete strict regression checks and optimized packaging; exact native outcomes and delivery are recorded in PROJECT_STATUS.md.
 - [x] Recheck the final corrected crop/detail view and persisted composition after relaunch on an unlocked Mac.
 - [ ] Complete physical pinch and broader accessibility/platform acceptance.
-- [ ] Follow with verified crop/orientation exchange/export, locked-ratio/straightening, color classes, external editors and other audited gaps according to priority.
+- [x] Keep selected crop proportions locked through drawing, corner resizing and numeric dimensions, with explicit Free and portrait/landscape swap; verify native resizing and unchanged originals.
+- [ ] Follow with verified crop/orientation exchange/export, straightening, color classes, external editors and other audited gaps according to priority.
 
 ## Photo Home and deadline-first workflow — 2026-10-20
 
@@ -558,3 +559,11 @@ See [ADR 0048](decisions/0048-explicit-workspace-image-sessions.md) and the curr
 - [ ] Broad real-camera/media/physical gesture/frame, pressure, concurrent and long-session acceptance.
 
 See [ADR 0049](decisions/0049-prepared-rating-keys-and-bulk-actions.md). No synchronous action is made asynchronous and no save/source protection is weakened.
+
+## Culling refinements and RAW backend experiment — 2026-10-30
+
+- [x] Request stable 160/240/320/480 thumbnail classes using point size and Retina scale; keep a valid cached image during size changes within existing cache/session budgets.
+- [x] Add temporary hold-W Quick Preview and an explicit transition to genuine 100% inspection, preserving the previous browsing layout.
+- [x] Benchmark opt-in JPEG versus current PNG disk records, including decoded memory, disk bytes, metadata and pixel differences; retain production PNG pending photographic/color acceptance.
+- [x] Run an isolated pinned LibRaw pilot for metadata, largest embedded JPEG, sensor unpack, full processing, memory and requested cancellation on authorized Sony and CC0 Canon/Olympus files. Keep camera JPEG separate from RAW detail.
+- [ ] Decide whether a narrow optional metadata/larger-camera-JPEG backend merits integration after broader EXIF/orientation/color, camera, cancellation, memory and distribution review. No runtime dependency or full RAW backend replacement is approved by the pilot.

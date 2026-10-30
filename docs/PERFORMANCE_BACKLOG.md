@@ -58,3 +58,9 @@ ADR 0047 implements immutable membership evaluation, guarded/cancellable backgro
 ADR 0048 repairs restored-folder thumbnail session ownership. The accepted-code negative control fails; three native 10k automatic restorations now load without Reload. Broad storage/camera/sleep-wake acceptance remains open.
 
 ADR 0049 prepares Rating comparator keys, avoids unchanged-star reorders and repeated target/selection work, and reuses visible Select All targets. Matched generated 10k/40k controls reduce rating-history and selection costs; large synchronous Unicode actions, first-selected lookup, cold metadata/XML and broad physical-frame/media acceptance remain open.
+
+## LibRaw / RawTherapee / darktable follow-up — 2026-10-30
+
+Implemented stable Retina thumbnail size classes, bounded same-session cached stand-ins and hold-W Quick Preview; see [ADR 0050](decisions/0050-crop-locks-adaptive-thumbnails-and-quick-preview.md). [Thumbnail codec controls](benchmarks/2026-10-30-thumbnail-strategies.json) show a fourfold decoded-byte reduction at 240 versus 480 for the same generated files. Experimental JPEG reduces disk bytes but changes pixels, so production remains PNG.
+
+The [RAW backend review](RAW_BACKEND_REVIEW.md) and [five-file pilot](benchmarks/2026-10-30-libraw-pilot.json) are complete as an experiment. LibRaw's metadata and largest-camera-JPEG extraction are promising follow-ups, especially Canon metadata and the tested Sony full-size JPEGs. Its untuned full processing did not justify replacing Apple detail. Broader cameras/modes, EXIF value/timezone accuracy, active-area/orientation/color agreement, mid-decode cancellation and memory remain open. Physical scrolling/frame, pressure/concurrency/long-session and release packaging acceptance remain open; these measurements do not close them.

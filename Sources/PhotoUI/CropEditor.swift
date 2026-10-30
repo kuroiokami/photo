@@ -43,6 +43,9 @@ struct CropEditor: View {
   @Environment(\.dismiss) private var dismiss
   @CropStorage private var crop: PhotoCrop
   @CropStorage private var imageSize = CGSize(width: 1000, height: 667)
+  @CropStorage private var originalSize = CGSize(width: 1000, height: 667)
+  @CropStorage private var aspect = CropAspect.free
+  @CropStorage private var swapped = false
   @CropStorage private var ready = false
   @CropStorage private var start: PhotoCrop?
   init(
@@ -63,22 +66,33 @@ struct CropEditor: View {
         "Drag outside the crop to draw; drag inside to move; drag a corner to resize. Edits are saved in Photo only. Originals and Lightroom develop settings stay untouched."
       ).font(.caption).foregroundStyle(.secondary)
       HStack {
-        Menu("Center a Ratio") {
-          Button("Original proportions") { crop = PhotoCrop(x: 0, y: 0, width: 1, height: 1) }
-          ForEach([1.0, 3.0 / 2, 4.0 / 3, 16.0 / 9], id: \.self) { ratio in
-            Button(ratio == 1 ? "Square" : ratio == 1.5 ? "3:2" : ratio < 1.5 ? "4:3" : "16:9") {
-              crop = CropGeometry.ratio(ratio, image: imageSize)
-            }
-          }
+        Picker("Aspect ratio", selection: $aspect) {
+          ForEach(CropAspect.allCases, id: \.self) { Text($0.title(swapped: swapped)).tag($0) }
         }.fixedSize().help(
-          "Creates a centered crop with this ratio. Subsequent dragging is unconstrained.")
-        Text("Drag freely after choosing a ratio").font(.caption).foregroundStyle(.secondary)
+          "Chosen proportions stay locked while drawing, resizing and editing dimensions. Choose Free to unlock."
+        )
+        Button {
+          swapped.toggle()
+        } label: {
+          Label("Swap", systemImage: "arrow.left.arrow.right")
+        }.disabled(aspect == .free || aspect == .square)
+          .help("Swap portrait and landscape proportions.")
+        Label(
+          aspect == .free ? "Free" : "Locked", systemImage: aspect == .free ? "lock.open" : "lock"
+        )
+        .font(.caption).foregroundStyle(.secondary)
         Spacer()
         Button("Clear Crop") {
           apply(nil)
           dismiss()
         }
       }.disabled(!ready)
+        .onChange(of: aspect) { fitAspect() }
+        .onChange(of: swapped) { fitAspect() }
+      if !aspectAvailable {
+        Text("These proportions are too narrow for this photo. Choose Free or another ratio.")
+          .font(.caption).foregroundStyle(.secondary)
+      }
       GeometryReader { geo in
         let frame = CropGeometry.fit(imageSize, in: geo.size)
         let box = CGRect(
@@ -91,13 +105,19 @@ struct CropEditor: View {
             onLoaded: { preview in
               imageSize = edit.orientedSize(
                 CGSize(width: preview.decodedWidth, height: preview.decodedHeight))
+              originalSize = edit.orientedSize(
+                CGSize(width: preview.originalWidth, height: preview.originalHeight))
               ready = true
             })
           Color.clear.contentShape(Rectangle()).gesture(
             DragGesture(minimumDistance: 2).onChanged { value in
-              crop = CropGeometry.rectangle(
+              if let value = CropGeometry.constrainedRectangle(
                 CropGeometry.point(value.startLocation, frame: frame),
-                CropGeometry.point(value.location, frame: frame))
+                CropGeometry.point(value.location, frame: frame),
+                ratio: aspectRatio, image: originalSize)
+              {
+                crop = value
+              }
             })
           Path { p in
             p.addRect(frame)
@@ -143,13 +163,20 @@ struct CropEditor: View {
                       .translation.width / max(1, frame.width),
                     y: (corner < 2 ? original.y : original.y + original.height) + value.translation
                       .height / max(1, frame.height))
-                  crop = CropGeometry.rectangle(
-                    opposite, CGPoint(x: min(1, max(0, moved.x)), y: min(1, max(0, moved.y))))
+                  if let result = CropGeometry.constrainedRectangle(
+                    opposite, CGPoint(x: min(1, max(0, moved.x)), y: min(1, max(0, moved.y))),
+                    ratio: aspectRatio, image: originalSize,
+                    directions: CGSize(
+                      width: corner % 2 == 0 ? -1 : 1, height: corner < 2 ? -1 : 1),
+                    drivingWidth: abs(value.translation.width) > abs(value.translation.height))
+                  {
+                    crop = result
+                  }
                 }.onEnded { _ in start = nil }
               )
               .accessibilityHidden(true)
           }
-        }.clipped().disabled(!ready)
+        }.clipped().disabled(!ready || !aspectAvailable)
       }.frame(minHeight: 240)
       HStack {
         coordinate("Left", value: crop.x) {
@@ -159,12 +186,12 @@ struct CropEditor: View {
           crop = CropGeometry.moved(crop, delta: CGSize(width: 0, height: $0 - crop.y))
         }
         coordinate("Width", value: crop.width) {
-          crop = PhotoCrop(x: crop.x, y: crop.y, width: $0, height: crop.height)
+          resizeDimension($0, width: true)
         }
         coordinate("Height", value: crop.height) {
-          crop = PhotoCrop(x: crop.x, y: crop.y, width: crop.width, height: $0)
+          resizeDimension($0, width: false)
         }
-      }.disabled(!ready)
+      }.disabled(!ready || !aspectAvailable)
       HStack {
         Text("100% inspection uses the cropped view; Reset Image Edits restores the full photo.")
           .font(.caption).foregroundStyle(.secondary)
@@ -173,9 +200,37 @@ struct CropEditor: View {
         Button("Apply Crop") {
           apply(crop)
           dismiss()
-        }.keyboardShortcut(.defaultAction).disabled(!ready)
+        }.keyboardShortcut(.defaultAction).disabled(!ready || !aspectAvailable)
       }
     }.padding(20).frame(width: 780, height: 640)
+  }
+  private var aspectRatio: Double? { aspect.ratio(image: originalSize, swapped: swapped) }
+  private var aspectAvailable: Bool {
+    aspectRatio.map { CropGeometry.normalizedRatio($0, image: originalSize) != nil } ?? true
+  }
+  private func fitAspect() {
+    start = nil
+    if let ratio = aspectRatio,
+      let value = CropGeometry.fitting(crop, ratio: ratio, image: originalSize)
+    {
+      crop = value
+    }
+  }
+  private func resizeDimension(_ value: Double, width: Bool) {
+    if aspectRatio == nil {
+      crop = PhotoCrop(
+        x: crop.x, y: crop.y,
+        width: width ? value : crop.width, height: width ? crop.height : value)
+      return
+    }
+    if let result = CropGeometry.constrainedRectangle(
+      CGPoint(x: crop.x, y: crop.y),
+      CGPoint(x: crop.x + (width ? value : crop.width), y: crop.y + (width ? crop.height : value)),
+      ratio: aspectRatio, image: originalSize, directions: CGSize(width: 1, height: 1),
+      drivingWidth: width)
+    {
+      crop = result
+    }
   }
   private func coordinate(_ title: String, value: Double, set: @escaping (Double) -> Void)
     -> some View

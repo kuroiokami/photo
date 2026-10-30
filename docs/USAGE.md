@@ -191,10 +191,17 @@ Press **⇧⌘F** or choose **View → Focus on Photo** to hide browsing control
 
 Press **⌥⌘T**, use the preview's filmstrip button, or choose **View → Hide/Show Filmstrip** to reclaim height independently. Drag the sidebar divider or use the standard sidebar button to reclaim width. Focus remembers an already hidden sidebar or filmstrip when it restores the layout.
 
+### Quick Preview without changing your layout
+
+Hold **W** to show the focused photo in a large, temporary **Quick Preview**. Release W to return to the contact sheet or preview layout you were using. The image keeps its source/resolution label: a small embedded RAW preview does not become full detail just because it fills the window.
+
+Choose **View → Quick Preview (hold W)** for a preview that stays open until **Close** or **Escape**. Press **Z** or click **Inspect at 100%** to leave Quick Preview and request genuine image detail in the normal viewer. For RAW files this deliberately starts RAW rendering. Use your usual navigation, rating and flag keys while reviewing. Typing in text fields, modified shortcuts such as ⌘W, crop/workflow dialogs and other windows keep their normal behavior. Losing window focus dismisses a temporary preview.
+
 ### A fast keyboard pass
 
 | Key | Action |
 | --- | --- |
+| **Hold W** | Temporary large Quick Preview; release returns to the previous layout |
 | **Z** | Toggle Fit / genuine 100% on the active photo, including from the contact sheet |
 | **B / N** | Previous / next photo, even when the zoom view or navigator has focus |
 | **[ / ]** | Rotate the selected photo(s) left / right |
@@ -276,8 +283,8 @@ Both Preview and Contact Sheet have a visible **Image** row with **Rotate Left [
 1. Select the photo and choose **Crop…**, press **⇧⌘C**, or use its context menu.
 2. The editor shows the uncropped rotated/mirrored image, using the fast preview.
 3. Drag outside the current crop to draw a new rectangle. Drag inside to move it. Drag one of four corner handles to resize.
-4. Optionally choose **Center a Ratio**: Original, Square, 3:2, 4:3 or 16:9. This creates a centered rectangle; later dragging is unconstrained.
-5. The Left/Top/Width/Height percentage fields provide precise, keyboard-accessible adjustments.
+4. Choose **Aspect ratio**: Free, Original, 1:1, 3:2, 4:3 or 16:9. A chosen ratio stays **Locked** while drawing, dragging a corner or editing Width/Height. **Swap** changes portrait/landscape proportions, with the actual ratio shown (for example 2:3). Choose **Free** to unlock. The choice applies to this open editor; saved crop geometry remains when you reopen it.
+5. The Left/Top/Width/Height percentage fields provide precise, keyboard-accessible adjustments. With a lock, Width adjusts Height and vice versa. Moving the crop preserves its shape. Bounds and the existing one-percent minimum still apply; an unrepresentable ratio shows an explanation.
 6. Choose **Apply Crop** to save, **Clear Crop** to restore the full oriented image, or **Cancel** to leave the composition unchanged.
 
 For grouped RAW+JPEG, cropping the representative applies the normalized crop to both companions. It does not copy other image or descriptive edits across the group.
@@ -458,7 +465,7 @@ Implemented features and open acceptance are tracked in [PROJECT_STATUS](../PROJ
 - Color classes, GPS editing and external-editor launching are still planned after the requested rotate/crop priority.
 - No continuous source watcher, HEIC or additional RAW extensions beyond the supported list.
 - No RAW histogram, focus peaking or sensor exposure adjustment. Rendered/embedded appearances are not sensor exposure measurements.
-- Crop ratio presets seed a rectangle; a locked-ratio resize and crop rotation are future work.
+- Crop ratios now stay locked during editing; arbitrary-angle crop rotation/straightening remains future work.
 - Native physical trackpad, broader camera/storage/platform, compact-window and full VoiceOver/keyboard-only coverage must be distinguished from automated gesture/model tests.
 - Synthetic 2k/10k combined-folder and 10k single-folder scripted checks now respond during initial information loading. Real-shoot, physical-trackpad and 40k desktop performance acceptance remain open; see the [measured limits](PERFORMANCE.md#combined-shoot-browsing-and-isolated-ui-regions--2026-10-26).
 - No installable signed/notarized release or automatic updater yet.

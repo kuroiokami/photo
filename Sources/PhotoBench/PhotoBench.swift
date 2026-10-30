@@ -75,6 +75,16 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if ["--raw-stages", "--raw-stages-detail"].contains(arguments.first ?? ""), arguments.count == 2
+    {
+      let report = try await RawStagesBenchmark.run(
+        file: URL(fileURLWithPath: arguments[1]),
+        full: arguments[0] == "--raw-stages-detail")
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     if ["--scale", "--scale-tree"].contains(arguments.first ?? ""), arguments.count == 2 {
       let report = try await WorkspaceScaleBenchmark.run(
         folder: URL(fileURLWithPath: arguments[1]),
@@ -88,6 +98,13 @@ private struct PhotoBench {
       guard let count = Int(arguments[2]), (1...40_000).contains(count) else { exit(2) }
       try generate(at: URL(fileURLWithPath: arguments[1]), count: count, cloned: true)
       print("Generated synthetic JPEG/PNG clones with separate file identities.")
+      return
+    }
+    if arguments == ["--thumbnail-strategies"] {
+      let report = try await ThumbnailStrategyBenchmark.run()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
       return
     }
     if arguments == ["--bulk-actions"] {
@@ -244,6 +261,8 @@ private struct PhotoBench {
       print("       PhotoBench --thumbnail-loads-tree /path/to/shoot > thumbnail-loads-report.json")
       print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
+      print("       PhotoBench --thumbnail-strategies > thumbnail-strategies.json")
+      print("       PhotoBench --raw-stages[-detail] FILE > raw-stages.json")
       print("       PhotoBench --bulk-actions > bulk-actions-report.json")
       print("       PhotoBench --selection-summary > selection-summary-report.json")
       print(

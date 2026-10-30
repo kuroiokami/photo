@@ -45,6 +45,28 @@ final class PreviewMemoryCache: @unchecked Sendable {
       return entry.preview
     }
   }
+  func bestThumbnail(_ file: URL, size: Int, session value: UUID?) -> CachedThumbnail? {
+    guard (1...480).contains(size) else { return nil }
+    return lock.withLock {
+      guard session == value else { return nil }
+      func found(_ edge: Int) -> CachedThumbnail? {
+        let key = Key(file: file, size: edge)
+        guard let entry = cache[key] else { return nil }
+        touch(key)
+        return CachedThumbnail(preview: entry.preview, requestedPixelSize: edge)
+      }
+      if let result = found(size) { return result }
+      // Bounded lookups, not a scan of every cached file. Prefer an adequate
+      // larger image, then the sharpest available smaller stand-in.
+      for edge in ThumbnailResolution.levels where edge > size {
+        if let result = found(edge) { return result }
+      }
+      for edge in ThumbnailResolution.levels.reversed() where edge < size {
+        if let result = found(edge) { return result }
+      }
+      return nil
+    }
+  }
   func insert(_ preview: PhotoPreview, file: URL, size: Int, protecting protectedFiles: [URL] = [])
   {
     lock.withLock {

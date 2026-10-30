@@ -6,6 +6,7 @@ import SwiftUI
 /// the owning workspace's stable State storage; all captured display inputs and
 /// clipboard availability participate in equality. Photo state is observed here.
 struct WorkspaceThumbnail: View, Equatable {
+  @Environment(\.displayScale) private var displayScale
   let photo: PhotoItem
   let state: PhotoThumbnailState
   let selection: WorkspaceSelectionState
@@ -140,7 +141,10 @@ struct WorkspaceThumbnail: View, Equatable {
       select()
     } label: {
       PhotoImageView(
-        photo: photo, pipeline: thumbnails, maximumPixelSize: 480, edit: state.edit,
+        photo: photo, pipeline: thumbnails,
+        maximumPixelSize: ThumbnailResolution.edge(
+          points: thumbnailEdge, displayScale: displayScale),
+        edit: state.edit,
         prioritize: state.selected, sessionID: sessionID, cacheGeneration: cacheGeneration
       )
       .frame(height: thumbnailEdge * 0.7).clipShape(RoundedRectangle(cornerRadius: 4))

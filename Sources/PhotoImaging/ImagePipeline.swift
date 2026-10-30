@@ -185,6 +185,14 @@ public actor ImagePipeline: PhotoPreviewLoading {
     guard !Task.isCancelled else { return nil }
     return memory.lookup(file, size: maximumPixelSize, session: sessionID)
   }
+  /// Display-only best effort. Decoder APIs retain their maximum-size contract.
+  /// Never serves another session or performs filesystem work on the UI thread.
+  public nonisolated func bestCachedThumbnail(
+    for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil
+  ) -> CachedThumbnail? {
+    guard !Task.isCancelled else { return nil }
+    return memory.bestThumbnail(file, size: maximumPixelSize, session: sessionID)
+  }
   public func preview(for file: URL, maximumPixelSize: Int, sessionID: UUID? = nil)
     async throws -> PhotoPreview
   {

@@ -4,6 +4,11 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Lock crop proportions through corner drags, drawing and numeric size edits; swap portrait/landscape ratios and choose Free to unlock.
+- Hold W for a temporary large Quick Preview, or open it from View; release/Escape returns, and Z requests genuine 100% detail.
+- Request thumbnail pixels according to display size and Retina scale; reuse an adequate cached image and retain a smaller stand-in during enlargement.
+- Add reproducible developer PNG/JPEG thumbnail controls and an isolated LibRaw/Apple RAW-stage pilot. Production disk thumbnails remain lossless PNG and no LibRaw runtime dependency is added.
+
 - Reduce Rating-order bulk decision/Undo costs and repeated Select All work while preserving native filename ordering, filters and selection.
 
 - Fix restored-folder thumbnails remaining pending when late sample-view image requests invalidate the active session.

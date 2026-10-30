@@ -12,6 +12,7 @@ private typealias WorkflowModelStorage = SwiftUI.State<WorkflowModel>
 private typealias BoolStorage = SwiftUI.State<Bool>
 private typealias ColumnStorage = SwiftUI.State<Int>
 private typealias SizeStorage = SwiftUI.State<Double>
+private typealias QuickPreviewStorage = SwiftUI.State<QuickPreviewState>
 private typealias ImageSessionStorage = SwiftUI.State<UUID?>
 private typealias PipelineStorage = SwiftUI.State<ImagePipeline>
 private typealias DetailPipelineStorage = SwiftUI.State<DetailPipeline>
@@ -43,6 +44,7 @@ public struct WorkspaceView: View {
   @DetailPipelineStorage private var referenceDetails = DetailPipeline()
   @FolderLibraryStorage private var folderLibrary = FolderLibrary()
   @LayoutStorage private var layout = WorkspaceLayout()
+  @QuickPreviewStorage private var quickPreview = QuickPreviewState()
   @BoolStorage private var showingFilters = false
   @BoolStorage private var showingOptions = false
   @WorkspaceStorage private var workspace: WorkspaceState
@@ -94,6 +96,22 @@ public struct WorkspaceView: View {
 
   public var body: some View {
     workspacePresentation
+      .overlay {
+        WorkspaceRegion {
+          if quickPreview.visible, quickPreviewAllowed, let photo = workspace.selectedPhoto {
+            QuickPreviewOverlay(
+              photo: photo, edit: workspace.imageEdits[photo.id] ?? PhotoEdit(),
+              pipeline: previews, session: workspace.sessionID, close: { quickPreview.dismiss() },
+              inspect: toggleInspection)
+          }
+        }
+      }
+      .background(
+        QuickPreviewKeys(state: quickPreview, allowed: quickPreviewAllowed)
+          .frame(width: 0, height: 0).accessibilityHidden(true)
+      )
+      .onChange(of: quickPreviewAllowed) { if !quickPreviewAllowed { quickPreview.dismiss() } }
+      .onChange(of: workspace.sessionID) { quickPreview.dismiss() }
       .focusedSceneValue(\.workspaceActions, sceneActions)
       .task(id: workspace.sessionID) {
         // Retain the bounded thumbnail pool and separate Fit lane across folders.
@@ -111,6 +129,12 @@ public struct WorkspaceView: View {
         async let decisions: Void = workspace.loadDecisions(expectedSession: session)
         _ = await (metadata, decisions)
       }
+  }
+
+  private var quickPreviewAllowed: Bool {
+    readyImageSession == workspace.sessionID && workspace.selectedPhoto != nil
+      && !choosingFolder && !showingWorkflow && !showingHelp && croppingPhoto == nil
+      && trashPlan == nil && !preparingTrash && !showingOptions && !showingFilters
   }
 
   private var workspaceShell: some View {
@@ -277,7 +301,9 @@ public struct WorkspaceView: View {
         && workspace.decisionSelectionReady
         && !workflowModel.busy,
       toggleFocus: toggleFocus, focused: layout.focused,
-      toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip
+      toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip,
+      toggleQuickPreview: { if quickPreviewAllowed { quickPreview.pinned.toggle() } },
+      quickPreviewVisible: quickPreview.visible
     )
   }
 
@@ -545,6 +571,10 @@ public struct WorkspaceView: View {
     }
   }
   private func cancelBrowsing() {
+    if quickPreview.visible {
+      quickPreview.dismiss()
+      return
+    }
     if showingOptions || showingFilters {
       dismissPopovers()
       return
@@ -1257,6 +1287,7 @@ public struct WorkspaceView: View {
   }
 
   private func toggleInspection() {
+    quickPreview.dismiss()
     if !showPreview {
       pendingInspection = true
       showPreview = true
