@@ -9,14 +9,18 @@
     "filteredGroupRemovalRestorationAndClear": true,
     "flagAndRatingUndoRedo": true,
     "generatedJPEGs": 65,
+    "normalQuitProcessExitVerified": true,
+    "onlyIsolatedAppQuit": true,
     "originalSHA256Unchanged": true,
-    "pendingNativeChecks": "Mac locked; requested manual unlock for restart/cleanup.",
+    "postRestartLastPhotoFitLoaded": true,
+    "postRestartOriginalHashesAndSidecarDecisionsRechecked": true,
     "releaseUUID": "987347F9-2D04-3D38-BAEC-70543B300E46",
-    "restartVerified": false,
+    "restartVerified": true,
+    "sampleFitPreviewRestored": true,
     "sidecarsContainExpectedIndependentStarsAndReject": true,
-    "temporaryShortcutRemoved": false
+    "temporaryShortcutRemoved": true
   },
-  "nativeStatus": "functional-and-sidecar-checks-pass-restart-cleanup-unverified-lock",
+  "nativeStatus": "scoped-native-workflow-restart-and-cleanup-passed",
   "order": [
     "baseline1",
     "candidate1",

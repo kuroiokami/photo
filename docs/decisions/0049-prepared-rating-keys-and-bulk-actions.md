@@ -2,7 +2,7 @@
 
 Date: 2026-10-30
 
-Status: Implemented; strict local regressions and matched generated controls pass; scoped native functional/hash/XMP acceptance passes; locked-screen restart/cleanup unverified.
+Status: Implemented; strict local regressions and matched generated controls pass; scoped native functional/hash/XMP, normal restart and cleanup acceptance pass.
 
 ## Decision
 
@@ -20,4 +20,4 @@ Identical optimized public-API harness source is separately linked against accep
 
 These are synchronous model timings, not displayed frames, file-save completion, physical camera/media or pressure/long-session acceptance. Large Unicode batches still cost time; filename-rank construction and first-selected lookup remain separate work. Native and delivery evidence belong in the tracker/PR.
 
-Isolated signed release `987347F9-2D04-3D38-BAEC-70543B300E46` verifies 65 selected Unicode JPEGs in Rating order: independent stars/flags, flag and rating Undo/Redo, Picks/min-four-star removal by rejection, Undo restoration, Redo removal and Clear Filters. All 65 original hashes match; all sidecars contain Rating 4 plus independent reject fields pick -1/good false. A native automation timeout was recovered through fresh state and separate actions. The Mac locked before normal Quit/restart and shortcut cleanup; an asynchronous unlock request is pending. Do not claim restart/cleanup complete.
+Isolated signed release `987347F9-2D04-3D38-BAEC-70543B300E46` verifies 65 selected Unicode JPEGs in Rating order: independent stars/flags, flag and rating Undo/Redo, Picks/min-four-star removal by rejection, Undo restoration, Redo removal and Clear Filters. All 65 original hashes match; all sidecars contain Rating 4 plus independent reject fields pick -1/good false. A native automation timeout was recovered through fresh state and separate actions. After user unlock, a normal isolated-app Quit was confirmed by process exit. A fresh process restored the 65-photo folder, loaded Fit/filmstrip images with saved Reject/4-star decisions, and navigated to the last photo (65 of 65) with a loaded 2400×1600 Fit image. All 65 original hashes and independent Rating 4 / pick -1 / good false sidecars were rechecked. The temporary sidebar shortcut was removed, the loaded three-photo sample view restored and only the isolated app quit. Native restart and cleanup are complete; no personal app decisions were changed.
