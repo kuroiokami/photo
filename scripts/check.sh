@@ -10,4 +10,5 @@ if [ -f "$plugin_dir/libTestingMacros.dylib" ]; then
   set -- "$@" -Xswiftc -plugin-path -Xswiftc "$plugin_dir"
 fi
 swift build "$@"
-swift test "$@"
+swift build --product PhotoPreviewWorker "$@"
+PHOTO_PREVIEW_WORKER_TEST_EXECUTABLE="$(swift build --show-bin-path)/PhotoPreviewWorker" swift test "$@"

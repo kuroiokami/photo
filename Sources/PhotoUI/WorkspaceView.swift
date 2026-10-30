@@ -76,6 +76,7 @@ public struct WorkspaceView: View {
   @BoolStorage private var preparingTrash = false
   @BoolStorage private var showingTrashError = false
   @BoolStorage private var pendingInspection = false
+  @BoolStorage private var pendingCameraPreview = false
   @MessageStorage private var trashNotice = ""
   private var metadataReader: ImageMetadataReader { workflowModel.metadataReader }
 
@@ -252,6 +253,10 @@ public struct WorkspaceView: View {
       .onChange(of: showPreview) {
         if !showPreview { layout.leaveFocus() }
         comparison.resetViewports()
+        if pendingCameraPreview && showPreview {
+          pendingCameraPreview = false
+          comparison.inspectCameraPreview()
+        }
         if pendingInspection && showPreview {
           pendingInspection = false
           comparison.toggleInspection()
@@ -303,7 +308,9 @@ public struct WorkspaceView: View {
       toggleFocus: toggleFocus, focused: layout.focused,
       toggleFilmstrip: { layout.filmstrip.toggle() }, filmstripVisible: layout.filmstrip,
       toggleQuickPreview: { if quickPreviewAllowed { quickPreview.pinned.toggle() } },
-      quickPreviewVisible: quickPreview.visible
+      quickPreviewVisible: quickPreview.visible,
+      cameraPreview: inspectCameraPreview,
+      canCameraPreview: workspace.selectedPhoto?.fileURL.map(PhotoFormats.isRaw) ?? false
     )
   }
 
@@ -1286,8 +1293,21 @@ public struct WorkspaceView: View {
     .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.vertical, 4)
   }
 
+  private func inspectCameraPreview() {
+    guard workspace.selectedPhoto?.fileURL.map(PhotoFormats.isRaw) == true else { return }
+    quickPreview.dismiss()
+    pendingInspection = false
+    if !showPreview {
+      pendingCameraPreview = true
+      showPreview = true
+    } else {
+      comparison.inspectCameraPreview()
+    }
+  }
+
   private func toggleInspection() {
     quickPreview.dismiss()
+    pendingCameraPreview = false
     if !showPreview {
       pendingInspection = true
       showPreview = true

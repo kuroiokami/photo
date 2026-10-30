@@ -22,6 +22,7 @@ Read-only inspection of `.build/Photo.app` found:
 | Identity | `com.kuroiokami.photo.development` | Choose a stable release identifier before first distribution; keep development identity separate |
 | Version | Hardcoded `0.1.0`, build `1` | Parameterize version/build and increase them for each published artifact |
 | Resources | SwiftPM resource bundles copied into wrapper | Stage from scratch so removed/renamed resources cannot linger; verify all embedded code/resources |
+| Camera Preview helper | Bundled, ad-hoc-signed `PhotoPreviewWorker`, launched for one requested photo | Build for the supported chips, Developer ID-sign before the app, and verify launch/cancellation/shared-memory transfer in the final quarantined artifact |
 | Installer/download | None | Signed/notarized DMG with Applications shortcut, release notes and checksum |
 | Updates | Manual rebuild/copy | First beta: quit, replace complete app; signed automatic updates can follow separately |
 | License | MIT OR Apache-2.0, at the recipient’s option | Include LICENSE-MIT, LICENSE-APACHE and NOTICE with source and app distributions |
@@ -45,11 +46,11 @@ No account purchase, agreement acceptance, certificate/private-key handling or p
 5. **Validate the actual artifact.** Check code signing, notarization tickets and Gatekeeper assessment for app and DMG. Download through a browser onto a separate/clean test Mac so quarantine behavior is exercised. Install in Applications and launch from there; also test offline launch, folder/card selection, embedded RAW previews, detail, SQLite saves and restart. Test upgrade without losing preferences, decisions or review sessions.
 6. **Publish after acceptance.** Attach the DMG, checksum, clear macOS/chip requirements, release notes, known limitations and installation steps to a versioned Release. Promote only the exact tested artifact; do not rebuild after testing. Recipients never need to disable Gatekeeper or remove quarantine manually.
 
-The first pipeline can run locally on a release Mac; ordinary untrusted pull-request CI must not have signing credentials. A protected/manual release job can follow after the local process works. No `.pkg` installer, background helper, administrator prompt or privileged install service is needed for the proposed single-app layout.
+The first pipeline can run locally on a release Mac; ordinary untrusted pull-request CI must not have signing credentials. A protected/manual release job can follow after the local process works. No `.pkg` installer, login/background service, administrator prompt or privileged install service is needed for the proposed single-app layout. The bundled `PhotoPreviewWorker` is an on-demand child process, not a separately installed service. Its hardened-runtime, shared-memory and minimum-platform acceptance belongs in final-artifact testing.
 
 ## Hardware and installation support
 
-Start with an explicitly labeled **Apple silicon beta** if Intel testing is unavailable. To support both chip families, build a universal `arm64` + `x86_64` app and verify its binary slices, packaged resources, platform minimums and real Intel behavior before calling it universal. A universal executable contains code for both architectures: [Apple universal binary guidance](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary). Do not infer Intel support merely from shared Swift source.
+Start with an explicitly labeled **Apple silicon beta** if Intel testing is unavailable. To support both chip families, build a universal `arm64` + `x86_64` app and verify both app and preview-helper binary slices, packaged resources, platform minimums and real Intel behavior before calling it universal. A universal executable contains code for both architectures: [Apple universal binary guidance](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary). Do not infer Intel support merely from shared Swift source.
 
 Keep macOS 14 as the declared floor unless a deliberate change is needed. Apple’s installed RAW decoder affects camera/detail support, so release notes must distinguish recognized extensions, embedded previews and actually tested RAW rendering.
 

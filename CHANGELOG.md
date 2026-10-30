@@ -4,6 +4,9 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Add optional Camera Preview (⌥Z) for large embedded Sony/Canon JPEGs and an embedded-only fallback. Source/resolution and preview-pixel zoom stay explicit; Z still requests rendered RAW.
+- Isolate camera-preview decoding in a bundled, cancellable one-photo worker with bounded shared RAM, source revalidation and no temporary image files.
+
 - Lock crop proportions through corner drags, drawing and numeric size edits; swap portrait/landscape ratios and choose Free to unlock.
 - Hold W for a temporary large Quick Preview, or open it from View; release/Escape returns, and Z requests genuine 100% detail.
 - Request thumbnail pixels according to display size and Retina scale; reuse an adequate cached image and retain a smaller stand-in during enlargement.

@@ -68,8 +68,12 @@ final class InspectionReports {
 struct InspectionScaleLabel: View {
   let viewport: InspectionViewport
   let source: String
+  var previewPixels = false
   var body: some View {
-    Text(source + " · \(Int((viewport.magnification*100).rounded()))%")
-      .font(.caption).foregroundStyle(.secondary).lineLimit(1).frame(height: 16)
+    Text(
+      source + " · \(Int((viewport.magnification*100).rounded()))%"
+        + (previewPixels ? " of preview pixels" : "")
+    )
+    .font(.caption).foregroundStyle(.secondary).lineLimit(1).frame(height: 16)
   }
 }

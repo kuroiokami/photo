@@ -37,3 +37,11 @@ LibRaw full unpack+processing was slower than Apple full completion in every pil
 Ship adaptive thumbnail/Quick Preview/crop improvements, retain production PNG and the existing RAW backend. Continue only a narrow metadata/larger-embedded-JPEG candidate if broader camera/mode, EXIF/timezone, rotation/active-area/color, decoded-memory, cancellation and distribution checks justify it. Keep camera-JPEG inspection explicitly labelled and preserve genuine RAW 100%. Do not replace Apple processing or add broad speculative full-detail decoding based on this pilot.
 
 The separate [thumbnail codec controls](PERFORMANCE.md#adaptive-thumbnail-sizes-and-disk-codec-experiment--2026-10-30) retain PNG/JPEG/JPEG/PNG observations and pixel errors. Photographic/color/physical-frame acceptance remains open.
+
+## Implemented camera-preview route — 2026-10-30
+
+The follow-up uses an original native Swift reader for bounded classic TIFF JPEG/SubIFD fields and strictly validated single-sample Canon CR3 JPEG tracks. It does not require LibRaw in the app. Larger verified JPEGs have **Camera JPEG** source labels; the embedded-only ImageIO fallback retains **Embedded preview** and a 4096-pixel cap. **⌥Z** explicitly requests this path; **Z** remains original/rendered RAW inspection.
+
+Repeated in-process JPEG decoding showed high process-memory growth even with output lifetimes released. A short-lived bundled worker now decodes one photo and transfers profiled, oriented RGBA pixels through private shared RAM. The parent validates the bounded header/stride/profile/decoded cost, owns the mapping until the image is released and can terminate a cancelled worker. No temporary photo file is created. Source bytes and identity are checked around decoding; malformed/oversized/unsupported requests keep Fit available.
+
+See [ADR 0051](decisions/0051-isolated-camera-preview-inspection.md), [read-only evidence](benchmarks/2026-10-30-camera-preview.json) and [usage](USAGE.md#camera-preview-for-a-faster-focus-check). This implements the narrow larger-preview direction, not a full RAW decoder replacement or the separate Canon EXIF optimization. SDK-dependent appearance, broader cameras/modes, physical-frame, pressure and long-session acceptance remain open.

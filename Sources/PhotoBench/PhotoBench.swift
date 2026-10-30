@@ -75,6 +75,24 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments.first == "--camera-preview-reference", arguments.count == 3 {
+      let result = try await CameraPreviewReference.run(
+        raw: URL(fileURLWithPath: arguments[1]), reference: URL(fileURLWithPath: arguments[2]))
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(result), as: UTF8.self))
+      return
+    }
+    if ["--camera-preview", "--camera-preview-tree"].contains(arguments.first ?? ""),
+      arguments.count == 2
+    {
+      let result = try await CameraPreviewBenchmark.run(
+        folder: URL(fileURLWithPath: arguments[1]), recursive: arguments[0].hasSuffix("-tree"))
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(result), as: UTF8.self))
+      return
+    }
     if ["--raw-stages", "--raw-stages-detail"].contains(arguments.first ?? ""), arguments.count == 2
     {
       let report = try await RawStagesBenchmark.run(
@@ -263,6 +281,7 @@ private struct PhotoBench {
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
       print("       PhotoBench --thumbnail-strategies > thumbnail-strategies.json")
       print("       PhotoBench --raw-stages[-detail] FILE > raw-stages.json")
+      print("       PhotoBench --camera-preview[-tree] FOLDER > camera-preview.json")
       print("       PhotoBench --bulk-actions > bulk-actions-report.json")
       print("       PhotoBench --selection-summary > selection-summary-report.json")
       print(

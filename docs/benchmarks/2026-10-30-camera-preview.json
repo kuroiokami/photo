@@ -1,0 +1,275 @@
+{
+  "sony": {
+    "notes": [
+      "Three sequential on-demand camera-preview requests per file; one serial detail worker, no detail cache. Source hashing warms filesystem caches.",
+      "Camera JPEG means verified embedded color JPEG bytes, not rendered RAW. Embedded preview is the conservative ImageIO fallback, capped at 4096 pixels; neither claims sensor-resolution RAW inspection.",
+      "Decoded bytes bound the returned image. Parent and fresh-worker RSS are reported separately, include framework/transient allocations and shared pages, and must not be summed as unique physical memory. No whole-process 256 MiB guarantee.",
+      "The parent service loop reads image metadata, not every mapped pixel. Display/pixel access faults shared pages into the parent; this RSS is not the displayed app footprint.",
+      "No original names, paths, metadata values or pixels in output. These are service timings, not native input/frame latency or photographic quality equivalence."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 86.59375,
+    "results": [
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          332.705333,
+          249.458,
+          257.761708
+        ],
+        "peakWorkerResidentMiB": 714.59375,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          258.604584,
+          255.769542,
+          249.578583
+        ],
+        "peakWorkerResidentMiB": 714.5625,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          249.892291,
+          253.086708,
+          252.006541
+        ],
+        "peakWorkerResidentMiB": 713.59375,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          253.462166,
+          250.547291,
+          252.864792
+        ],
+        "peakWorkerResidentMiB": 713.53125,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 240869376,
+        "failures": 0,
+        "format": "arw",
+        "height": 9504,
+        "milliseconds": [
+          482.010333,
+          478.714,
+          486.21475
+        ],
+        "peakWorkerResidentMiB": 711.90625,
+        "source": "Camera JPEG",
+        "width": 6336
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          250.240083,
+          247.257083,
+          246.677208
+        ],
+        "peakWorkerResidentMiB": 712.21875,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          246.968667,
+          250.819292,
+          245.940791
+        ],
+        "peakWorkerResidentMiB": 714.015625,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          243.250334,
+          246.710417,
+          242.357417
+        ],
+        "peakWorkerResidentMiB": 714.015625,
+        "source": "Camera JPEG",
+        "width": 9504
+      },
+      {
+        "decodedBytes": 241680384,
+        "failures": 0,
+        "format": "arw",
+        "height": 6336,
+        "milliseconds": [
+          238.229833,
+          246.01025,
+          248.553792
+        ],
+        "peakWorkerResidentMiB": 713.6875,
+        "source": "Camera JPEG",
+        "width": 9504
+      }
+    ],
+    "retainedCameraPreviewBytesAfterRequests": 0,
+    "schemaVersion": 1
+  },
+  "public": {
+    "notes": [
+      "Three sequential on-demand camera-preview requests per file; one serial detail worker, no detail cache. Source hashing warms filesystem caches.",
+      "Camera JPEG means verified embedded color JPEG bytes, not rendered RAW. Embedded preview is the conservative ImageIO fallback, capped at 4096 pixels; neither claims sensor-resolution RAW inspection.",
+      "Decoded bytes bound the returned image. Parent and fresh-worker RSS are reported separately, include framework/transient allocations and shared pages, and must not be summed as unique physical memory. No whole-process 256 MiB guarantee.",
+      "The parent service loop reads image metadata, not every mapped pixel. Display/pixel access faults shared pages into the parent; this RSS is not the displayed app footprint.",
+      "No original names, paths, metadata values or pixels in output. These are service timings, not native input/frame latency or photographic quality equivalence."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "originalsUnchanged": true,
+    "peakResidentMiB": 40.640625,
+    "results": [
+      {
+        "decodedBytes": 71663616,
+        "failures": 0,
+        "format": "cr2",
+        "height": 3456,
+        "milliseconds": [
+          106.643,
+          104.429916,
+          98.076125
+        ],
+        "peakWorkerResidentMiB": 224.359375,
+        "source": "Camera JPEG",
+        "width": 5184
+      },
+      {
+        "decodedBytes": 120422400,
+        "failures": 0,
+        "format": "cr3",
+        "height": 4480,
+        "milliseconds": [
+          143.381625,
+          150.576125,
+          140.169875
+        ],
+        "peakWorkerResidentMiB": 363.453125,
+        "source": "Camera JPEG",
+        "width": 6720
+      },
+      {
+        "decodedBytes": 30720000,
+        "failures": 0,
+        "format": "orf",
+        "height": 2400,
+        "milliseconds": [
+          212.813708,
+          211.767583,
+          211.485875
+        ],
+        "peakWorkerResidentMiB": 142.640625,
+        "source": "Embedded preview",
+        "width": 3200
+      }
+    ],
+    "retainedCameraPreviewBytesAfterRequests": 0,
+    "schemaVersion": 1
+  },
+  "references": [
+    {
+      "case": 1,
+      "format": "arw",
+      "height": 6336,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 6336,
+      "referenceWidth": 9504,
+      "source": "Camera JPEG",
+      "width": 9504
+    },
+    {
+      "case": 2,
+      "format": "arw",
+      "height": 9504,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 9504,
+      "referenceWidth": 6336,
+      "source": "Camera JPEG",
+      "width": 6336
+    },
+    {
+      "case": 3,
+      "format": "arw",
+      "height": 6336,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 6336,
+      "referenceWidth": 9504,
+      "source": "Camera JPEG",
+      "width": 9504
+    },
+    {
+      "case": 4,
+      "format": "cr2",
+      "height": 3456,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 3456,
+      "referenceWidth": 5184,
+      "source": "Camera JPEG",
+      "width": 5184
+    },
+    {
+      "case": 5,
+      "format": "cr3",
+      "height": 4480,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 4480,
+      "referenceWidth": 6720,
+      "source": "Camera JPEG",
+      "width": 6720
+    },
+    {
+      "case": 6,
+      "format": "orf",
+      "height": 2400,
+      "originalsUnchanged": true,
+      "pixelMatch": true,
+      "referenceHeight": 2400,
+      "referenceWidth": 3200,
+      "source": "Embedded preview",
+      "width": 3200
+    }
+  ],
+  "notes": [
+    "Read-only authorized Sony corpus and three provenance-verified CC0 Canon/Olympus fixtures; source bytes never enter Git.",
+    "Reference JPEGs extracted by the pinned standalone LibRaw 0.22.3 probe, compared after orientation in sRGB bands, then deleted. This validates camera-preview pixels, not RAW rendering/color equivalence.",
+    "Reference comparison intentionally retains two images; its memory is not the app single-detail policy. Main per-family service runs report their own peak RSS."
+  ]
+}
