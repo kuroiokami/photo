@@ -21,6 +21,33 @@ struct MetadataSortTests {
         "2", "10", "1", "missing",
       ])
   }
+  @Test func preparedRatingKeysMatchNativeOrderForUnicodeTiesAndIncompleteRanks() {
+    let photos = ["Frame10.jpg", "Frame2.jpg", "cafe\u{301}.JPG", "日本語.jpg", "Frame2.jpg"]
+      .enumerated().map {
+        PhotoItem(id: "id-\($0.offset)", filename: $0.element, resourceName: "")
+      }
+    // The public sort accepts any integer, even though UI decisions clamp 0–5.
+    let ratings = ["id-0": -1, "id-1": 7, "id-2": 7, "id-4": 0]
+    let ranks = PhotoSort.filenameRanks(for: photos)
+    var incomplete = ranks
+    incomplete.removeValue(forKey: "id-2")
+    incomplete["unused"] = 100
+    for offset in photos.indices {
+      let input = Array(photos.dropFirst(offset)) + Array(photos.prefix(offset))
+      let native = PhotoSort.rating.ordered(input, metadata: [:], ratings: ratings).map(\.id)
+      #expect(
+        PhotoSort.rating.ordered(
+          input, metadata: [:], ratings: ratings,
+          filenameRanks: ranks
+        ).map(\.id) == native)
+      #expect(
+        PhotoSort.rating.ordered(
+          input, metadata: [:], ratings: ratings,
+          filenameRanks: incomplete
+        ).map(\.id) == native)
+    }
+  }
+
   @Test func captureTimeUsesInstants() {
     var a = PhotoMetadata(pixelWidth: 1, pixelHeight: 1)
     var b = a

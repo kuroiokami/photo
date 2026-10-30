@@ -72,6 +72,38 @@ struct SelectionCostTests {
     #expect(photos.allSatisfy { state.thumbnailState(for: $0.id)?.selected == false })
   }
 
+  @MainActor @Test func bulkFlagHistoryRetainsRatingOrderAndFilteredNeighborSelection() async {
+    let photos = (0..<129).map {
+      PhotoItem(id: "日本語-\($0)", filename: "Frame\($0).jpg", resourceName: "")
+    }
+    let state = WorkspaceState(photos: photos)
+    await state.loadDecisions()
+    let subset = Set(
+      photos.enumerated().filter { $0.offset.isMultiple(of: 2) }.map { $0.element.id })
+    state.selectGroup(subset, focus: photos[0].id)
+    state.applyDecision(rating: 4)
+    await state.setSort(.rating)
+    let ordered = state.photos.map(\.id)
+    state.selectAllVisible()
+    state.applyDecision(flag: .pick)
+    #expect(state.photos.map(\.id) == ordered && state.selectedIDs.count == photos.count)
+    state.undoDecision()
+    #expect(state.photos.map(\.id) == ordered && state.selectionSummary.flag == .unflagged)
+    state.redoDecision()
+    #expect(state.photos.map(\.id) == ordered && state.selectionSummary.flag == .pick)
+    state.setFilter(.pick, minimumRating: 4)
+    #expect(Set(state.photos.map(\.id)) == subset && state.selectedIDs == subset)
+    state.applyDecision(flag: .reject)
+    #expect(state.photos.isEmpty && state.selectedIDs.isEmpty)
+    state.undoDecision()
+    #expect(Set(state.photos.map(\.id)) == subset && state.selectedID == photos[0].id)
+    #expect(state.selectionSummary.rating == 4 && state.selectionSummary.flag == .pick)
+    state.redoDecision()
+    #expect(state.photos.isEmpty)
+    state.setFilter(.all, minimumRating: 0)
+    #expect(state.photos.map(\.id) == ordered)
+  }
+
   @MainActor @Test func ungroupedSelectionDoesNotExpandCompanionsAndGroupingStillDeduplicates() {
     let photos = ["Frame.ARW", "Frame.jpeg", "Other.JPG"].map {
       PhotoItem(fileURL: URL(fileURLWithPath: "/selection-cost/" + $0))

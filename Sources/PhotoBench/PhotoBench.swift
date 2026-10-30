@@ -90,6 +90,13 @@ private struct PhotoBench {
       print("Generated synthetic JPEG/PNG clones with separate file identities.")
       return
     }
+    if arguments == ["--bulk-actions"] {
+      let report = await BulkActionBenchmark.run()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      return
+    }
     if arguments == ["--selection-summary"] {
       let report = await SelectionSummaryBenchmark.run()
       let encoder = JSONEncoder()
@@ -237,6 +244,7 @@ private struct PhotoBench {
       print("       PhotoBench --thumbnail-loads-tree /path/to/shoot > thumbnail-loads-report.json")
       print("       PhotoBench --ingest-journal > ingest-journal-report.json")
       print("       PhotoBench --sqlite-statements > sqlite-statements-report.json")
+      print("       PhotoBench --bulk-actions > bulk-actions-report.json")
       print("       PhotoBench --selection-summary > selection-summary-report.json")
       print(
         "       PhotoBench --generate-scale /new/temp/folder count [1...40000; requires file cloning]"

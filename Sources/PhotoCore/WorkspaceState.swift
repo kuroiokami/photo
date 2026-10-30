@@ -82,10 +82,14 @@ public final class WorkspaceState {
   @ObservationIgnored public let selectionPresentation = WorkspaceSelectionState()
   public func thumbnailState(for id: String) -> PhotoThumbnailState? { thumbnailStates[id] }
 
+  // Select All already has the exact visible rows. Reuse them for its one
+  // synchronous summary refresh instead of looking every ID up again.
+  @ObservationIgnored private var preparedSelectionTargets: [PhotoItem]?
   @ObservationIgnored private var selectionMembershipEvaluations = 0
   private func refreshSelectionPresentation() {
     selectionMembershipEvaluations += 1
-    selectionPresentation.replace(operationPhotos, decisions: decisions, ready: decisionsReady)
+    selectionPresentation.replace(
+      preparedSelectionTargets ?? operationPhotos, decisions: decisions, ready: decisionsReady)
   }
   private func publishThumbnailDecision(_ id: String) {
     let decision = decisions[id] ?? CullingDecision()
@@ -130,6 +134,8 @@ public final class WorkspaceState {
   public var selectionReadinessEvaluations: Int { selectionMembershipEvaluations }
   public var decisionSelectionReady: Bool { selectionPresentation.ready }
   public func selectAllVisible() {
+    preparedSelectionTargets = groupPairs ? nil : photos
+    defer { preparedSelectionTargets = nil }
     selectedIDs = Set(photos.map(\.id))
     if selectedIndex == nil, !photos.isEmpty { selectedIndex = 0 }
     selectionAnchorID = selectedID
@@ -1023,7 +1029,9 @@ public final class WorkspaceState {
       preferred.flatMap { indicesByID[$0] }
       ?? fallback.lazy.compactMap { self.indicesByID[$0] }.first
       ?? (photos.isEmpty ? nil : 0)
-    selectedIDs = selectedIDs.filter { indicesByID[$0] != nil }
+    if selectedIDs.contains(where: { indicesByID[$0] == nil }) {
+      selectedIDs = selectedIDs.filter { indicesByID[$0] != nil }
+    }
     if selectedIDs.isEmpty { selectedIDs = Set([selectedID].compactMap { $0 }) }
   }
 
@@ -1039,7 +1047,8 @@ public final class WorkspaceState {
     let trace = PhotoTrace.begin("ApplyDecision")
     defer { PhotoTrace.end(trace) }
     guard let photo = selectedPhoto else { return }
-    let targets = operationPhotos.isEmpty ? [photo] : operationPhotos
+    let selected = operationPhotos
+    let targets = selected.isEmpty ? [photo] : selected
     guard targets.allSatisfy({ decisionsReady.contains($0.id) }) else { return }
     let index = selectedIndex ?? 0
     let next = index + 1 < photos.count ? photos[index + 1].id : nil
@@ -1072,7 +1081,7 @@ public final class WorkspaceState {
         sourceFields[change.photo.id] = change.afterFields
       }
       persistDecisions(changes.map { ($0.photo, $0.after, $0.afterReviewed) })
-      if sort == .rating {
+      if sort == .rating, changes.contains(where: { $0.before.rating != $0.after.rating }) {
         if changes.count == 1 {
           repositionRating(photo)
         } else {
@@ -1212,6 +1221,14 @@ public final class WorkspaceState {
     }
   }
   private func restoreDecision(_ change: DecisionChange, undo: Bool) {
+    // Compare with live values: an external sync may have changed stars since
+    // the recorded flag-only action. History still restores its full decision.
+    let reordersRating =
+      sort == .rating
+      && change.items.contains { item in
+        decisions[item.photo.id, default: CullingDecision()].rating
+          != (undo ? item.before : item.after).rating
+      }
     decisionRevision += 1
     for item in change.items {
       let value = undo ? item.before : item.after
@@ -1232,7 +1249,7 @@ public final class WorkspaceState {
           undo ? item.beforeReviewed : item.afterReviewed
         )
       })
-    if sort == .rating {
+    if reordersRating {
       allPhotos = sort.ordered(
         allPhotos, metadata: metadata, ratings: decisions.mapValues(\.rating),
         filenameRanks: filenameRanks)

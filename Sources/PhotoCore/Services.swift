@@ -63,7 +63,22 @@ public enum PhotoSort: String, CaseIterable, Sendable {
     _ photos: [PhotoItem], metadata: [String: PhotoMetadata],
     ratings: [String: Int] = [:], filenameRanks: [String: Int] = [:]
   ) -> [PhotoItem] {
-    photos.sorted { a, b in
+    if self == .rating, filenameRanks.count >= photos.count {
+      // Hash each ID once per input, rather than on every sort comparison.
+      // Incomplete rank maps retain the general comparator's native fallback.
+      var keyed: [(photo: PhotoItem, rating: Int, rank: Int)] = []
+      keyed.reserveCapacity(photos.count)
+      for photo in photos {
+        guard let rank = filenameRanks[photo.id] else { break }
+        keyed.append((photo, ratings[photo.id, default: 0], rank))
+      }
+      if keyed.count == photos.count {
+        return keyed.sorted {
+          $0.rating == $1.rating ? $0.rank < $1.rank : $0.rating > $1.rating
+        }.map(\.photo)
+      }
+    }
+    return photos.sorted { a, b in
       let av = value(metadata[a.id])
       let bv = value(metadata[b.id])
       if self == .rating, ratings[a.id, default: 0] != ratings[b.id, default: 0] {
