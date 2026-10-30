@@ -27,19 +27,37 @@ public enum DetailUpdate: Sendable {
 /// One serial, on-demand lane. Reuses its context, never caches decoded photos.
 public actor DetailPipeline {
   public static let byteLimit = 256 * 1024 * 1024
+  public nonisolated static var retainedCameraPreviewBytes: Int {
+    CameraBitmapAccounting.shared.bytes
+  }
   private var context: CIContext?
-  public init() {}
+  private let cameraWorker: URL?
+  private let cameraLane = CameraPreviewProcessLane()
+  public init() { cameraWorker = CameraPreviewWorker.executable() }
+  init(cameraPreviewWorker: URL?) { cameraWorker = cameraPreviewWorker }
+  private func cameraPreview(_ url: URL) async throws -> PhotoPreview {
+    try Task.checkCancellation()
+    guard let cameraWorker else { throw CameraPreviewError.unavailable }
+    return try await cameraLane.decode(url, executable: cameraWorker)
+  }
 
   /// Cancellation terminates the producer too. Synchronous Apple decoding cannot
   /// be interrupted mid-call, but cancelled queued work and later stages are skipped.
-  public nonisolated func updates(for url: URL, focus: DetailFocus) -> AsyncThrowingStream<
+  public nonisolated func updates(
+    for url: URL, focus: DetailFocus, source: DetailSource = .original
+  ) -> AsyncThrowingStream<
     DetailUpdate, Error
   > {
     AsyncThrowingStream { continuation in
       let job = Task {
         do {
-          let image = try await self.render(for: url, focus: focus) {
-            continuation.yield(.region($0))
+          let image: PhotoPreview
+          if source == .cameraPreview {
+            image = try await self.cameraPreview(url)
+          } else {
+            image = try await self.render(for: url, focus: focus, source: .original) {
+              continuation.yield(.region($0))
+            }
           }
           try Task.checkCancellation()
           continuation.yield(.complete(image))
@@ -50,13 +68,15 @@ public actor DetailPipeline {
     }
   }
 
-  public func detail(for url: URL) throws -> PhotoPreview {
-    try render(for: url, focus: nil, regionReady: { _ in })
+  public func detail(for url: URL, source: DetailSource = .original) async throws -> PhotoPreview {
+    if source == .cameraPreview { return try await cameraPreview(url) }
+    return try render(for: url, focus: nil, source: .original, regionReady: { _ in })
   }
 
   private func render(
-    for url: URL, focus: DetailFocus?, regionReady: (DetailRegion) -> Void
+    for url: URL, focus: DetailFocus?, source: DetailSource, regionReady: (DetailRegion) -> Void
   ) throws -> PhotoPreview {
+    precondition(source == .original)
     let trace = PhotoTrace.begin("FullDetail")
     defer { PhotoTrace.end(trace) }
     try Task.checkCancellation()

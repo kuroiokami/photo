@@ -8,8 +8,14 @@ private struct NearbyFitRequest: Equatable {
   let files: [URL]
 }
 
+private struct DetailRequest: Equatable {
+  let photoID: String
+  let zoom: Bool
+  let source: DetailSource
+}
 private struct DetailPresentation {
   var zoom = false
+  var source: DetailSource = .original
   var image: PhotoPreview?
   var region: DetailRegion?
   var fitPreview: PhotoPreview?
@@ -52,7 +58,10 @@ struct DetailPreviewView: View {
     VStack(spacing: 0) {
       InspectionControls(
         viewport: viewport, zoom: state.zoom, loading: state.image == nil && state.error == nil,
-        hasRegion: state.region != nil, choose: { chooseZoom($0) })
+        hasRegion: state.region != nil, camera: state.source == .cameraPreview,
+        hasCamera: photo.fileURL.map(PhotoFormats.isRaw) ?? false,
+        choose: { chooseZoom($0, source: .original) },
+        chooseCamera: { chooseZoom(true, source: .cameraPreview) })
       GeometryReader { geometry in
         ZStack(alignment: .bottomTrailing) {
           if state.zoom, let display = state.display {
@@ -110,11 +119,12 @@ struct DetailPreviewView: View {
         }
       }
       if state.zoom {
-        InspectionScaleLabel(viewport: viewport, source: detailSource)
+        InspectionScaleLabel(
+          viewport: viewport, source: detailSource, previewPixels: state.source == .cameraPreview)
       }
       if let error = state.error {
         Text(error).font(.caption).foregroundStyle(.secondary)
-        Button("Retry Full Detail") {
+        Button(state.source == .cameraPreview ? "Retry Camera Preview" : "Retry Full Detail") {
           chooseZoom(true)
         }
       }
@@ -123,7 +133,18 @@ struct DetailPreviewView: View {
       ComparisonCommandRelay(channel: comparison?.channel(for: pane)) { request in
         switch request.action {
         case .fit: fit()
-        case .zoom(let point, let scale):
+        case .zoom(let point, let scale), .cameraPreview(let point, let scale):
+          let source: DetailSource
+          if case .cameraPreview = request.action, photo.fileURL.map(PhotoFormats.isRaw) == true {
+            source = .cameraPreview
+          } else {
+            source = .original
+          }
+          if state.source != source {
+            state.image = nil
+            state.region = nil
+            state.source = source
+          }
           viewport.magnification = scale
           if state.error != nil { state.error = nil }
           viewport.focal = point
@@ -138,8 +159,8 @@ struct DetailPreviewView: View {
       fit()
       comparison?.resetViewports()
     }
-    .task(id: state.zoom) {
-      guard state.zoom else { return }
+    .task(id: DetailRequest(photoID: photo.id, zoom: state.zoom, source: state.source)) {
+      guard state.zoom, !Task.isCancelled else { return }
       do {
         guard let url = photo.fileURL ?? SampleResources.url(for: photo) else {
           throw PreviewError.unreadable
@@ -149,7 +170,8 @@ struct DetailPreviewView: View {
           point: edit.originalPoint(viewport.focal, original: originalSize),
           viewportPixels: CGSize(
             width: state.viewport.width * scale, height: state.viewport.height * scale))
-        for try await update in detailPipeline.updates(for: url, focus: focus) {
+        for try await update in detailPipeline.updates(for: url, focus: focus, source: state.source)
+        {
           try Task.checkCancellation()
           switch update {
           case .region(let region): state.region = region
@@ -185,10 +207,14 @@ struct DetailPreviewView: View {
       return "\(image.sourceKind.rawValue) · \(image.decodedWidth) × \(image.decodedHeight)"
     }
     return state.region != nil
-      ? "Rendered RAW · focus region · surrounding detail is loading" : "Preparing full detail…"
+      ? "Rendered RAW · focus region · surrounding detail is loading"
+      : (state.source == .cameraPreview ? "Preparing camera preview…" : "Preparing full detail…")
   }
   private var originalSize: CGSize {
-    state.fitPreview.map { CGSize(width: $0.originalWidth, height: $0.originalHeight) }
+    if state.source == .cameraPreview, let image = state.image {
+      return CGSize(width: image.decodedWidth, height: image.decodedHeight)
+    }
+    return state.fitPreview.map { CGSize(width: $0.originalWidth, height: $0.originalHeight) }
       ?? state.fitSize
   }
   private var fitMagnification: Double {
@@ -218,21 +244,28 @@ struct DetailPreviewView: View {
       visible: span)
     comparison?.zoom(true, center: linkedCenter, scale: scale, from: pane)
   }
-  private func chooseZoom(_ zoom: Bool, scale: Double = 1) {
+  private func chooseZoom(_ zoom: Bool, scale: Double = 1, source: DetailSource? = nil) {
     let center =
       state.zoom ? CGPoint(x: viewport.visible.midX, y: viewport.visible.midY) : viewport.focal
     if zoom {
+      if let source, state.source != source {
+        state.image = nil
+        state.region = nil
+        state.source = source
+      }
       if state.error != nil { state.error = nil }
       viewport.magnification = InspectionZoom.bounded(scale)
       if !state.zoom { state.zoom = true }
     } else {
       fit()
     }
-    comparison?.zoom(zoom, center: center, scale: viewport.magnification, from: pane)
+    comparison?.zoom(
+      zoom, center: center, scale: viewport.magnification, source: state.source, from: pane)
   }
 
   private func fit() {
     state.zoom = false
+    state.source = .original
     state.image = nil
     state.region = nil
     state.error = nil
@@ -279,7 +312,10 @@ private struct InspectionControls: View {
   let zoom: Bool
   let loading: Bool
   let hasRegion: Bool
+  let camera: Bool
+  let hasCamera: Bool
   let choose: (Bool) -> Void
+  let chooseCamera: () -> Void
   var body: some View {
     HStack {
       Button {
@@ -295,16 +331,27 @@ private struct InspectionControls: View {
       } label: {
         Text("100%").frame(width: 58, height: 25)
           .background(
-            zoom && abs(viewport.magnification - 1) < 0.005
+            !camera && zoom && abs(viewport.magnification - 1) < 0.005
               ? Color.accentColor : Color.white.opacity(0.1),
             in: RoundedRectangle(cornerRadius: 5))
       }.buttonStyle(.plain)
         .accessibilityValue(
-          zoom && abs(viewport.magnification - 1) < 0.005 ? "Selected" : "Not selected"
+          !camera && zoom && abs(viewport.magnification - 1) < 0.005 ? "Selected" : "Not selected"
         )
         .help(
           "Z toggles Fit / 100%. One image pixel per physical display pixel. Pinch to adjust magnification; two-finger scrolling pans."
         )
+      if hasCamera {
+        Button(action: chooseCamera) {
+          Text("Camera Preview").frame(height: 25).padding(.horizontal, 8)
+            .background(
+              camera && zoom ? Color.accentColor : Color.white.opacity(0.1),
+              in: RoundedRectangle(cornerRadius: 5))
+        }.buttonStyle(.plain).accessibilityValue(camera && zoom ? "Selected" : "Not selected")
+          .help(
+            "Inspect the camera JPEG or embedded preview (⌥Z). One preview pixel per display pixel; Z requests rendered RAW."
+          )
+      }
       Spacer()
       if zoom, loading {
         ProgressView().controlSize(.small)

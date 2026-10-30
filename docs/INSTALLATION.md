@@ -28,6 +28,8 @@ Photo is a native, folder-first culling app. This guide covers getting the sourc
 | Dependencies | No third-party Swift packages, API keys or environment files |
 | Images | JPEG (`.jpg` / `.jpeg`), PNG, Sony ARW, Canon CR2/CR3/CRW, Olympus/OM System ORF; extension matching is case-insensitive |
 
+The build script also builds, bundles and signs **PhotoPreviewWorker**, Photo’s own one-photo preview decoder. Keep it inside the app when copying an installation. It uses shared RAM and starts only for Camera Preview; no separate installation or third-party decoder is required. Developers launching the bare executable should first run `swift build` to build all products.
+
 The optional [LibRaw developer probe](../Tools/LibRawProbe/README.md) is separate from the app; you do not need LibRaw to install or use Photo.
 
 Recognition does not guarantee a preview or RAW decoder for every camera/mode. Real-camera coverage and minimum-platform/Intel acceptance are recorded in the [tracker](../PROJECT_STATUS.md). Thumbnail RAM caching uses 64–256 MiB per window based on physical RAM; generated disk thumbnails use a 512 MiB cache target. View → Clear Thumbnail Cache discards derived thumbnails without touching photos or decisions. Recent metadata uses a separate bounded result cache (128 entries / 4 MiB accounted results) and at most one short-lived ImageIO source per workspace. Keys, allocator overhead and opaque ImageIO memory are separate. Reload clears it; it writes no new cache files. Fit previews, decoded detail and Apple’s transient RAW/GPU allocations use memory separately. One detail pane retains up to 256 MiB; comparison allows two such panes. Cropping does not reduce the full RAW decoding budget.

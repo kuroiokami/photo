@@ -22,7 +22,7 @@ Bring back a hidden, minimized or closed workspace with **Window → Show Photo 
 | **Browse without importing** | Open a folder or memory card. Explore the sidebar tree or turn on **Include Subfolders** to review a whole shoot together. |
 | **Revisit photos quickly** | Reuse thumbnails from bounded memory and disk caches; load new thumbnails with a small worker pool, save disk thumbnails in the background and clear them from the View menu when needed. |
 | **Find the keepers** | Use keyboard shortcuts, stars, pick/reject flags, filters and group selection. Work in a contact sheet or a large preview with a bottom filmstrip. Review selected rejects and move them to macOS Trash. |
-| **Check the details** | Prepare nearby Fit previews while you pause, hold W for a temporary large preview, zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; full RAW rendering happens when you request detail. |
+| **Check the details** | Prepare nearby Fit previews while you pause, hold W for a temporary large preview, zoom to 100%, pan with the navigator, compare photos side by side, and see shooting information. RAW browsing uses embedded previews; use Camera Preview (⌥Z) for camera-JPEG pixels, or 100% / Z for deliberate rendered RAW inspection. |
 | **Review before copying** | Make culling decisions locally while Photo keeps the source protected. Choose which photos to copy, verify both destinations, and carry your decisions to the working copies. |
 | **Organize a shoot** | Rename batches, add shared IPTC fields without replacing unrelated metadata, and apply captions, copyright and hierarchical keywords. |
 | **Prepare the next step** | Create delivery copies with metadata for publication, Lightroom Classic or another editor. Rotate, mirror and crop with locked aspect ratios within Photo for review. |
@@ -46,7 +46,7 @@ The [installation guide](docs/INSTALLATION.md) walks through installing Apple's 
 
 1. Open a working folder with **⌘O**. To review a memory card before copying, choose **Workflow → Ingest → Choose keepers before copying → Start Culling**. Turn on **Include Subfolders** to combine the card’s folders, or expand the sidebar and choose one subfolder.
 2. Move through photos with the arrow keys. Press **P** to pick, **X** to reject, **U** to clear a flag, and **0–5** to rate. Rejecting never deletes a photo.
-3. Hold **W** for a quick large preview and release to return. Use **⇧⌘F** for Focus on Photo and **⌥⌘T** to hide the filmstrip. Press **Z** to switch between Fit and 100% for focus inspection; **[ / ]** rotate, and **B / N** always browse previous/next photos. Compare similar frames, then filter down to your keepers.
+3. Hold **W** for a quick large preview and release to return. Use **⇧⌘F** for Focus on Photo and **⌥⌘T** to hide the filmstrip. Use **⌥Z** for a camera preview or **Z** for rendered RAW / genuine image 100%; **[ / ]** rotate, and **B / N** always browse previous/next photos. Compare similar frames, then filter down to your keepers.
 4. Copy reviewed photos to your Photo and Backup folders, or continue organizing existing working copies. Add metadata, rename, and prepare delivery copies when ready.
 
 The app includes a walkthrough under **Help → Photo Quick Start & Shortcuts**. You can dismiss the introduction permanently and reopen the walkthrough whenever you need it.

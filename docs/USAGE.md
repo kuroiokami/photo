@@ -202,6 +202,7 @@ Choose **View → Quick Preview (hold W)** for a preview that stays open until *
 | Key | Action |
 | --- | --- |
 | **Hold W** | Temporary large Quick Preview; release returns to the previous layout |
+| **⌥Z** | Inspect the camera JPEG or embedded preview; Z requests rendered RAW |
 | **Z** | Toggle Fit / genuine 100% on the active photo, including from the contact sheet |
 | **B / N** | Previous / next photo, even when the zoom view or navigator has focus |
 | **[ / ]** | Rotate the selected photo(s) left / right |
@@ -210,6 +211,14 @@ Choose **View → Quick Preview (hold W)** for a preview that stays open until *
 | **0–5** | Set stars independently of flags |
 
 Use Z to check focus, Z to return to Fit, then P/X or Shift-P/Shift-X to decide and move on. Arrow keys can pan when the zoom navigator has focus; B/N always navigate photos. Each new photo starts at Fit. Rotation/mirror/crop remains Photo-local and is not applied to delivery copies or Lightroom. For speed, do a focus/flag pass first, then crop and caption the keepers.
+
+### Camera Preview for a faster focus check
+
+For a RAW photo, choose **Camera Preview**, press **⌥Z**, or use **Image → Inspect Camera Preview**. Photo looks for a larger embedded camera JPEG without rendering the RAW. Tested Sony ARWs provide a full-size JPEG; supported Canon CR2/CR3 layouts also expose larger JPEGs. Other layouts can use an embedded-only preview capped at 4096 pixels. Unknown or damaged layouts show an explanation, and Fit stays available.
+
+The badge says **Camera JPEG** when the embedded color-JPEG payload is verified, or **Embedded preview** for the fallback, together with actual dimensions. **100% of preview pixels** means one decoded preview pixel per physical display pixel. The preview may be smaller than the sensor and includes the camera's sharpening, noise reduction, white balance and picture style. Use **Z** or **100%** to request **Rendered RAW** when needed; Z switches directly from Camera Preview to RAW rather than merely closing the preview.
+
+Pan, pinch, double-click, the navigator, rotation/mirror/crop and linked comparison keep their normal behavior. Each new photo starts at Fit. A useful pass is **⌥Z → check focus → P/X → N**; use Z for a closer RAW decision. Preview decoding runs only on request and stops when cancelled or superseded. The decoded-image limit remains 256 MiB per detail pane; it is not a total-process memory limit.
 
 ### Fast Fit versus real detail
 

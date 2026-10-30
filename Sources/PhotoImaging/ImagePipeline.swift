@@ -12,6 +12,7 @@ public struct PhotoPreview: @unchecked Sendable {
   public var decodedHeight: Int { image.height }
   public let originalWidth: Int
   public let originalHeight: Int
+  public var workerPeakResidentBytes: UInt64? = nil
   public var byteCost: Int { image.bytesPerRow * image.height }
 }
 
@@ -19,6 +20,7 @@ public enum PreviewSource: String, Sendable {
   case image = "Image"
   case embedded = "Embedded preview"
   case raw = "Rendered RAW"
+  case cameraJPEG = "Camera JPEG"
 }
 
 public enum PreviewError: LocalizedError {

@@ -566,4 +566,13 @@ See [ADR 0049](decisions/0049-prepared-rating-keys-and-bulk-actions.md). No sync
 - [x] Add temporary hold-W Quick Preview and an explicit transition to genuine 100% inspection, preserving the previous browsing layout.
 - [x] Benchmark opt-in JPEG versus current PNG disk records, including decoded memory, disk bytes, metadata and pixel differences; retain production PNG pending photographic/color acceptance.
 - [x] Run an isolated pinned LibRaw pilot for metadata, largest embedded JPEG, sensor unpack, full processing, memory and requested cancellation on authorized Sony and CC0 Canon/Olympus files. Keep camera JPEG separate from RAW detail.
-- [ ] Decide whether a narrow optional metadata/larger-camera-JPEG backend merits integration after broader EXIF/orientation/color, camera, cancellation, memory and distribution review. No runtime dependency or full RAW backend replacement is approved by the pilot.
+- [x] Choose native bounded camera-JPEG integration without a runtime LibRaw dependency (ADR 0051, below). Optional LibRaw metadata/full-RAW replacement remains deferred; broader camera, color, memory and distribution acceptance stays open.
+
+## Optional camera-preview inspection — 2026-10-30
+
+- [x] Add explicit Camera Preview / ⌥Z, labelled camera-JPEG or embedded-preview pixels; keep Z/100% on the genuine original/RAW path.
+- [x] Index bounded classic TIFF/SubIFDs and strict single-sample Canon CR3 JPEG tracks; reject sensor/lossless JPEG frames and guard dimensions before decoding.
+- [x] Preserve orientation, RGB profiles, crop/pan/pinch/navigation and linked comparison; reset to Fit on new photos.
+- [x] Use a bundled one-photo worker and private, immediately unlinked shared memory, with bounded header/pixel validation, cancellation, timeout and source identity checks.
+- [x] Add generated parser/pixel/profile/memory/worker regressions and anonymous real Sony/Canon/Olympus read-only service/reference checks.
+- [ ] Complete broader camera/mode/storage, minimum-platform/Intel, pressure/long-session and photographic acceptance; do not infer these from the current corpus.

@@ -31,6 +31,8 @@ struct WorkspaceActions {
   var filmstripVisible = true
   var toggleQuickPreview: @MainActor () -> Void = {}
   var quickPreviewVisible = false
+  var cameraPreview: @MainActor () -> Void = {}
+  var canCameraPreview = false
 
 }
 
@@ -162,6 +164,10 @@ public struct WorkspaceCommands: Commands {
       }.disabled(actions?.canDecide != true)
     }
     CommandMenu("Image") {
+      Button("Inspect Camera Preview") { actions?.cameraPreview() }
+        .keyboardShortcut("z", modifiers: .option)
+        .disabled(actions?.canDecide != true || actions?.canCameraPreview != true)
+
       Group {
         Button("Rotate Left") { actions?.workspace.editSelection(.counterclockwise) }
           .keyboardShortcut("[", modifiers: [])

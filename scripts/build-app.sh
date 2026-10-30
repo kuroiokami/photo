@@ -8,10 +8,13 @@ case "${1-}" in
   *) printf 'Usage: sh scripts/build-app.sh [--release]\n' >&2; exit 2 ;;
 esac
 swift build -c "$configuration" --product Photo
+swift build -c "$configuration" --product PhotoPreviewWorker
 bin_path="$(swift build -c "$configuration" --show-bin-path)"
 app_dir="$PWD/.build/Photo.app"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
 cp "$bin_path/Photo" "$app_dir/Contents/MacOS/Photo"
+cp "$bin_path/PhotoPreviewWorker" "$app_dir/Contents/MacOS/PhotoPreviewWorker"
+codesign --force --sign - "$app_dir/Contents/MacOS/PhotoPreviewWorker"
 for resource in "$bin_path"/*.bundle; do
   [ -d "$resource" ] || continue
   ditto "$resource" "$app_dir/Contents/Resources/$(basename "$resource")"
