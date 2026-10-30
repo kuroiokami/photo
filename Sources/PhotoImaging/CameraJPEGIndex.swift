@@ -13,6 +13,7 @@ struct CameraJPEGIndex {
     let height: Int
   }
   let reader: BufferedContainerReader
+  init(reader: BufferedContainerReader) { self.reader = reader }
   private var entries = 0
   private var boxesSeen = 0
   private(set) var orientation: Int?
