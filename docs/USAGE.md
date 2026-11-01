@@ -177,7 +177,7 @@ Open **Filters** to combine a flag filter with a minimum-star filter. The header
 
 Sort by filename, capture time, ISO, shutter speed, aperture, focal length or rating. Photo keeps the current collection visible while preparing a new order in the background, then keeps your selection with the same files. If you change the sort again, the newest choice wins. Numeric EXIF values sort numerically; missing values go last with filename ties. EXIF sorts wait for indexing rather than repeatedly shuffling the collection. Selection follows identity after reordering. Rating sort puts highest stars first.
 
-The **shooting-information** button displays capture time, camera/lens, shutter, aperture, ISO, focal length and dimensions. A compact exposure strip remains near preview decisions.
+The **shooting-information** button displays capture time, camera/lens, shutter, aperture, ISO, focal length and dimensions. A compact exposure strip remains near preview decisions. Supported Canon CR3 files now load these standard fields without initializing the full RAW metadata reader. Recorded timezone offsets and fractional seconds are used for capture-time sorting; keep camera clocks consistent when combining a shoot. Other layouts continue through the existing reader.
 
 **Browsing options** (the sliders button beside Filters) adds up to two remembered rows beneath thumbnail filenames: exposure summary, shutter, aperture, ISO, focal length, camera, lens, capture time or dimensions. Values reuse already indexed metadata; they do not decode images. Missing values are explicit. **Hide Extra Labels** restores compact thumbnails.
 
@@ -376,7 +376,7 @@ Rename one folder at a time. **Undo Last Rename** and **Recover Original Names**
 
 ## 11. IPTC, keywords and Lightroom
 
-Photo reuses recent, unchanged shooting information and embedded metadata while you work. Sidecars are read separately, so a changed or removed sidecar appears when you reopen the workflow. **Reload Folder (⌘R)** also clears metadata reuse.
+Photo reuses recent, unchanged shooting information, embedded metadata and parsed sidecar values while you work. Sidecars are still read afresh: only identical packet bytes reuse parsed values, so a changed or removed sidecar appears when you reopen the workflow. **Reload Folder (⌘R)** clears shooting-information and embedded-metadata reuse. Saving still checks the current sidecar for conflicts.
 
 ### Apply one shared field without flattening a batch
 

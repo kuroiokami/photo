@@ -70,7 +70,7 @@ extension DecisionStore {
         )
       }
       let fields = entry.reviewFields
-      let current = try data.map(XMPSidecar.read) ?? CullingDecision()
+      let current = try data.map { try xmpReads.decision($0) } ?? CullingDecision()
       let decision = CullingDecision(
         rating: fields.contains(.rating) ? entry.decision.rating : current.rating,
         flag: fields.contains(.flag) ? entry.decision.flag : current.flag)

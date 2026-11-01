@@ -37,8 +37,8 @@ extension DecisionStore {
       let baseline = XMPSidecar.digest(data)
       if var local, local.pending {
         if data != nil, !local.baseline.hasPrefix("replacement:"),
-          let external = try? XMPSidecar.combinedDescriptive(
-            sidecar: data, embedded: embedded ?? local.embedded),
+          let external = try? xmpReads.combined(
+            sidecar: data, embedded: embedded ?? local.embedded, sidecarDigest: baseline),
           local.fields.allSatisfy({ (external.fields[$0] ?? "") == (local.value.fields[$0] ?? "") }
           ),
           !local.changesKeywords
@@ -61,8 +61,8 @@ extension DecisionStore {
           value: DescriptiveMetadata(), identity: identity, baseline: "replacement:" + baseline,
           status: decision.status)
       }
-      let value = try XMPSidecar.combinedDescriptive(
-        sidecar: data, embedded: embedded ?? local?.embedded)
+      let value = try xmpReads.combined(
+        sidecar: data, embedded: embedded ?? local?.embedded, sidecarDigest: baseline)
       try putMetadata(
         StoredMetadata(
           value: value, baseline: baseline, pending: false, fields: [], changesKeywords: false,
@@ -122,7 +122,7 @@ extension DecisionStore {
       let identity = try key(for: image)
       let data = try sidecarData(image)
       let embedded = try metadataRecord(identity)?.embedded
-      let value = try XMPSidecar.combinedDescriptive(sidecar: data, embedded: embedded)
+      let value = try xmpReads.combined(sidecar: data, embedded: embedded)
       let baseline = XMPSidecar.digest(data)
       try putMetadata(
         StoredMetadata(

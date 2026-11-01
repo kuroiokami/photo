@@ -136,7 +136,7 @@ extension DecisionStore {
     if let pending = local, pending.pending, !pending.baseline.hasPrefix("replacement:"),
       let publication = pending.publication, case .success(let current) = sidecar, let current,
       XMPSidecar.digest(current) == publication.after,
-      let decision = try? XMPSidecar.read(current), decision == pending.decision
+      let decision = try? xmpReads.decision(current), decision == pending.decision
     {
       // Finish a previous durable publication before a retry/Undo replaces its
       // receipt. Otherwise its descriptive baseline could be stranded behind.
