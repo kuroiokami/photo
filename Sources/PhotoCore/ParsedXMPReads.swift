@@ -20,12 +20,13 @@ final class ParsedXMPReads {
     var descriptive: DescriptiveMetadata?
     var accessed: UInt64 = 0
     var cost: Int {
-      192 + packet.count
-        + (descriptive.map {
-          $0.fields.values.reduce(0) { $0 + $1.utf8.count }
-            + $0.keywords.reduce(0) { $0 + $1.utf8.count }
-            + $0.hierarchy.reduce(0) { $0 + $1.utf8.count }
-        } ?? 0)
+      var result = 192 + packet.count
+      if let value = descriptive {
+        for text in value.fields.values { result += text.utf8.count }
+        for text in value.keywords { result += text.utf8.count }
+        for text in value.hierarchy { result += text.utf8.count }
+      }
+      return result
     }
   }
   private let entryLimit: Int
