@@ -54,8 +54,9 @@ public enum XMPSidecar {
   }
   public static func read(_ data: Data) throws -> CullingDecision {
     let doc = try document(data)
+    let elements = walk(doc)
     func value(_ uri: String, _ name: String) -> String? {
-      for element in walk(doc) {
+      for element in elements {
         for attr in element.attributes ?? [] where attr.localName == name && attr.uri == uri {
           return attr.stringValue
         }

@@ -576,3 +576,13 @@ See [ADR 0049](decisions/0049-prepared-rating-keys-and-bulk-actions.md). No sync
 - [x] Use a bundled one-photo worker and private, immediately unlinked shared memory, with bounded header/pixel validation, cancellation, timeout and source identity checks.
 - [x] Add generated parser/pixel/profile/memory/worker regressions and anonymous real Sony/Canon/Olympus read-only service/reference checks.
 - [ ] Complete broader camera/mode/storage, minimum-platform/Intel, pressure/long-session and photographic acceptance; do not infer these from the current corpus.
+
+## Metadata indexing and repeated panel reads — 2026-10-30
+
+- [x] Add bounded standard-field Canon CR3 CMT1/CMT2 reading with version/type/size/offset/duplicate checks, ISO and timezone/subseconds; preserve ImageIO fallback and source revalidation.
+- [x] Reuse bounded immutable XMP parse results by digest plus exact bytes, retaining fresh file reads, independent local intent and uncached coordinated XML merges.
+- [x] Add malformed/cancellation/endianness/orientation/time/cache/external-change regressions and same-code optimized Canon/panel controls with unchanged-source checks.
+- [x] Complete scoped native inspector, selection-retaining ISO sort, external metadata refresh and one-field save/Undo checks with original hashes and cleanup. Final remote review/CI and delivery evidence belong in the feature PR.
+- [ ] Broader Canon models/versions/extended ISO, physical storage/frames, pressure/concurrency/long-session and minimum-platform/Intel acceptance remain open.
+
+See [ADR 0052](decisions/0052-bounded-canon-exif-and-parsed-xmp.md). Repeated filesystem-read consolidation and EXIF reuse across workspaces are separate follow-ups.

@@ -1,8 +1,26 @@
 # Project tracker
 
-Last updated: 2026-10-30
+Last updated: 2026-11-01
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
+
+## Canon EXIF and repeated metadata-panel reads — 2026-10-30
+
+Implemented [ADR 0052](docs/decisions/0052-bounded-canon-exif-and-parsed-xmp.md): read standard shooting fields from bounded Canon CR3 CMT1/CMT2 TIFF blocks without initializing ImageIO's RAW route. Require known Canon/Exif 2.3x structures, consistent dimensions, valid orientation/types/counts/ranges and unambiguous fields; unknown layouts, missing standard shooting fields and extended ISO retain ImageIO. Recorded ISO, original timezone and fractional seconds are preserved through the existing typed parser. Before/after file identity/timestamp validation, per-workspace result budgets, cancellation and selected-photo scheduling remain. No pixel decode or runtime LibRaw dependency is added.
+
+DecisionStore now reuses immutable parsed XMP decision/descriptive values lazily by digest **and exact packet bytes**, up to **128 packets / 4 MiB accounted results**. Every operation still reads current sidecar bytes and keeps identity/ambiguity/symlink/source-protection/pending/conflict checks. No mutable XML tree is cached; merges/writes parse current XML afresh and retain coordinated atomic publication, unrelated/develop properties, SQLite durability and history. Nil descriptive packets avoid constructing empty XML; decision extraction walks its element list once. Filesystem snapshot/read consolidation and cross-workspace EXIF sharing remain separate work.
+
+[Optimized same-code controls](docs/benchmarks/2026-10-30-metadata-indexing.json): four fresh processes per Canon mode in alternating ImageIO/native/native/ImageIO order twice produce first metadata median **137.57 → 2.31 ms** on the public EOS R CR3. Native reads request 36,864 bytes including bounded header prefetch, create zero ImageIO sources and agree with common/public shooting references. The current SDK omits standard ISO and original offset on this fixture; the native values/time conversion match reference constants, and pinned developer-only LibRaw independently agrees on numeric/camera fields. SDK ISO/time-reference failures remain explicit. This is limited-camera correctness/performance evidence, not exact SDK equivalence or a broad Canon claim.
+
+Repeated generated panel controls (16 packets, 256 timed visits each, cache off/on/on/off) reduce visit medians **1.853–1.978 → 1.103–1.120 ms**, total **477.24–523.05 → 287.01–292.31 ms**. Descriptive parses fall 272→16 (including untimed initialization), then 256 hits; 16 entries retain 181,100 accounted bytes. Filesystem/SQLite work is identical between controls; all values/status/source/sidecar hashes match. Public CR2/ORF and all nine supplied Sony ARWs pass ImageIO fallback/repeated-value/original-hash checks. Source hashing warms OS caches; these are service controls, not historical executable, cold-media, native frame or whole-app memory acceptance.
+
+Validation: formatter, warnings-as-errors build and **305 registered Swift tests / 303 default executed** pass, with two optional RAW cases skipped by default and both subsequently passing on the authorized Sony folder. New regressions cover mixed endianness, eight orientations, positive/negative offsets and subsecond time, invalid pointers/versions/timezones/rationals, sparse sensor skipping, cancellation, stale native results and ImageIO fallback. XMP tests cover budgets/eviction/disable, copy-safe/lazy results, digest collisions, malformed packets, empty overlays, cancelled hits, same-length external edits with restored mtime, sidecar removal/symlinks and pending conflicts. Existing durable recovery/source/history/filter/preservation tests pass.
+
+Native signed app **27A50087-2804-330E-ADD9-13CA9B7B454D**, worker **D15F507C-5EA4-3A28-B6A8-22C4FEAA94AB**, confirms Canon inspector/compact ISO and timezone, ISO sorting with selection retention, initial IPTC load, externally changed title after an equal-length/mtime-preserved edit, and one-field copyright save/Undo preserving the external title and rating. All four disposable original hashes match. Temporary shortcut removed, loaded sample Fit/Filename restored, inspector hidden and only the isolated app quit; process exit is verified. The native provider's initial request was exceptionally slow; its duration is excluded from app latency evidence.
+
+Final 2026-11-01 follow-up: strict checks again pass 305 registered / 303 default executed tests. Fresh signed release **EA4A99E9-B3C9-38A0-B4B0-002A93AF1764**, worker **56B98C19-36B6-3E03-9AD8-1351B164471F**, repeats folder opening, loaded Canon preview/ISO/timezone and externally changed title refresh after equal-length/mtime-preserved packet editing. Both original hashes and the expected sidecar bytes match; samples restored, temporary shortcut removed, inspector hidden and only the test app quit with verified exit. A stopped test wrapper rebuilt by copying executables in place had a disabled folder chooser; a fresh wrapper with new executable inodes and explicit signing identity passes. Cause is not established; the delivered bundle uses fresh staging and atomic replacement. Provider launch durations are excluded from performance evidence. The earlier one-field test history entry is removed through exact owned-path validation with a private recovery snapshot; all other history is unchanged. Initial controls are retained separately from final-code observations.
+
+Guides, milestones, changelog, backend review and performance evidence are updated. Required remote review/CI, full repository hygiene and atomic local-bundle delivery will be recorded in the feature PR after inspection. Preserve the unrelated development-plan wording edit. Next: remaining filesystem-read/cache costs, broader camera/media/physical frames, pressure/concurrent ingest and sustained-session/sleep-wake acceptance, then signed/notarized beta packaging.
 
 ## Explicit Camera Preview inspection — 2026-10-30
 
@@ -548,6 +566,10 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-11-01: Resume metadata delivery after interruption, retain initial controls separately and reconcile final-code timing evidence; final validation/delivery status is recorded with the feature PR.
+
+- 2026-10-30: Read supported Canon CR3 standard EXIF directly, honor ISO/timezone/subseconds, and reuse bounded immutable XMP values after fresh reads; matched service controls and native metadata-refresh/one-field-save/Undo checks pass (ADR 0052).
 
 - 2026-10-30: Add explicit ⌥Z camera-JPEG inspection, a bounded original format index and cancellable shared-memory worker; verify generated/native controls, 12 real RAWs and six independent JPEG references (ADR 0051).
 

@@ -58,13 +58,19 @@ public actor DecisionStore {
   // Actor-owned, default configuration shared by decision and metadata records.
   let recordEncoder = JSONEncoder()
   let recordDecoder = JSONDecoder()
+  let xmpReads: ParsedXMPReads
+  public var xmpReadStatistics: XMPReadStatistics { xmpReads.statistics }
   var decisionWriteCounters = DecisionWriteStatistics()
   var decisionBatchProbe: (@Sendable (DecisionBatchCheckpoint) throws -> Void)?
   public var decisionWriteStatistics: DecisionWriteStatistics { decisionWriteCounters }
   func setDecisionBatchProbe(_ probe: (@Sendable (DecisionBatchCheckpoint) throws -> Void)?) {
     decisionBatchProbe = probe
   }
-  public init(databaseURL: URL, sourceProtection: SourceProtection = .shared) {
+  public init(
+    databaseURL: URL, sourceProtection: SourceProtection = .shared,
+    xmpCacheEntryLimit: Int = 128, xmpCacheByteLimit: Int = 4 * 1024 * 1024
+  ) {
+    xmpReads = ParsedXMPReads(entryLimit: xmpCacheEntryLimit, byteLimit: xmpCacheByteLimit)
     self.databaseURL = databaseURL
     self.sourceProtection = sourceProtection
   }
@@ -240,7 +246,7 @@ public actor DecisionStore {
         // Recover a crash after atomic XMP publication but before the SQLite
         // acknowledgement. Matching decisions need no further sidecar write.
         if !local.baseline.hasPrefix("replacement:"), let data,
-          try XMPSidecar.read(data) == local.decision
+          try xmpReads.decision(data, digest: digest) == local.decision
         {
           if let publication = local.publication, publication.after != digest {
             return DecisionEntry(
@@ -259,7 +265,9 @@ public actor DecisionStore {
       if let local, local.baseline == digest {
         return DecisionEntry(decision: local.decision, status: "Saved")
       }
-      let decision = try data.map(XMPSidecar.read) ?? local?.decision ?? CullingDecision()
+      let decision =
+        try data.map { try xmpReads.decision($0, digest: digest) } ?? local?.decision
+        ?? CullingDecision()
       try write(
         StoredDecision(
           decision: decision, pending: false, baseline: digest,
@@ -294,7 +302,7 @@ public actor DecisionStore {
         throw DecisionStoreError.fileChanged
       }
       let data = try sidecarData(image)
-      let decision = try data.map(XMPSidecar.read) ?? CullingDecision()
+      let decision = try data.map { try xmpReads.decision($0) } ?? CullingDecision()
       try write(
         StoredDecision(
           decision: decision, pending: false, baseline: XMPSidecar.digest(data), userModified: true),

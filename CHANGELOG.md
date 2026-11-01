@@ -4,6 +4,9 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Read standard shooting data directly from supported Canon CR3 metadata blocks, including ISO, timezone and fractional seconds, with ImageIO fallback.
+- Reuse recently parsed XMP decisions and descriptive values after fresh sidecar reads; preserve external edits, conflicts and uncached XML merges.
+
 - Add optional Camera Preview (⌥Z) for large embedded Sony/Canon JPEGs and an embedded-only fallback. Source/resolution and preview-pixel zoom stay explicit; Z still requests rendered RAW.
 - Isolate camera-preview decoding in a bundled, cancellable one-photo worker with bounded shared RAM, source revalidation and no temporary image files.
 

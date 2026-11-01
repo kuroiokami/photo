@@ -75,6 +75,23 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments.first == "--canon-metadata", arguments.count == 3,
+      ["native", "imageio"].contains(arguments[2])
+    {
+      let result = try await MetadataIndexingBenchmark.canon(
+        URL(fileURLWithPath: arguments[1]), native: arguments[2] == "native")
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(result), as: UTF8.self))
+      return
+    }
+    if arguments == ["--sidecar-reads"] {
+      let result = try await MetadataIndexingBenchmark.sidecars()
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(result), as: UTF8.self))
+      return
+    }
     if arguments.first == "--camera-preview-reference", arguments.count == 3 {
       let result = try await CameraPreviewReference.run(
         raw: URL(fileURLWithPath: arguments[1]), reference: URL(fileURLWithPath: arguments[2]))
@@ -271,6 +288,8 @@ private struct PhotoBench {
       print("       PhotoBench --workspace-ingest /path/to/folder > workspace-ingest-report.json")
       print("       PhotoBench --hot-paths > hot-path-report.json")
       print("       PhotoBench --metadata-reads > metadata-read-report.json")
+      print("       PhotoBench --canon-metadata FILE native|imageio > canon-metadata-report.json")
+      print("       PhotoBench --sidecar-reads > sidecar-read-report.json")
       print("       PhotoBench --thumbnail-cache > thumbnail-cache-report.json")
       print("       PhotoBench --cache-contention > cache-contention-report.json")
       print("       PhotoBench --nearby-fit /path/to/folder > nearby-fit-report.json")

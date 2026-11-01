@@ -99,7 +99,7 @@ extension DecisionStore {
     guard let existing = try read(identity) else { return true }
     guard existing.userModified == false && !existing.pending && existing.baseline == baseline
     else { return false }
-    let original = try sidecarData(image).map(XMPSidecar.read) ?? CullingDecision()
+    let original = try sidecarData(image).map { try xmpReads.decision($0) } ?? CullingDecision()
     return existing.decision == original
   }
 

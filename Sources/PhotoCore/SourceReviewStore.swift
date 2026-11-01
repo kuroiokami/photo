@@ -78,7 +78,7 @@ extension DecisionStore {
       var warning: String?
       do {
         let data = try sidecarData(image)
-        decision = try data.map(XMPSidecar.read) ?? CullingDecision()
+        decision = try data.map { try xmpReads.decision($0) } ?? CullingDecision()
         baseline = XMPSidecar.digest(data)
       } catch { warning = "Existing metadata unavailable: " + error.localizedDescription }
       let initial = SourceReviewItem(

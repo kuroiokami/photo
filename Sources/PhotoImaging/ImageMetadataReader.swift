@@ -7,6 +7,8 @@ import PhotoCore
 public struct MetadataReadStatistics: Codable, Sendable {
   public var sourceCreations = 0
   public var sourceReuses = 0
+  public var nativeCanonReads = 0
+  public var nativeCanonBytes: UInt64 = 0
   public var propertyReads = 0
   public var xmpReads = 0
   public var exifHits = 0
@@ -60,6 +62,7 @@ public actor ImageMetadataReader: PhotoMetadataReading {
   private var access: UInt64 = 0
   private let entryLimit: Int
   private let byteLimit: Int
+  private let nativeCanon: Bool
   private var lastSource: Source?
   private var sourceDeadline = ContinuousClock.now
   private var sourceLease: Task<Void, Never>?
@@ -75,7 +78,8 @@ public actor ImageMetadataReader: PhotoMetadataReading {
     formatter.dateFormat = format
     return formatter
   }
-  public init(entryLimit: Int = 128, byteLimit: Int = 4 * 1024 * 1024) {
+  public init(entryLimit: Int = 128, byteLimit: Int = 4 * 1024 * 1024, nativeCanon: Bool = true) {
+    self.nativeCanon = nativeCanon
     self.entryLimit = max(0, entryLimit)
     self.byteLimit = max(0, byteLimit)
   }
@@ -224,6 +228,18 @@ public actor ImageMetadataReader: PhotoMetadataReading {
       return metadata
     }
     return try autoreleasepool {
+      if nativeCanon, let native = try CanonEXIFReader.read(url) {
+        let value = try parse(native.properties)
+        try validate(url, path, stamp)
+        counters.nativeCanonReads += 1
+        counters.nativeCanonBytes += native.io.bytesRead
+        if let stamp {
+          var entry = entries[path] ?? Entry(stamp: stamp)
+          entry.metadata = value
+          store(path, entry)
+        }
+        return value
+      }
       guard let source = source(url, path, stamp) else { throw PreviewError.unreadable }
       counters.propertyReads += 1
       guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
