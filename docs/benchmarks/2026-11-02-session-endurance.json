@@ -1,0 +1,838 @@
+{
+  "date": "2026-11-02",
+  "kind": "bounded-generated-service-endurance",
+  "harnessSHA256": "8731b6622687d9658cd5d2aa5a878b48909d928cc130ccaa11bd03d74f4db2eb",
+  "measuredExecutableSHA256": "7ba0a4518e80a85d53e83e2eefcb4bb6a6c194d33f8fe7caa3d33775a750afb3",
+  "report": {
+    "checkpoints": [
+      {
+        "elapsedSeconds": 6.484528791,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 164937728,
+        "round": 1,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 11.8992915,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165052416,
+        "round": 2,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 17.126917916,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165183488,
+        "round": 3,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 22.484442875,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165117952,
+        "round": 4,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 27.770305041,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165265408,
+        "round": 5,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 33.112295208,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165167104,
+        "round": 6,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 38.484455666,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165199872,
+        "round": 7,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 43.696654583,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165314560,
+        "round": 8,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 49.036668583,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165511168,
+        "round": 9,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 54.4844185,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165478400,
+        "round": 10,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 59.84363875,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165560320,
+        "round": 11,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 65.12861025,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 165773312,
+        "round": 12,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 70.620968166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166232064,
+        "round": 13,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 76.848404,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166477824,
+        "round": 14,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 82.125945833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166756352,
+        "round": 15,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 87.484332333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166510592,
+        "round": 16,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 92.910591,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166510592,
+        "round": 17,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 98.12593675,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166477824,
+        "round": 18,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 103.483952625,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166526976,
+        "round": 19,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 108.978236916,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 20,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 114.484541708,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166461440,
+        "round": 21,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 119.771634791,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166723584,
+        "round": 22,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 125.125675166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166166528,
+        "round": 23,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 130.484581125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166133760,
+        "round": 24,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 135.981935,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166199296,
+        "round": 25,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 141.484421333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166150144,
+        "round": 26,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 146.805065083,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166264832,
+        "round": 27,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 152.126031291,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166297600,
+        "round": 28,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 157.56617225,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166625280,
+        "round": 29,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 162.839688833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167165952,
+        "round": 30,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 168.127400541,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166903808,
+        "round": 31,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 173.651386291,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167018496,
+        "round": 32,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 179.000105916,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167018496,
+        "round": 33,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 184.48460125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167067648,
+        "round": 34,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 189.717920833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167067648,
+        "round": 35,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 195.126277666,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167002112,
+        "round": 36,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 200.484543291,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166936576,
+        "round": 37,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 205.806497291,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166838272,
+        "round": 38,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 211.12714675,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166756352,
+        "round": 39,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 216.484755791,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166887424,
+        "round": 40,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 221.94320925,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166838272,
+        "round": 41,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 227.195017958,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166887424,
+        "round": 42,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 232.484451125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166838272,
+        "round": 43,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 237.997944041,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166887424,
+        "round": 44,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 243.484286083,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166920192,
+        "round": 45,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 248.7304945,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166969344,
+        "round": 46,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 254.126781333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166969344,
+        "round": 47,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 259.496496333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 48,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 264.754140208,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167100416,
+        "round": 49,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 270.126672166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166952960,
+        "round": 50,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 275.484904125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167018496,
+        "round": 51,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 280.705754208,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167215104,
+        "round": 52,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 285.95677975,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 53,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 291.500542708,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166871040,
+        "round": 54,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 296.972675,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 55,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 302.499885708,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 56,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 308.008637583,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166871040,
+        "round": 57,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 313.484319083,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 58,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 318.920799875,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 59,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 324.194354375,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166838272,
+        "round": 60,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 329.485058375,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 61,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 334.815886791,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166903808,
+        "round": 62,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 340.126284333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166707200,
+        "round": 63,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 345.485051041,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166707200,
+        "round": 64,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 350.740677833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167002112,
+        "round": 65,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 356.125164833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166772736,
+        "round": 66,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 361.484348958,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166805504,
+        "round": 67,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 366.765840916,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167067648,
+        "round": 68,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 372.126052166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166739968,
+        "round": 69,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 377.499354375,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166903808,
+        "round": 70,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 382.756412416,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166903808,
+        "round": 71,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 388.127417166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166772736,
+        "round": 72,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 393.488233375,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166789120,
+        "round": 73,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 398.719410583,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166805504,
+        "round": 74,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 403.985948458,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167084032,
+        "round": 75,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 409.485188,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166854656,
+        "round": 76,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 414.886401416,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167018496,
+        "round": 77,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 420.12699675,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167084032,
+        "round": 78,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 425.497466958,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 79,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 430.966469458,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 80,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 436.485259083,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 81,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 441.826862833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 82,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 447.126731666,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166936576,
+        "round": 83,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 452.624780166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166821888,
+        "round": 84,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 457.997615541,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166838272,
+        "round": 85,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 463.485353916,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166789120,
+        "round": 86,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 468.72446325,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167018496,
+        "round": 87,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 474.126474708,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 88,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 479.577052416,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166789120,
+        "round": 89,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 484.861452625,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 90,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 490.126186125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 91,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 495.580099833,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 92,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 501.127391,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166936576,
+        "round": 93,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 506.485356125,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167149568,
+        "round": 94,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 511.810198166,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167149568,
+        "round": 95,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 517.127320541,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167100416,
+        "round": 96,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 522.511640041,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 166985728,
+        "round": 97,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 527.770474333,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167215104,
+        "round": 98,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 533.127209583,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167542784,
+        "round": 99,
+        "thumbnailBytes": 3456000
+      },
+      {
+        "elapsedSeconds": 538.4854035,
+        "fitBytes": 44800000,
+        "openDescriptors": 4,
+        "residentBytes": 167854080,
+        "round": 100,
+        "thumbnailBytes": 3456000
+      }
+    ],
+    "cullingActionsWhileIngestPending": 32,
+    "decisionsVerifiedInFreshProcess": 64,
+    "elapsedSeconds": 538.533772875,
+    "idleSecondsPerRound": 5,
+    "imageCount": 64,
+    "notes": [
+      "Generated 1600x1000 JPEGs only, 64 separate identities in two subfolders. All writes use a fresh private temporary tree and explicit store/journal injection, never Photo's shared database.",
+      "One initial 32-image verified ingest, followed by 32 live arrivals while making decisions; arrival callbacks include a deliberate 20ms dwell to exercise overlap, not measure copy throughput. Both destinations share a local volume.",
+      "Each round alternates combined parent/subfolder browsing, indexes EXIF/decisions, loads 24 thumbnails, navigates 16 Fit previews, draws two full-detail JPEGs, rates/flags a group, then idles with services alive.",
+      "A separate child process opens the same disposable database and compares all expected decisions. This verifies completed-save restart persistence, not power-loss recovery or app termination barriers.",
+      "Checkpoint RSS includes allocator/framework/model memory and is not a whole-session peak. Descriptor counts include process baseline. No automatic RSS threshold proves absence of leaks; compare late checkpoints and repeated runs.",
+      "No native window, App Nap, physical scroll/frame, RAW detail/camera-worker, real sleep/wake, memory-pressure or overnight acceptance is implied. Camera-preview accounting is recorded, but this JPEG workload does not exercise that worker.",
+      "Output omits paths, filenames, hashes, photo metadata and pixels. Image hashes are compared outside active work. Source hashing warms filesystem caches."
+    ],
+    "operatingSystem": "Version 27.0.1 (Build 26A434)",
+    "queuesDrained": true,
+    "releasedCameraPreviewBytes": 0,
+    "rounds": 100,
+    "schemaVersion": 1,
+    "sourceAndBackupImagesUnchanged": true,
+    "verifiedArrivals": 32,
+    "workingImagesUnchanged": true
+  },
+  "limitations": [
+    "One sustained observation, with development/compiler work and separate native sample checks on the same Mac; uncontrolled scheduling and filesystem caches.",
+    "The final CLI argument guard was added afterward; the measured endurance implementation is unchanged and the final debug executable passes the shared two-round smoke.",
+    "Per-round snapshots are not peak measurements. About 2.78 MiB growth across this run is recorded rather than treated as a proof of no leak.",
+    "No real RAW, sleep/wake, pressure, overnight, physical-frame or broad hardware acceptance."
+  ]
+}

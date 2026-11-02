@@ -72,3 +72,7 @@ The [RAW backend review](RAW_BACKEND_REVIEW.md) and [five-file pilot](benchmarks
 ## Metadata indexing follow-up — 2026-10-30
 
 [ADR 0052](decisions/0052-bounded-canon-exif-and-parsed-xmp.md) implements standard Canon CR3 metadata reading and content-validated, bounded parsed-XMP reuse. [Controls](benchmarks/2026-10-30-metadata-indexing.json) separate one real Canon file's first metadata read from repeated generated panel visits. ISO/original timezone omitted by the current SDK are recovered from standard fields; unsupported layouts retain ImageIO. Filesystem reads, write/merge validation, conflicts, identity/source protection and SQLite durability remain. These results do not close physical frames/media, broader cameras/modes, pressure/concurrent/long-session or release acceptance.
+
+## Session endurance follow-up — 2026-11-02
+
+[ADR 0053](decisions/0053-isolated-session-endurance-checks.md) adds private generated-photo browsing/ingest/inspection/decision runs with per-round resource checkpoints and fresh-process decision verification. The shared check runs two rounds; sustained observations are recorded in [performance evidence](PERFORMANCE.md#session-endurance-checks--2026-11-02). Ownership regressions cover completed save captures and background sampler lifetime. JPEG service checks and bounded native sample restoration do not close RAW/camera-worker pressure, actual sleep/wake, overnight, physical media or distribution acceptance. No production policy change or confirmed crash fix is claimed.

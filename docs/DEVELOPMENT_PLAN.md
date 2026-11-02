@@ -586,3 +586,9 @@ See [ADR 0049](decisions/0049-prepared-rating-keys-and-bulk-actions.md). No sync
 - [ ] Broader Canon models/versions/extended ISO, physical storage/frames, pressure/concurrency/long-session and minimum-platform/Intel acceptance remain open.
 
 See [ADR 0052](decisions/0052-bounded-canon-exif-and-parsed-xmp.md). Repeated filesystem-read consolidation and EXIF reuse across workspaces are separate follow-ups.
+
+## Session reliability acceptance — 2026-11-02
+
+Add repeatable isolated browsing/ingest/decision/inspection endurance checks before distribution acceptance. Use generated images, explicitly injected private database/protection/journal locations, independent expected decisions, a fresh-process restart verifier, original/backup hash checks and recorded resource checkpoints. Supplement service checks with native background/reopen checks using samples; do not equate a separate bundle identifier with a separate decision database.
+
+**Exit criteria:** bounded runs and ownership regressions pass with actual durations/resource observations recorded; native restoration has loaded-image and lifecycle evidence; unresolved RAW/pressure, real sleep/wake, overnight and physical-media acceptance remain explicit. A short soak does not close broad long-session reliability or signed/notarized beta distribution.

@@ -12,3 +12,5 @@ fi
 swift build "$@"
 swift build --product PhotoPreviewWorker "$@"
 PHOTO_PREVIEW_WORKER_TEST_EXECUTABLE="$(swift build --show-bin-path)/PhotoPreviewWorker" swift test "$@"
+# Exercise the real service/restart harness briefly; long runs remain explicit.
+"$(swift build --show-bin-path)/PhotoBench" --endurance 2 0

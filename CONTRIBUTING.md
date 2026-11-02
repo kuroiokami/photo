@@ -31,6 +31,8 @@ python3 scripts/check-repository.py
 
 The repository checker uses Python 3's standard library and downloads checksum-pinned Gitleaks and actionlint into a temporary directory. Use `--metadata-only` for offline file/link checks; the full command also checks workflows and scans for secrets. Documentation-only changes do not need a local Swift rebuild.
 
+The shared check also runs a two-round isolated service/endurance smoke check. For sustained generated browsing, detail, ingest and save/restart validation, run `sh scripts/benchmark.sh --endurance 100 5`; see [measurement limits](docs/PERFORMANCE.md#session-endurance-checks--2026-11-02).
+
 For UI changes, also open the app and check the affected controls, keyboard shortcuts and window behavior. Test file operations on disposable copies. Add tests for meaningful behavior, especially original-file preservation, interruption and recovery.
 
 ## Open a pull request
