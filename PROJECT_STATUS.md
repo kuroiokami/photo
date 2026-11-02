@@ -1,8 +1,18 @@
 # Project tracker
 
-Last updated: 2026-11-01
+Last updated: 2026-11-02
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
+
+## Bounded session reliability pass — 2026-11-02
+
+Implemented [ADR 0053](docs/decisions/0053-isolated-session-endurance-checks.md) and `sh scripts/benchmark.sh --endurance ROUNDS IDLE_SECONDS`. It generates 64 JPEGs across two subfolders, injects private database/protection/journal storage, overlaps verified ingest with decisions, alternates folder scopes, indexes, requests thumbnails/Fit/full JPEG detail and group decision Undo/Redo, then flushes/idles. Every round checks cache budgets and drained queues; independent expected decisions are checked in a fresh store and child process. All work is joined/flushed before temporary-tree cleanup. Failures return nonzero without acceptance JSON. A two-round smoke is now part of `scripts/check.sh` and CI. No production UI, decoder, save, sleep or termination policy changes are made.
+
+[Retained sustained evidence](docs/benchmarks/2026-11-02-session-endurance.json): 100 rounds / 5 idle seconds each complete in **538.53 seconds**. All 64 decisions match after process recreation, 32 verified arrivals and 32 overlapping culling actions are observed, all image hashes match and queues drain. Thumbnail/Fit accounting remains 3,456,000 / 44,800,000 bytes under 16/48 MiB caps. Descriptor count stays four; per-round RSS ranges **157.30–160.08 MiB**, with final-quarter 159.06–160.08. Small growth is retained, not interpreted as proof of leak absence. Source hashing warms storage caches; development/native work overlaps, so this is correctness/resource evidence rather than an isolated speed comparison or peak/native memory bound. Final CLI argument validation is covered by the debug smoke; the sustained loop's implementation is unchanged, with measured executable/source hashes recorded.
+
+Strict formatter/build/tests pass **307 registered Swift cases / 305 default executed**, including 512-save capture release and weak sampler-owner lifetime regressions, followed by the shared two-round smoke. The two optional RAW cases are skipped by default and not rerun for this JPEG/test-tool change. No app installation update is required because production app code is unchanged; the existing signed runtime is used for native sample/lifecycle checks. [Native evidence](docs/benchmarks/2026-11-02-native-session.json): unchanged signed runtime UUID **52DAF054-DED8-3372-B101-19DE0612DE3B** runs **890.65 seconds**, using only bundled samples. Five explicitly observed close/reopen cycles and final recovery show loaded Fit images; 20 diagnostic window-creation events are retained separately. Normal Quit/termination and process exit are verified. Late foreground-idle RSS settles near 310.6 MiB after warm-up/recreation growth; a logged background interval is about 115 seconds. Most idle heartbeats are foreground, so extended background/App Nap remains unverified. Provider delays/interrupted batches are excluded from app performance claims. No personal folder or file decision/metadata save is used. Full repository checks pass for 309 tracked files (local links/JSON/data policy, workflow lint and redacted history/worktree secret scans); all nine Python analyzer tests pass. Final optimized CLI smoke and four invalid/missing-state controls pass with anonymous nonzero failure output. [PR #54](https://github.com/kuroiokami/photo/pull/54) records final-head remote checks, review and delivery after completion.
+
+Real RAW/camera-worker resource endurance, pressure, actual sleep/wake, overnight use, physical media/frames and macOS 14/Intel remain open. No intermittent-crash cause or universal reliability fix is claimed. Preserve the unrelated development-plan wording edit. Next distribution work remains a signed/notarized beta after the applicable acceptance checks.
 
 ## Canon EXIF and repeated metadata-panel reads — 2026-10-30
 
@@ -566,6 +576,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-11-02: Add isolated service endurance/restart validation, shared short smoke and save/sampler lifetime regressions; record bounded 100-round resource and image-preservation evidence (ADR 0053).
 
 - 2026-11-01: Resume metadata delivery after interruption, retain initial controls separately and reconcile final-code timing evidence; final validation/delivery status is recorded with the feature PR.
 

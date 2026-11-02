@@ -199,6 +199,8 @@ Photo records local diagnostic events with build identification, run duration, m
 
 Look for `quitRequested` and `willTerminate` near the time Photo disappeared. Heartbeats may be delayed while the Mac sleeps or macOS pauses background work, so a gap alone does not prove a crash. macOS manages log retention. If macOS offers a Photo crash report, retain it with the time and build information; PhotoBench reports concern the separate benchmark tool. Review system reports for private information before sharing them.
 
+Developers can run a repeatable, isolated generated-photo check with `sh scripts/benchmark.sh --endurance 100 5`. It tests services and saved-decision recovery without using your library or Photo’s shared database; it does not test overnight or real sleep/wake behavior. See [scope and evidence](PERFORMANCE.md#session-endurance-checks--2026-11-02).
+
 The currently reported intermittent idle exit has not yet been reproduced or tied to a matching crash report. Diagnostic logging helps investigate another occurrence; it is not a claim that every cause of unexpected termination has been fixed. See the [current tracker](../PROJECT_STATUS.md).
 
 ### Thumbnails keep spinning after reopening a folder

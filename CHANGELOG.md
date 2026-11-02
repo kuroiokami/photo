@@ -4,6 +4,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Add repeatable developer endurance checks for browsing, full JPEG detail, live ingest, group decisions and fresh-process recovery in disposable storage.
+
 - Read standard shooting data directly from supported Canon CR3 metadata blocks, including ISO, timezone and fractional seconds, with ImageIO fallback.
 - Reuse recently parsed XMP decisions and descriptive values after fresh sidecar reads; preserve external edits, conflicts and uncached XML merges.
 

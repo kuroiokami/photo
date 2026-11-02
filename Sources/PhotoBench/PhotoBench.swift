@@ -75,6 +75,33 @@ private struct Report: Codable {
 private struct PhotoBench {
   static func main() async throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments.first == "--endurance" {
+      guard arguments.count == 3,
+        let rounds = Int(arguments[1]), (1...10_000).contains(rounds),
+        let idle = Int(arguments[2]), (0...3600).contains(idle)
+      else {
+        FileHandle.standardError.write(
+          Data("Usage: PhotoBench --endurance rounds(1...10000) idle-seconds(0...3600)\n".utf8))
+        exit(2)
+      }
+      do {
+        let report = try await SessionEnduranceBenchmark.run(rounds: rounds, idleSeconds: idle)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: try encoder.encode(report), as: UTF8.self))
+      } catch {
+        FileHandle.standardError.write(
+          Data("Endurance check failed; no acceptance report was produced.\n".utf8))
+        exit(2)
+      }
+      return
+    }
+    if arguments.first == "--endurance-verify", arguments.count == 2 {
+      do { try await SessionEnduranceBenchmark.verify(URL(fileURLWithPath: arguments[1])) } catch {
+        exit(2)
+      }
+      return
+    }
     if arguments.first == "--canon-metadata", arguments.count == 3,
       ["native", "imageio"].contains(arguments[2])
     {
@@ -281,6 +308,7 @@ private struct PhotoBench {
       return
     }
     guard arguments.first == "--folder", arguments.count == 2 else {
+      print("       PhotoBench --endurance rounds idle-seconds > endurance-report.json")
       print("Usage: PhotoBench --folder /path/to/folder > report.json")
       print("       PhotoBench --detail /path/to/folder [--baseline] > detail-report.json")
       print("       PhotoBench --generate /new/temp/folder [count]")
