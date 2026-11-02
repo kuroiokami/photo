@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-02",
+  "purpose": "Native application icon and local artifact acceptance; no runtime speed claim.",
+  "sourceCommit": "a54c6902256239709a7db6c081ad92b6580b5176",
+  "artwork": {
+    "generator": "built-in imagegen",
+    "width": 1254,
+    "height": 1254,
+    "format": "RGBA PNG",
+    "bytes": 2869856,
+    "sha256": "661cc2218f497b7666cd905059e27645e2390d583c6a82f5c539d9a3ec2da8bb",
+    "prompt": "Assets/AppIcon/PROVENANCE.md"
+  },
+  "representations": {
+    "icon_16x16.png": 16,
+    "icon_16x16@2x.png": 32,
+    "icon_32x32.png": 32,
+    "icon_32x32@2x.png": 64,
+    "icon_128x128.png": 128,
+    "icon_128x128@2x.png": 256,
+    "icon_256x256.png": 256,
+    "icon_256x256@2x.png": 512,
+    "icon_512x512.png": 512,
+    "icon_512x512@2x.png": 1024
+  },
+  "matchingIcons": {
+    "development": {
+      "iconSHA256": "3db57b53bbafe92f4fe5ac909e62287fc4162fe962bb1987f4dbb2f578fa1673",
+      "iconBytes": 3202117,
+      "sourceSHA256": "661cc2218f497b7666cd905059e27645e2390d583c6a82f5c539d9a3ec2da8bb"
+    },
+    "package": {
+      "iconSHA256": "3db57b53bbafe92f4fe5ac909e62287fc4162fe962bb1987f4dbb2f578fa1673",
+      "iconBytes": 3202117,
+      "sourceSHA256": "661cc2218f497b7666cd905059e27645e2390d583c6a82f5c539d9a3ec2da8bb"
+    },
+    "nativeQA": {
+      "iconSHA256": "3db57b53bbafe92f4fe5ac909e62287fc4162fe962bb1987f4dbb2f578fa1673",
+      "iconBytes": 3202117,
+      "sourceSHA256": "661cc2218f497b7666cd905059e27645e2390d583c6a82f5c539d9a3ec2da8bb"
+    }
+  },
+  "package": {
+    "version": "0.1.0",
+    "build": "1003",
+    "sourceDirty": false,
+    "appFileCount": 14,
+    "executables": {
+      "Photo": {
+        "architectures": [
+          "arm64"
+        ],
+        "minimumOS": "14.0",
+        "sha256": "09cc6c06cfd24137fd5b94dd62d9bbae9ef7536e0d4b2b13f8c31a6906d792df",
+        "uuids": {
+          "arm64": "52E59B08-23ED-36F1-A1E4-4CA8734E1B00"
+        }
+      },
+      "PhotoPreviewWorker": {
+        "architectures": [
+          "arm64"
+        ],
+        "minimumOS": "14.0",
+        "sha256": "50ff57242e8fbf7ae13a033ec8f0df95a384188b585b9e8d8ae21cb55238e2d2",
+        "uuids": {
+          "arm64": "15C111F1-8EFB-38B8-9CA6-8C20D84655DF"
+        }
+      }
+    },
+    "diskImage": {
+      "bytes": 7213599,
+      "filename": "Photo-0.1.0-1003-macos-arm64-local.dmg",
+      "sha256": "67abbb4668b390f1f8cae48f547b8e8fb32e204b045b755e561d34048fa5fca7"
+    },
+    "standaloneVerifier": "passed; including actual mounted read-only payload",
+    "legacyBuild1002Verifier": "passed with new verifier"
+  },
+  "native": {
+    "preferenceIdentity": "disposable; no prior settings",
+    "photos": "only three bundled synthetic samples",
+    "observed": "Standard About panel visibly displays the magpie, photo prints, warm paper tile and transparent corners; AX identifies Photo icon and version 0.1.0 (1003).",
+    "quit": "normal Quit followed by stopped-process verification",
+    "cleanup": "disposable preference domain removed; no personal library opened or photo decision/metadata saved",
+    "finderDockScreenshot": "not captured; native icon registration and bundle verification support those surfaces"
+  },
+  "validation": {
+    "sharedCheck": "passed; formatter, warnings-as-errors build, 307 registered Swift cases / 305 default executions, endurance smoke and 19 Python cases",
+    "python": "19 passed; 9 analyzer and 10 packaging, including native icon and legacy upgrade",
+    "repository": "full check passed before evidence append (322 tracked files); final exact-head remote status recorded in the PR"
+  },
+  "limits": [
+    "Local ad-hoc signature; no Developer ID or notarization.",
+    "No Gatekeeper/quarantine, clean-Mac, Intel or native macOS 14 acceptance claimed.",
+    "System icon caching can require relaunch or re-adding an existing Dock shortcut.",
+    "Native provider delay is excluded from application performance."
+  ]
+}

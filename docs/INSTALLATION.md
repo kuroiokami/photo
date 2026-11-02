@@ -92,7 +92,7 @@ sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
 
-The first build takes longer. The helper builds the optimized app and preview worker, stages fresh resources and licenses, and applies and verifies a local ad-hoc signature. It refuses to replace a running copy and retains the previous complete app as `Photo.previous-….app`. Old resources are not merged into the new app. The output is **`.build/Photo.app`**.
+The first build takes longer. The helper builds the optimized app and preview worker, stages fresh resources and licenses, and applies and verifies a local ad-hoc signature. It refuses to replace a running copy and retains the previous complete app as `Photo.previous-….app`. Old resources are not merged into the new app. The output is **`.build/Photo.app`**, with Photo’s minhwa-inspired magpie icon in Finder and the Dock. Quit and reopen Photo after an update to load the new app; an existing Dock shortcut may also need to be removed and added again if macOS retains its previous icon.
 
 Use the release build when judging responsiveness. For faster development iterations:
 

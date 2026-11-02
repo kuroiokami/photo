@@ -23,7 +23,7 @@ Workflows run on PRs and pushes to `main`, use read-only token permissions, do n
 
 There is no signed/notarized public download yet. Maintain Unreleased entries in CHANGELOG.md; use semantic `vMAJOR.MINOR.PATCH` tags only for an accepted release with notes, tested platforms/cameras, original-file/recovery evidence, checksums, LICENSE-MIT, LICENSE-APACHE and NOTICE. Follow [distribution acceptance](DISTRIBUTION.md). Public source availability does not complete packaging or platform verification.
 
-The maintainer selected MIT OR Apache-2.0 on 2026-10-20, matching ArtCraft’s recipient-choice model. Both licenses cover project code/documentation and original synthetic fixtures unless a file explicitly says otherwise. External RAW sample references keep their recorded independent licenses; no external photo bytes are distributed here. Preserve third-party notices if dependencies/assets are introduced.
+The maintainer selected MIT OR Apache-2.0 on 2026-10-20, matching ArtCraft’s recipient-choice model. Both licenses cover project code/documentation, original synthetic fixtures and the project-generated app artwork unless a file explicitly says otherwise. The minhwa magpie source and generation prompt are recorded in [its provenance](../Assets/AppIcon/PROVENANCE.md); repository checks allow that exact documented PNG asset, while generated ICNS/app/DMG outputs remain untracked. External RAW sample references keep their recorded independent licenses; no external photo bytes are distributed here. Preserve third-party notices if dependencies/assets are introduced.
 
 ## Publication audit
 

@@ -62,9 +62,19 @@ def metadata_check(files):
                 or any(marker in name for marker in (".sqlite-", ".db-", ".lrcat-"))):
             errors.append(f"Local data, generated output or signing material must not be tracked: {relative}")
         if relative.suffix.lower() in MEDIA:
-            allowed = relative.parts[:3] == ("Sources", "PhotoUI", "Resources") or relative.parts[:2] == ("Tests", "Fixtures")
+            allowed = (relative.parts[:3] == ("Sources", "PhotoUI", "Resources")
+                       or relative.parts[:2] == ("Tests", "Fixtures")
+                       or relative == Path("Assets/AppIcon/PhotoIcon.png"))
             if not allowed or not (path.parent / "PROVENANCE.md").is_file():
                 errors.append(f"Image fixtures need an intentional fixture location and adjacent PROVENANCE.md: {relative}")
+            if relative == Path("Assets/AppIcon/PhotoIcon.png"):
+                header = path.read_bytes()[:33]
+                if (path.stat().st_size > 8 * 1024 * 1024 or len(header) < 33
+                        or header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR"
+                        or int.from_bytes(header[16:20], "big") != int.from_bytes(header[20:24], "big")
+                        or not 1024 <= int.from_bytes(header[16:20], "big") <= 4096
+                        or header[25] not in (4, 6)):
+                    errors.append("App-icon master must be a square 1024–4096px PNG with alpha, at most 8 MiB.")
             continue
         if path.stat().st_size > 2 * 1024 * 1024:
             errors.append(f"Review large tracked files before adding them: {relative}")

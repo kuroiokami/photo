@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import plistlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -65,6 +66,18 @@ class PackagingPolicyTests(unittest.TestCase):
             with self.assertRaises(bundle.PackageError):
                 release.export_commit(repo, 'HEAD', root / 'rejected')
             self.assertEqual((repo / 'original.txt').read_text(), 'working edit')
+
+    def test_bad_icon_sources_and_containers_fail_before_native_tools(self):
+        from app_icon import IconError, compile_icon, verify_icon
+        import struct
+        def header(width, height, color):
+            return b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' + struct.pack('>II', width, height) + bytes([8, color, 0, 0, 0]) + bytes(4)
+        for data in (b'not an image', header(1024, 512, 6), header(512, 512, 6), header(1024, 1024, 2)):
+            with self.subTest(source=len(data)):
+                with self.assertRaises(IconError):
+                    compile_icon(data)
+        with self.assertRaises(IconError):
+            verify_icon(b'not an icon')
 
     def test_checksum_mismatch_never_mounts_an_image(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -173,6 +186,34 @@ class NativePackagingTests(unittest.TestCase):
         (installed / 'Contents/Resources/Legal/NOTICE').write_text('tampered')
         with self.assertRaises(bundle.PackageError):
             bundle.verify_app(installed)
+
+    def test_icon_formats_are_complete_and_legacy_apps_can_upgrade(self):
+        from app_icon import ICON_FILE, ICON_SIZES, verify_icon
+        app = self.app('Legacy.app')
+        verified = bundle.verify_app(app)
+        icon = app / 'Contents/Resources' / ICON_FILE
+        self.assertTrue(verify_icon(icon.read_bytes()))
+        self.assertEqual(len(ICON_SIZES), 10)
+        self.assertEqual(bundle.read_info(app)['CFBundleIconFile'], ICON_FILE)
+        self.assertEqual(verified['info']['icon']['sourceSHA256'],
+                         bundle.sha256(self.source / 'Assets/AppIcon/PhotoIcon.png'))
+        info = bundle.read_info(app)
+        del info['CFBundleIconFile']
+        (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(info))
+        receipt_path = app / 'Contents/Resources/BuildInfo.json'
+        receipt = json.loads(receipt_path.read_text())
+        del receipt['icon']
+        receipt_path.write_text(json.dumps(receipt))
+        icon.unlink()
+        bundle.run(['/usr/bin/codesign', '--force', '--sign', '-', app])
+        self.assertNotIn('icon', bundle.verify_app(app)['info'])
+        source = self.app(build='2')
+        backup = bundle.install_bundle(source, app)
+        self.assertTrue((app / 'Contents/Resources' / ICON_FILE).is_file())
+        self.assertFalse((backup / 'Contents/Resources' / ICON_FILE).exists())
+        (app / 'Contents/Resources' / ICON_FILE).unlink()
+        with self.assertRaisesRegex(bundle.PackageError, 'App icon'):
+            bundle.verify_app(app)
 
     def test_backup_rename_failure_retains_the_old_app_in_its_staging_container(self):
         installed = self.app('Installed.app')

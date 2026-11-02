@@ -13,7 +13,7 @@ This is a recommendation for Photo’s initial public beta. Direct distribution 
 | Item | Implemented and verified locally | Remaining acceptance |
 | --- | --- | --- |
 | Source provenance | Export selected Git commit; isolated source and SwiftPM scratch folders; omit working edits/untracked files | Public candidate must use the accepted source commit |
-| App assembly | Fresh numeric version/build; worker, SwiftPM resources, both licenses/NOTICE and BuildInfo.json | App icon and public-release presentation can follow |
+| App assembly | Fresh numeric version/build; worker, SwiftPM resources, minhwa magpie ICNS, both licenses/NOTICE and BuildInfo.json | Public-release presentation and final artifact acceptance |
 | Architectures | Local package verifies app and helper are arm64; actual deployment metadata declares 14.0 | Native macOS 14, Intel/universal and broader platform checks |
 | Identity | Packaged `com.kuroiokami.photo`; development retains `.development`; QA override for disposable settings | First packaged launch has separate preferences from development |
 | Signing | Explicit ad-hoc worker → app signing; strict signatures and sealed-content verification | Developer ID, hardened runtime, timestamps and notarization |
@@ -26,7 +26,7 @@ No certificate, developer account or notarization credential was inspected. No a
 
 ## Build a local installation package
 
-Requirements: macOS, Apple Swift 6+, Python 3.9+ standard library, Git and Apple's `codesign`, `hdiutil`, `ditto`, `lipo`, `otool` and `dwarfdump` tools. No Python packages or signing credentials are needed. Photographers receiving a future packaged app will need none of these build tools.
+Requirements: macOS, Apple Swift 6+, Python 3.9+ standard library, Git and Apple's `codesign`, `hdiutil`, `ditto`, `lipo`, `otool` and `dwarfdump` tools. `sips` and `iconutil` generate the native icon from the tracked artwork. No Python packages or signing credentials are needed. Photographers receiving a future packaged app will need none of these build tools.
 
 From a reviewed source commit, first run `sh scripts/check.sh` and `python3 scripts/check-repository.py`, then:
 
@@ -66,6 +66,10 @@ The source and destination must be separate, regular app folders with matching i
 
 Quit all Photo copies before updating or making installation-test decisions. Replacing an app leaves saved data and sidecars alone. Upgrades with the same packaged identity preserve settings. Development and packaged builds have separate preferences but currently share Application Support/Photo decisions, protection and operation journals. A QA identifier alone does not isolate that database. This foundation's installer/verifier supports local ad-hoc builds; signed/notarized public installation comes later.
 
+## App icon
+
+[Original minhwa-inspired artwork and exact generation prompt](../Assets/AppIcon/PROVENANCE.md) are tracked separately from sample photographs. The build creates a native `PhotoIcon.icns` with all standard 1x/2x representations from 16 to 1024 pixels, preserves alpha, declares it through `CFBundleIconFile` and seals it before signing. Both development and packaged apps use the same source. Verification checks the actual ICNS representations and its receipt/source hashes. Legacy local candidates with no icon remain verifiable and can upgrade to an icon-bearing app.
+
 ## Local acceptance evidence — 2026-11-02
 
 [Recorded evidence](benchmarks/2026-11-02-packaging.json) identifies local 0.1.0 build 1002, source `42a0059`, app/worker UUIDs, exact 13-file inventory and a 3,997,375-byte DMG. It verifies signatures, hashes, arm64/macOS 14 metadata, UDZO format and mounted contents after temporary source/build removal. Reusing an existing output folder is refused without mutation. The stable local artifact remains under `.build/packages/Photo-0.1.0-1002-arm64-local` on the reference machine; generated installers are not tracked or uploaded.
@@ -73,6 +77,8 @@ Quit all Photo copies before updating or making installation-test decisions. Rep
 Native disposable variants from those compiled inputs pass initial installation, bundled sample resources, owned-folder browsing, camera-JPEG helper and rendered RAW. A running installed app is refused. Stopped update 1001→1002 preserves settings, shared saved-data files, images/sidecars and the old executable inode/bytes; the new process restores the folder, Auto-advance and four-star Pick decision. Only owned test records/preferences are cleaned up; all other database rows remain unchanged. This QA identifier isolates preferences only, so shared-store cleanup is explicitly scoped. The app is quit normally and process exit verified.
 
 Shared checks pass 307 registered Swift cases / 305 default executions, the endurance smoke and 17 Python cases. Native/portable packaging tests cover the safety failures described in ADR 0054. Provider startup delay is not app-latency evidence. No public-signing, hardened-runtime, quarantine/Gatekeeper, clean-Mac/offline, macOS 14/Intel or general camera acceptance is inferred.
+
+The [app-icon follow-up](benchmarks/2026-11-02-app-icon.json) provides local **0.1.0 build 1003**, source `a54c690`, with the original minhwa magpie icon included in all ten native representations. Its 7,213,599-byte DMG and 14 sealed app files pass standalone verification, including the actual mounted contents. The stable local output is `.build/packages/Photo-0.1.0-1003-arm64-local`; development, packaged and disposable native QA icons match exactly. The standard About panel visibly loads the icon. The previous build-1002 package remains verifiable; signing/public-release limits above still apply.
 
 ## Owner prerequisites
 

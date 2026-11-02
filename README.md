@@ -1,5 +1,7 @@
 # Photo
 
+<img src="Assets/AppIcon/PhotoIcon.png" width="112" height="112" alt="Minhwa-inspired magpie sorting photographs, Photo app icon">
+
 **Fast photo culling and organization for macOS.**
 
 [![Swift checks](https://github.com/kuroiokami/photo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kuroiokami/photo/actions/workflows/ci.yml)
