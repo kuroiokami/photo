@@ -4,6 +4,8 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Add a minhwa-inspired magpie sorting photographs as the native app icon, including standard and Retina sizes in development and local installation builds.
+
 - Add versioned local app/DMG packaging from committed source, with a bundled preview worker, licenses, manifest, checksums and mounted-payload verification.
 - Stage complete local app updates, refuse a running destination and retain the previous app as a backup. Python 3.9+ now supports the documented app build/install helpers.
 

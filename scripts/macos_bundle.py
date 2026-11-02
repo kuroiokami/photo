@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tempfile
 import uuid
+from app_icon import ICON_FILE, MASTER, IconError, compile_icon, verify_icon
 
 DEVELOPMENT_ID = "com.kuroiokami.photo.development"
 RELEASE_ID = "com.kuroiokami.photo"
@@ -99,14 +100,25 @@ def assemble(app, binaries, source, version, build, bundle_id, revision,
         if (source / name).is_symlink() or not (source / name).is_file():
             raise PackageError(f"Missing regular license file: {name}")
         shutil.copy2(source / name, legal / name)
+    master = source / MASTER
+    if master.is_symlink() or not master.is_file():
+        raise PackageError("The project app-icon artwork is missing.")
+    master_data = master.read_bytes()
+    try:
+        icon = compile_icon(master_data)
+    except IconError as error:
+        raise PackageError(str(error)) from error
+    (resources / ICON_FILE).write_bytes(icon)
+    icon_info = dict(filename=ICON_FILE, sha256=hashlib.sha256(icon).hexdigest(),
+                     sourceSHA256=hashlib.sha256(master_data).hexdigest())
     info = dict(CFBundleIdentifier=bundle_id, CFBundleName="Photo", CFBundleDisplayName="Photo",
                 CFBundleExecutable="Photo", CFBundlePackageType="APPL", CFBundleVersion=build,
                 CFBundleShortVersionString=version, LSMinimumSystemVersion="14.0",
-                NSHighResolutionCapable=True, NSPrincipalClass="NSApplication")
+                NSHighResolutionCapable=True, NSPrincipalClass="NSApplication", CFBundleIconFile=ICON_FILE)
     (app / "Contents/Info.plist").write_bytes(plistlib.dumps(info))
     build_info = dict(sourceCommit=revision, version=version, build=build,
                       bundleIdentifier=bundle_id, signing="ad-hoc", notarized=False,
-                      sourceKind=source_kind, sourceDirty=source_dirty)
+                      sourceKind=source_kind, sourceDirty=source_dirty, icon=icon_info)
     (resources / "BuildInfo.json").write_text(json.dumps(build_info, indent=2) + "\n")
     # Explicit inside-out signing. --deep is used only for verification.
     run(["/usr/bin/codesign", "--force", "--sign", "-", app / "Contents/MacOS/PhotoPreviewWorker"])
@@ -134,6 +146,19 @@ def verify_app(app):
             raise ValueError()
     except (KeyError, OSError, ValueError, TypeError) as error:
         raise PackageError("App version, identity or build receipt is invalid.") from error
+    # Legacy local candidates predate the project icon. Both absent is valid;
+    # a new/declarative icon must be complete and match its sealed receipt.
+    icon_info = build_info.get("icon")
+    if icon_info is not None or info.get("CFBundleIconFile") is not None:
+        try:
+            if not isinstance(icon_info, dict) or icon_info["filename"] != ICON_FILE or info.get("CFBundleIconFile") != ICON_FILE:
+                raise ValueError()
+            data = (app / "Contents/Resources" / ICON_FILE).read_bytes()
+            if hashlib.sha256(data).hexdigest() != icon_info["sha256"] or not re.fullmatch(r"[0-9a-f]{64}", icon_info["sourceSHA256"]):
+                raise ValueError()
+            verify_icon(data)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            raise PackageError("App icon is missing, invalid or differs from its receipt.") from error
     for name in LICENSES:
         if f"Contents/Resources/Legal/{name}" not in files:
             raise PackageError("A required license or notice is missing.")

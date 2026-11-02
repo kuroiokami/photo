@@ -602,3 +602,7 @@ Add repeatable isolated browsing/ingest/decision/inspection endurance checks bef
 - [ ] Complete Developer ID/hardened-runtime signing, notarization/stapling, final quarantined/clean-Mac/offline installation and minimum-platform/Intel acceptance before public-beta publication.
 
 **Exit criteria:** local artifact and disposable native install/update evidence are recorded with exact source/build identities; no signing/publication acceptance is inferred from ad-hoc signatures. See [ADR 0054](decisions/0054-local-app-and-disk-image-packaging.md).
+
+## Minhwa magpie application icon — 2026-11-02
+
+Track an original generated PNG and exact prompt/provenance, compile standard transparent ICNS sizes through macOS tools, and set the native icon in both development and packaged apps. Verify source/ICNS hashes and the actual representation matrix while retaining old icon-less candidate compatibility. Record native icon appearance and deliver a new local disk image without changing originals, saved data or signing/notarization status. See [ADR 0055](decisions/0055-minhwa-magpie-app-icon.md).

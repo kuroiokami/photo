@@ -4,6 +4,12 @@ Last updated: 2026-11-02
 
 This is the maintained handoff for humans and AI contributors. Follow [AGENTS.md](AGENTS.md); update this file with behavior, setup, validation and delivery changes. See [development milestones](docs/DEVELOPMENT_PLAN.md), [design/research](docs/CULLING_DESIGN.md), [architecture decisions](docs/decisions/0004-fast-culling.md), and [performance evidence](docs/PERFORMANCE.md).
 
+## Minhwa magpie application icon — 2026-11-02
+
+Added original [app artwork and exact prompt/provenance](Assets/AppIcon/PROVENANCE.md), generated with built-in imagegen: an ink-and-mineral-color magpie sorting photo prints on a warm paper tile. The 1254 × 1254 alpha PNG lives under `Assets/AppIcon` rather than the photo sample bundle. `scripts/app_icon.py` uses system sips/iconutil for standard 1x/2x native ICNS sizes (16–1024), with bounded build-process caches only. Assembly declares `CFBundleIconFile`, records master/ICNS hashes and signs after icon inclusion. Verification decodes the actual ten representations; old icon-less candidates remain supported. The README uses a compact artwork preview. See [ADR 0055](docs/decisions/0055-minhwa-magpie-app-icon.md).
+
+Repository data policy permits only the exact documented app-icon PNG, with square/size/alpha/budget guards and adjacent provenance; generated ICNS/app/DMG outputs remain untracked. Python tests pass all 19 cases, including icon completeness, source/receipt identity, missing-icon failure and icon-less app upgrades. The previous build-1002 candidate still passes standalone verification. Native/new-artifact, shared Swift/repository and final remote delivery results are recorded below after completion. Both unrelated documentation edits are preserved. Signing remains local ad-hoc; Developer ID/notarization/public distribution acceptance is unchanged.
+
 ## Local installation packaging — 2026-11-02
 
 Implemented [ADR 0054](docs/decisions/0054-local-app-and-disk-image-packaging.md). `python3 scripts/package-release.py --local --revision HEAD --version 0.1.0 --build 1 --output <new-folder>` exports a committed source snapshot into private build/scratch directories, builds the app and worker, and creates a fresh arm64 app/UDZO disk image. Includes version/build/source receipt, resources, both licenses/NOTICE, Applications shortcut, instructions, exact manifest and SHA256SUMS. Strict verification checks app/helper signatures, UUIDs, architecture/deployment agreement, all file hashes and actual read-only mounted payload. Existing package folders are never overwritten. No Developer ID identity, certificate or notary credential was inspected; no upload or public release occurred.
@@ -590,6 +596,8 @@ Next: investigate remaining first-open RAW/decoder latency; verify Lightroom RAW
 Preserve the user's pre-existing unstaged `native rightmacOS` edit in the development plan. It is unrelated and must not be committed or reverted. Personal test-photo copies and metadata must stay outside Git.
 
 ## Change log
+
+- 2026-11-02: Generate the minhwa magpie/photo artwork, compile and verify standard native icon sizes, and preserve icon-less package compatibility while wiring both app builders.
 
 - 2026-11-02: Add committed-source local app/DMG packaging, mounted-payload/manifest checks and safe stopped-app installation; verify disposable upgrades preserve preferences/decisions and previous app bytes (ADR 0054). Complete PR #54 delivery after the hosted-runner retry passes.
 
