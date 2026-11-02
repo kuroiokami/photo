@@ -1,0 +1,115 @@
+{
+  "artifact": {
+    "app": {
+      "executables": {
+        "Photo": {
+          "architectures": [
+            "arm64"
+          ],
+          "minimumOS": "14.0",
+          "sha256": "911e1cae9ec5473033a692eef85cd65fda5fbdb5c4a64a92ec2df95ba8ce68bb",
+          "uuids": {
+            "arm64": "52E59B08-23ED-36F1-A1E4-4CA8734E1B00"
+          }
+        },
+        "PhotoPreviewWorker": {
+          "architectures": [
+            "arm64"
+          ],
+          "minimumOS": "14.0",
+          "sha256": "13c28ab3fb5e318719f8861da9d46cb92252d41cd56298ad4d245a32ad27507f",
+          "uuids": {
+            "arm64": "15C111F1-8EFB-38B8-9CA6-8C20D84655DF"
+          }
+        }
+      },
+      "files": {
+        "Contents/Info.plist": "34b8490db1fdf6653dd3b0a8018b0abcee02e184d9be799ad334df38be1af4e6",
+        "Contents/MacOS/Photo": "911e1cae9ec5473033a692eef85cd65fda5fbdb5c4a64a92ec2df95ba8ce68bb",
+        "Contents/MacOS/PhotoPreviewWorker": "13c28ab3fb5e318719f8861da9d46cb92252d41cd56298ad4d245a32ad27507f",
+        "Contents/Resources/BuildInfo.json": "7cbca525934e3d6213a405740abb34d8d511f6cc3dd64189e8fce73fb1990d71",
+        "Contents/Resources/Legal/LICENSE-APACHE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "Contents/Resources/Legal/LICENSE-MIT": "83d29dafaabdc2ff4d1c7c5fd235433836251bbfb5dc74fa4f47f88472b7a71e",
+        "Contents/Resources/Legal/NOTICE": "80224a0f540d413bae53681e34d6ff0188f176a746b3ef1d55e544a4d613d83d",
+        "Contents/Resources/Photo_PhotoUI.bundle/Contents/Info.plist": "e97f621a331bf13d6d61c6335cc2af435b952a2904ada47c4fa1ee60573d2ec7",
+        "Contents/Resources/Photo_PhotoUI.bundle/Contents/Resources/PROVENANCE.md": "812329f152513ed8778406bf72ceea2fcda1d64c43e53182ee1e6b74db922ca9",
+        "Contents/Resources/Photo_PhotoUI.bundle/Contents/Resources/coast.png": "b4dbe7235f4d7607661646d45b53c463da251498c56caf13dd870bbbb03980e0",
+        "Contents/Resources/Photo_PhotoUI.bundle/Contents/Resources/dawn.png": "4e0b2946efb7686b9b5b46a5303a85583ac3a46b33a3d992482638196d6e7af6",
+        "Contents/Resources/Photo_PhotoUI.bundle/Contents/Resources/dusk.png": "60e0cfdeea7ebae4cbf28338ac196e1fc1ed2204ae4d4123ea852fe1bb8fa00e",
+        "Contents/_CodeSignature/CodeResources": "52213590302cb399d0ad6fe8df8b16c60eca5af5ffff17c09bf5da15fccda48c"
+      },
+      "info": {
+        "build": "1002",
+        "bundleIdentifier": "com.kuroiokami.photo",
+        "notarized": false,
+        "signing": "ad-hoc",
+        "sourceCommit": "42a005905d2a1011ef3a962a8c95a511507b2994",
+        "sourceDirty": false,
+        "sourceKind": "commit",
+        "version": "0.1.0"
+      }
+    },
+    "checks": {
+      "gatekeeper": "not-accepted-for-public-distribution",
+      "minimumPlatform": "declared-not-native-verified",
+      "notarization": "not-performed",
+      "signatures": "ad-hoc",
+      "sourceSnapshot": "git-archive",
+      "tests": "run-separately-for-source-commit"
+    },
+    "diskImage": {
+      "bytes": 3997375,
+      "filename": "Photo-0.1.0-1002-macos-arm64-local.dmg",
+      "sha256": "ec2d934898f68747b41220ba108895fedf27f13d4e392e537d7a2dc8f65a05af"
+    },
+    "installationGuideSHA256": "e6930266ff19cc2588c9a5c8171ffde923808d856e16cf58f4de6f249752698f",
+    "publicReleaseReady": false,
+    "schemaVersion": 1,
+    "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0"
+  },
+  "date": "2026-11-02",
+  "existingPackageRefusedWithoutMutation": true,
+  "limits": [
+    "Local ad-hoc candidate only; no Developer ID, hardened-runtime/notarization/stapling, quarantine, Gatekeeper or clean-Mac acceptance.",
+    "Native QA uses the local source code from the pinned passing commit, with a separate disposable preferences identity. The shared decision database received only owned test-image rows; cleanup verifies every other row unchanged.",
+    "macOS 14 is declared and checked in Mach-O metadata, not natively tested. Intel/universal and broad camera/platform acceptance remain open.",
+    "No source photos, database contents, preference paths, account credentials, process timing or private filesystem names are included.",
+    "The provider launch call took about nine minutes; it is not a Photo startup measurement. No performance claim is made."
+  ],
+  "manifestSHA256": "cc6b876d591cd0ca735a4c6e0867ff8265c70b99dc9ae3373a3a56f8e478ec3b",
+  "native": {
+    "compiledInputs": "Copied from the actual local 1002 candidate; QA variants rebundled/re-signed with one disposable identity.",
+    "explicitlyOwnedImageFixtures": "One project synthetic PNG and a hash-verified CC0 Canon EOS R CR3; no personal photos.",
+    "observations": {
+      "cameraPreviewBeforeAndAfterUpgradeVerified": true,
+      "imageAndSidecarBytesPreservedByInstall": true,
+      "liveRefusalVerified": true,
+      "nativeUpdateRestorationVerified": true,
+      "normalQuitAndExitVerified": true,
+      "originalHashesUnchanged": true,
+      "otherDatabaseRowsUnchanged": true,
+      "ownedTestDatabaseRowsRemoved": true,
+      "preferencesPreserved": true,
+      "priorBundleInodeAndBytesPreserved": true,
+      "qaPreferencesRemoved": true,
+      "renderedRAWAfterUpgradeVerified": true,
+      "sharedDataBytesPreservedByInstall": true
+    },
+    "observedImageCount": 2,
+    "providerDelayExcluded": true,
+    "qaBuilds": [
+      "1001",
+      "1002"
+    ],
+    "qaPreferencesIsolated": true
+  },
+  "sourceBuildStagingRemoved": true,
+  "validation": {
+    "nativePackagingCases": 4,
+    "optionalRAWSkipped": 2,
+    "packagingCases": 8,
+    "pythonCases": 17,
+    "swiftExecutedDefault": 305,
+    "swiftRegistered": 307
+  }
+}

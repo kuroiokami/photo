@@ -2,7 +2,7 @@
 
 Photo is a native, folder-first culling app. This guide covers getting the source, building an optimized app, putting it in Applications, updating it, and troubleshooting installation.
 
-**Current delivery:** a local development build. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. Photo is dual-licensed under [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE), at your option; see [NOTICE](../NOTICE). For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
+**Current delivery:** a local development build, plus developer tooling for a versioned local installation disk image. There is no downloadable signed installer, automatic updater, Developer ID signature or notarized release yet. Photo is dual-licensed under [MIT](../LICENSE-MIT) or [Apache-2.0](../LICENSE-APACHE), at your option; see [NOTICE](../NOTICE). For the path to a drag-to-Applications download, see [Distribution](DISTRIBUTION.md). See the [tracker](../PROJECT_STATUS.md) for verified platforms and remaining release work.
 
 ## Contents
 
@@ -24,6 +24,7 @@ Photo is a native, folder-first culling app. This guide covers getting the sourc
 | Operating system | macOS 14 or newer |
 | Toolchain | Apple Swift 6 or newer, with `swift format`; matching Xcode or Command Line Tools and macOS SDK |
 | Git | Supplied by Apple developer tools |
+| Python | Python 3.9 or newer for the standard-library app packaging/installation helpers; no pip packages required |
 | Network | Needed to clone/update the repository; normal local browsing needs no account or cloud service |
 | Dependencies | No third-party Swift packages, API keys or environment files |
 | Images | JPEG (`.jpg` / `.jpeg`), PNG, Sony ARW, Canon CR2/CR3/CRW, Olympus/OM System ORF; extension matching is case-insensitive |
@@ -50,9 +51,10 @@ Check the selected tools:
 xcode-select -p
 xcrun swift --version
 xcrun swift format --version
+python3 --version
 ```
 
-Swift must report version 6 or newer, and the formatter command must work. If the tools are missing or too old, update Command Line Tools/Xcode through Apple’s supported installation mechanism. Keep Swift and its SDK from the same installation.
+Swift must report version 6 or newer, and the formatter command must work. Python must report 3.9 or newer; if it is missing, use a current Python 3 [macOS installer from Python.org](https://www.python.org/downloads/macos/). No pip packages or virtual environment are needed. If the tools are missing or too old, update Command Line Tools/Xcode through Apple’s supported installation mechanism. Keep Swift and its SDK from the same installation.
 
 ## 3. Download the repository
 
@@ -90,7 +92,7 @@ sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
 
-The first build takes longer. The helper builds the optimized executable, copies bundled resources, writes the macOS app wrapper and applies a local ad-hoc signature. The output is **`.build/Photo.app`**.
+The first build takes longer. The helper builds the optimized app and preview worker, stages fresh resources and licenses, and applies and verifies a local ad-hoc signature. It refuses to replace a running copy and retains the previous complete app as `Photo.previous-….app`. Old resources are not merged into the new app. The output is **`.build/Photo.app`**.
 
 Use the release build when judging responsiveness. For faster development iterations:
 
@@ -113,15 +115,15 @@ Open `Package.swift` in Xcode, select the **Photo** scheme and run it. No separa
 
 ## 5. Install a convenient app copy
 
-After building successfully, quit Photo and optionally copy the complete bundle into your own Applications folder. For a first installation where that app copy does not already exist:
+After building successfully, quit Photo and optionally install the complete app into your own Applications folder:
 
 ```sh
 mkdir -p ~/Applications
-ditto .build/Photo.app ~/Applications/Photo.app
+python3 scripts/install-app.py --app .build/Photo.app --destination ~/Applications/Photo.app
 open ~/Applications/Photo.app
 ```
 
-If a copy already exists, use Finder to replace the complete app bundle instead of merging into it. You can drag that app to the Dock. Keep track of which copy you launch: rebuilding `.build/Photo.app` does not automatically update `~/Applications/Photo.app`.
+The installer supports both a first installation and replacing a stopped copy with the same build identity. It verifies the new app and keeps a complete previous-app backup. You can also use Finder to replace the complete app instead of merging folders. You can drag that app to the Dock. Keep track of which copy you launch: rebuilding `.build/Photo.app` does not automatically update `~/Applications/Photo.app`.
 
 The copied app still has a local ad-hoc signature. It is not a notarized distribution build. If macOS refuses to open it, check the build/signature and the system’s stated reason; this guide does not require disabling Gatekeeper or removing security protections.
 
@@ -146,11 +148,11 @@ sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
 
-If you use the Applications copy, quit it and drag the new `.build/Photo.app` into `~/Applications` in Finder and choose **Replace**. Replace the complete bundle; a folder merge can retain obsolete resources and invalidate its signature. Avoid launching an old Dock copy when verifying a new build.
+If you use the Applications copy, quit it and run the installation command in step 5 again, or drag the new `.build/Photo.app` into `~/Applications` in Finder and choose **Replace**. Replace the complete bundle; a folder merge can retain obsolete resources and invalidate its signature. Avoid launching an old Dock copy when verifying a new build.
 
 `--ff-only` refuses to invent a merge when your local branch has diverged. Inspect `git status` and your branches if it fails; keep your changes and resolve the divergence deliberately.
 
-Updating the app does not remove the local database, folder shortcuts, presets or image sidecars. For an important library, include these in your normal backups before updating.
+Updating a build with the same identity does not remove its local database, folder shortcuts, presets or image sidecars. Development and packaged apps keep separate settings, so the first packaged build may ask you to choose your usual folders again. They currently share the saved photo decisions and review data in Application Support/Photo; quit other Photo copies before using one. For an important library, include these in your normal backups before updating.
 
 ## 8. Develop and run checks
 
@@ -161,9 +163,15 @@ sh scripts/format.sh
 sh scripts/check.sh
 ```
 
-The check script verifies formatting, builds in Swift 6 language mode with compiler warnings treated as errors, and runs the tests. Ordinary checks need no private photographs. Optional real-RAW tests require `PHOTO_RAW_TEST_FOLDER` pointing to disposable copies; CI skips those tests when it is unset.
+The check script verifies formatting, builds in Swift 6 language mode with compiler warnings treated as errors, runs the Swift tests and a short endurance check, and runs Python tests including native packaging/update safety cases. Ordinary checks need no private photographs. Optional real-RAW tests require `PHOTO_RAW_TEST_FOLDER` pointing to disposable copies; CI skips those tests when it is unset.
 
 For read-only performance measurements, use the commands and interpretation limits in [PERFORMANCE](PERFORMANCE.md). Do not infer release speed from an unoptimized debug run.
+
+### Build a local installation disk image
+
+Developers can create and verify a versioned disk image without signing credentials. Follow [the packaging commands and limits](DISTRIBUTION.md#build-a-local-installation-package). The result is for local installation checks; it is not the public, notarized download planned for other photographers.
+
+For a local image you built, open the `.dmg`, quit Photo, drag **Photo.app** onto **Applications**, eject the image and launch the installed app. The image includes instructions and licenses. Keep the whole app intact, including its preview helper. No administrator-level installer or separate helper installation is needed.
 
 ## 9. Troubleshooting
 

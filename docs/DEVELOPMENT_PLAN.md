@@ -592,3 +592,13 @@ See [ADR 0052](decisions/0052-bounded-canon-exif-and-parsed-xmp.md). Repeated fi
 Add repeatable isolated browsing/ingest/decision/inspection endurance checks before distribution acceptance. Use generated images, explicitly injected private database/protection/journal locations, independent expected decisions, a fresh-process restart verifier, original/backup hash checks and recorded resource checkpoints. Supplement service checks with native background/reopen checks using samples; do not equate a separate bundle identifier with a separate decision database.
 
 **Exit criteria:** bounded runs and ownership regressions pass with actual durations/resource observations recorded; native restoration has loaded-image and lifecycle evidence; unresolved RAW/pressure, real sleep/wake, overnight and physical-media acceptance remain explicit. A short soak does not close broad long-session reliability or signed/notarized beta distribution.
+
+## Local packaging foundation — 2026-11-02
+
+- [x] Export a pinned commit into a private build/scratch directory; stage an optimized app with numeric version/build, separate packaged/development identity, worker, resources and both licenses/NOTICE.
+- [x] Create a local-only UDZO disk image with Applications shortcut and instructions; verify mounted content, signatures, architecture/deployment targets and manifest/checksums.
+- [x] Replace local development apps as complete directories after Quit, preserving the previous app and refusing links, mismatched identities and running app/helper processes.
+- [x] Add portable and macOS signing/install safety regressions to shared checks.
+- [ ] Complete Developer ID/hardened-runtime signing, notarization/stapling, final quarantined/clean-Mac/offline installation and minimum-platform/Intel acceptance before public-beta publication.
+
+**Exit criteria:** local artifact and disposable native install/update evidence are recorded with exact source/build identities; no signing/publication acceptance is inferred from ad-hoc signatures. See [ADR 0054](decisions/0054-local-app-and-disk-image-packaging.md).

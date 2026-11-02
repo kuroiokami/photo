@@ -4,6 +4,9 @@ User-visible changes are collected here before a release. Development evidence a
 
 ## Unreleased
 
+- Add versioned local app/DMG packaging from committed source, with a bundled preview worker, licenses, manifest, checksums and mounted-payload verification.
+- Stage complete local app updates, refuse a running destination and retain the previous app as a backup. Python 3.9+ now supports the documented app build/install helpers.
+
 - Add repeatable developer endurance checks for browsing, full JPEG detail, live ingest, group decisions and fresh-process recovery in disposable storage.
 
 - Read standard shooting data directly from supported Canon CR3 metadata blocks, including ISO, timezone and fractional seconds, with ImageIO fallback.

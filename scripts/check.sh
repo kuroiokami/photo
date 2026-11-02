@@ -14,3 +14,5 @@ swift build --product PhotoPreviewWorker "$@"
 PHOTO_PREVIEW_WORKER_TEST_EXECUTABLE="$(swift build --show-bin-path)/PhotoPreviewWorker" swift test "$@"
 # Exercise the real service/restart harness briefly; long runs remain explicit.
 "$(swift build --show-bin-path)/PhotoBench" --endurance 2 0
+# Native packaging safety tests run on macOS; portable policy tests also run in repository CI.
+python3 -m unittest discover -s scripts/tests -p 'test_*.py'

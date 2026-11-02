@@ -1,6 +1,6 @@
 # Distributing Photo to other Mac users
 
-Status: **release plan, not a shipped installer**. Reviewed 2026-10-20 against the repository and Apple’s documentation. Users currently build from source using [Installation](INSTALLATION.md).
+Status: **local packaging foundation implemented; no public notarized download**. Updated 2026-11-02. Source builds remain available through [Installation](INSTALLATION.md). The local app/DMG pipeline and safe updater are implemented in [ADR 0054](decisions/0054-local-app-and-disk-image-packaging.md); Developer ID, notarization and clean-Mac acceptance remain separate milestones.
 
 ## Recommended first route
 
@@ -10,36 +10,81 @@ This is a recommendation for Photo’s initial public beta. Direct distribution 
 
 ## What exists today
 
-Read-only inspection of `.build/Photo.app` found:
-
-| Item | Current state | Release work |
+| Item | Implemented and verified locally | Remaining acceptance |
 | --- | --- | --- |
-| Native app bundle | `.build/Photo.app`, packaged by `scripts/build-app.sh` | Use a clean, separate release staging directory |
-| Build | Optimized local app available | Build from a pinned, tested Git commit |
-| Architectures | Current executable is `arm64` only | Label Apple silicon support honestly; add Intel only after building/testing it |
-| macOS minimum | 14.0 declared | Verify the signed artifact on macOS 14 and current supported systems |
-| Signing | Ad-hoc; no TeamIdentifier | Developer ID Application signature, hardened runtime and secure timestamp |
-| Identity | `com.kuroiokami.photo.development` | Choose a stable release identifier before first distribution; keep development identity separate |
-| Version | Hardcoded `0.1.0`, build `1` | Parameterize version/build and increase them for each published artifact |
-| Resources | SwiftPM resource bundles copied into wrapper | Stage from scratch so removed/renamed resources cannot linger; verify all embedded code/resources |
-| Camera Preview helper | Bundled, ad-hoc-signed `PhotoPreviewWorker`, launched for one requested photo | Build for the supported chips, Developer ID-sign before the app, and verify launch/cancellation/shared-memory transfer in the final quarantined artifact |
-| Installer/download | None | Signed/notarized DMG with Applications shortcut, release notes and checksum |
-| Updates | Manual rebuild/copy | First beta: quit, replace complete app; signed automatic updates can follow separately |
-| License | MIT OR Apache-2.0, at the recipient’s option | Include LICENSE-MIT, LICENSE-APACHE and NOTICE with source and app distributions |
+| Source provenance | Export selected Git commit; isolated source and SwiftPM scratch folders; omit working edits/untracked files | Public candidate must use the accepted source commit |
+| App assembly | Fresh numeric version/build; worker, SwiftPM resources, both licenses/NOTICE and BuildInfo.json | App icon and public-release presentation can follow |
+| Architectures | Local package verifies app and helper are arm64; actual deployment metadata declares 14.0 | Native macOS 14, Intel/universal and broader platform checks |
+| Identity | Packaged `com.kuroiokami.photo`; development retains `.development`; QA override for disposable settings | First packaged launch has separate preferences from development |
+| Signing | Explicit ad-hoc worker → app signing; strict signatures and sealed-content verification | Developer ID, hardened runtime, timestamps and notarization |
+| Disk image | UDZO read-only compressed HFS+, Applications shortcut, instructions and licenses; mounted-payload checks | Quarantined download, Gatekeeper and clean-Mac/offline checks |
+| Receipts | App/worker UUIDs, architectures, hashes, file inventory, source pin, manifest and SHA256SUMS | No claim of bit-for-bit reproducible builds or publisher authentication from checksums |
+| Local updates | Refuse running main/helper, links, overlap and wrong identity; fresh copy and atomic exchange; retain old app inode/bytes | Signed/public-update acceptance; automatic updates remain separate |
+| Data preservation | Installer writes app folders only; disposable upgrade retains settings and saved decisions | Broader migrations, clean-machine and public-release acceptance |
 
-No signing certificate, developer account status or notarization credentials were inspected. No software was submitted to Apple and no installer was published during this design work.
+No certificate, developer account or notarization credential was inspected. No app was submitted to Apple and no installer was uploaded or publicly released.
+
+## Build a local installation package
+
+Requirements: macOS, Apple Swift 6+, Python 3.9+ standard library, Git and Apple's `codesign`, `hdiutil`, `ditto`, `lipo`, `otool` and `dwarfdump` tools. No Python packages or signing credentials are needed. Photographers receiving a future packaged app will need none of these build tools.
+
+From a reviewed source commit, first run `sh scripts/check.sh` and `python3 scripts/check-repository.py`, then:
+
+```sh
+python3 scripts/package-release.py --local \
+  --revision HEAD --version 0.1.0 --build 1 \
+  --output .build/packages/Photo-0.1.0-1-arm64-local
+
+python3 scripts/verify-release.py .build/packages/Photo-0.1.0-1-arm64-local
+```
+
+The package builder uses the **committed** snapshot named by `--revision`. Working edits are preserved but are not included. Use a new output folder and increasing build number for another candidate; existing packages are never replaced. Version has three numeric components; build is a positive integer. The default packaged identity is stable. `--bundle-id` exists for disposable QA preferences and should not be changed between actual upgrades.
+
+The output folder contains:
+
+- `Photo.app` — the complete locally signed app and bundled preview worker.
+- `Photo-<version>-<build>-macos-arm64-local.dmg` — the local installation image.
+- `manifest.json` — source/version/signing status, exact executable/file inventory and image hash.
+- `SHA256SUMS` — hashes for the DMG and manifest. Run `shasum -a 256 -c SHA256SUMS` from the output folder if checking manually.
+
+Verification runs automatically before publication to the new output folder. It checks metadata, signatures, deployment/architecture agreement, hashes and UDZO format, then mounts a private read-only image, checks its app/guide/licenses/Applications shortcut and detaches it. Source/build staging is removed afterward. Neither command publishes a GitHub Release or contacts Apple's notary service.
+
+These are **local development candidates**, not notarized public downloads. Open your local image in Finder, quit Photo, drag Photo.app onto Applications, eject and launch the installed copy. Do not disable Gatekeeper or strip quarantine to make a distributed candidate pass. Public distribution requires the acceptance below.
+
+### Safe development and local installation
+
+The existing `sh scripts/build-app.sh [--release]` command still produces `.build/Photo.app`, now with fresh staging, worker/resources/licenses, verification and stopped-app replacement. It requires Python 3.9+. A working-tree receipt records its base commit and dirty state. It never claims that an edited development build is a committed-source release.
+
+To install or update a stopped local development copy:
+
+```sh
+python3 scripts/install-app.py --app .build/Photo.app \
+  --destination ~/Applications/Photo.app
+```
+
+The source and destination must be separate, regular app folders with matching identities when replacing. The installer refuses a running app/helper, stages and verifies a complete new copy beside the destination, and atomically exchanges directories. It prints the retained `Photo.previous-….app` backup location. Keep backups until satisfied with the update; remove obsolete local build backups deliberately when no longer needed. A backup-naming error reports the retained staging location and never cleans up that only previous copy. Filesystem swap/exclusive-rename support is required; there is no unsafe in-place fallback.
+
+Quit all Photo copies before updating or making installation-test decisions. Replacing an app leaves saved data and sidecars alone. Upgrades with the same packaged identity preserve settings. Development and packaged builds have separate preferences but currently share Application Support/Photo decisions, protection and operation journals. A QA identifier alone does not isolate that database. This foundation's installer/verifier supports local ad-hoc builds; signed/notarized public installation comes later.
+
+## Local acceptance evidence — 2026-11-02
+
+[Recorded evidence](benchmarks/2026-11-02-packaging.json) identifies local 0.1.0 build 1002, source `42a0059`, app/worker UUIDs, exact 13-file inventory and a 3,997,375-byte DMG. It verifies signatures, hashes, arm64/macOS 14 metadata, UDZO format and mounted contents after temporary source/build removal. Reusing an existing output folder is refused without mutation. The stable local artifact remains under `.build/packages/Photo-0.1.0-1002-arm64-local` on the reference machine; generated installers are not tracked or uploaded.
+
+Native disposable variants from those compiled inputs pass initial installation, bundled sample resources, owned-folder browsing, camera-JPEG helper and rendered RAW. A running installed app is refused. Stopped update 1001→1002 preserves settings, shared saved-data files, images/sidecars and the old executable inode/bytes; the new process restores the folder, Auto-advance and four-star Pick decision. Only owned test records/preferences are cleaned up; all other database rows remain unchanged. This QA identifier isolates preferences only, so shared-store cleanup is explicitly scoped. The app is quit normally and process exit verified.
+
+Shared checks pass 307 registered Swift cases / 305 default executions, the endurance smoke and 17 Python cases. Native/portable packaging tests cover the safety failures described in ADR 0054. Provider startup delay is not app-latency evidence. No public-signing, hardened-runtime, quarantine/Gatekeeper, clean-Mac/offline, macOS 14/Intel or general camera acceptance is inferred.
 
 ## Owner prerequisites
 
-- Apple Developer Program membership and a Developer ID Application signing identity on the release machine. Apple currently lists **US$99 per membership year**, with local currency where available: [membership details](https://developer.apple.com/programs/whats-included/).
+- Apple Developer Program membership and a Developer ID Application signing identity on the release machine. See Apple’s current [membership details](https://developer.apple.com/programs/whats-included/) for enrollment and local pricing.
 - Confirm the public app name, stable bundle identifier, support contact and intended hardware support. The owner selected MIT OR Apache-2.0; include LICENSE-MIT, LICENSE-APACHE and NOTICE in distributions.
 - Configure notarization credentials through Keychain or protected CI secrets. Do not put passwords, certificate private keys or API keys into the repository or release artifacts.
 
 No account purchase, agreement acceptance, certificate/private-key handling or public publishing is needed merely to implement the packaging scripts. Those owner-dependent steps occur when preparing the first signed release.
 
-## Release pipeline to implement
+## Remaining public-release pipeline
 
-1. **Build cleanly.** Run the repository checks for the pinned commit. Stage an optimized app with the selected version/build, stable identifier, icon and complete resources in a fresh directory outside the running development bundle. Preserve the existing local-development build command.
+1. **Choose the accepted source.** The local packaging foundation implements isolated committed-source app/DMG assembly. Run checks for the selected commit and retain the exact tested app/artifact. Add public presentation/versioning choices before signing.
 2. **Sign the app.** Sign nested code explicitly from the inside out, then the app with Developer ID Application, hardened runtime and secure timestamp. Use only entitlements actually needed. Verify signatures; do not use blanket runtime exceptions or `--deep` as a substitute for signing nested items correctly. See [Apple’s notarization issue guide](https://developer.apple.com/documentation/security/resolving-common-notarization-issues).
 3. **Notarize and staple the app.** Create a temporary ZIP for submission with `notarytool`; wait for an Accepted result, inspect failures, then staple/validate the ticket on the app. ZIP is a transport here; the ticket is stapled to the app, not the ZIP. See [customizing notarization](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow).
 4. **Make the download.** Create a read-only DMG containing the stapled app and an Applications shortcut. Sign the DMG, submit that final DMG for notarization, require Accepted, and staple/validate its ticket. Notarizing/stapling the app and final container is an intentionally explicit pipeline; never alter the signed app afterward.
@@ -62,7 +107,7 @@ The user-facing installation guide for a shipped beta should be:
 4. Choose Photo Home and grant normal access to chosen photo/card folders when macOS asks.
 5. For an update, quit Photo and replace the complete application; local Photo data remains separate from the app bundle.
 
-These steps become actionable only once a notarized download exists. Until then, the current source-build guide remains accurate.
+These are the intended recipient steps for a future notarized download. Local candidates can already be installed this way on the build/test Mac; they do not establish Gatekeeper or clean-Mac acceptance.
 
 ## Why the App Store can follow later
 
@@ -72,7 +117,7 @@ Do not add automatic updating, telemetry, a paid licensing system or store integ
 
 ## Smallest release milestones
 
-- **Packaging foundation:** clean versioned release bundle and DMG scripts, development/release identity separation, resource/signature checks, documented secret inputs and a reproducible artifact manifest. No credentials required for implementing the unsigned/local checks.
+- **Packaging foundation (implemented):** clean versioned local app/DMG, committed-source isolation, identity separation, worker/resource/signature and mounted-payload checks, safe local updates and artifact manifest/checksums. See ADR 0054 and the tracker for observed checks. No credentials used; no bit-for-bit reproducibility claim.
 - **Signed beta candidate:** owner-provided signing/notarization setup; actual Accepted submissions, stapled tickets and Gatekeeper/clean-Mac acceptance. Not achievable from the existing ad-hoc signature alone.
 - **Public beta:** both license texts and notices, verified supported machines, recipient installation/update instructions, honest limitations, signed artifact and checksum published through an explicit release action.
 - **Wider release:** measured large-library performance, broader camera/macOS/accessibility/Intel coverage and, if desired, an independently reviewed update/store path.
