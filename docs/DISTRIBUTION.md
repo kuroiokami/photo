@@ -78,6 +78,8 @@ Native disposable variants from those compiled inputs pass initial installation,
 
 Shared checks pass 307 registered Swift cases / 305 default executions, the endurance smoke and 17 Python cases. Native/portable packaging tests cover the safety failures described in ADR 0054. Provider startup delay is not app-latency evidence. No public-signing, hardened-runtime, quarantine/Gatekeeper, clean-Mac/offline, macOS 14/Intel or general camera acceptance is inferred.
 
+The [app-icon follow-up](benchmarks/2026-11-02-app-icon.json) provides local **0.1.0 build 1003**, source `a54c690`, with the original minhwa magpie icon included in all ten native representations. Its 7,213,599-byte DMG and 14 sealed app files pass standalone verification, including the actual mounted contents. The stable local output is `.build/packages/Photo-0.1.0-1003-arm64-local`; development, packaged and disposable native QA icons match exactly. The standard About panel visibly loads the icon. The previous build-1002 package remains verifiable; signing/public-release limits above still apply.
+
 ## Owner prerequisites
 
 - Apple Developer Program membership and a Developer ID Application signing identity on the release machine. See Apple’s current [membership details](https://developer.apple.com/programs/whats-included/) for enrollment and local pricing.
