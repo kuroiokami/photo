@@ -11,7 +11,7 @@ Photo helps you get from a card full of images to a set of keepers. Browse folde
 
 Built for photographers working to a deadline and photographers sorting through a large shoot. Start reviewing before copying, or begin culling as verified copies arrive. Lightroom is optional. Group ratings and flags save in the background; normal Quit waits for pending saves.
 
-Photo is open source and in active development. You can build it from source today; a signed installer is still on the [roadmap](ROADMAP.md).
+Photo is open source and in active development. You can build it from source and create a [local installation disk image](docs/DISTRIBUTION.md#build-a-local-installation-package). A Developer ID-signed, notarized download is still on the [roadmap](ROADMAP.md).
 
 Bring back a hidden, minimized or closed workspace with **Window → Show Photo Window (⌘0)** or by clicking Photo in the Dock.
 
@@ -31,7 +31,7 @@ JPEG (`.jpg` and `.jpeg`), PNG, Sony ARW, Canon CR2/CR3/CRW and Olympus/OM Syste
 
 ## Build and run
 
-You need **macOS 14 or later** and **Apple Swift 6 or later**, including `swift format`. No third-party Swift packages or API keys are required.
+You need **macOS 14 or later**, **Apple Swift 6 or later** including `swift format`, and **Python 3.9 or later** for the app packaging helper. No third-party Swift packages or API keys are required.
 
 ```sh
 git clone https://github.com/kuroiokami/photo.git
@@ -40,7 +40,7 @@ sh scripts/build-app.sh --release
 open .build/Photo.app
 ```
 
-The [installation guide](docs/INSTALLATION.md) walks through installing Apple's developer tools, copying Photo to Applications, updates and troubleshooting. Quit Photo before replacing its app bundle. Local builds are ad-hoc signed; a Developer ID-signed, notarized download is not available yet.
+The [installation guide](docs/INSTALLATION.md) walks through installing Apple's developer tools, copying Photo to Applications, updates and troubleshooting. Quit Photo before replacing its app bundle. The build helper stages a complete fresh app, refuses a running destination and retains the previous app as a backup. Local builds are ad-hoc signed; a Developer ID-signed, notarized download is not available yet.
 
 ## Your first culling session
 

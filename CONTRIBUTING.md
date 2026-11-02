@@ -31,7 +31,7 @@ python3 scripts/check-repository.py
 
 The repository checker uses Python 3's standard library and downloads checksum-pinned Gitleaks and actionlint into a temporary directory. Use `--metadata-only` for offline file/link checks; the full command also checks workflows and scans for secrets. Documentation-only changes do not need a local Swift rebuild.
 
-The shared check also runs a two-round isolated service/endurance smoke check. For sustained generated browsing, detail, ingest and save/restart validation, run `sh scripts/benchmark.sh --endurance 100 5`; see [measurement limits](docs/PERFORMANCE.md#session-endurance-checks--2026-11-02).
+The shared check also runs a two-round isolated service/endurance smoke check and the Python suite. On macOS, packaging cases verify real signatures, safe updates, running-process refusal and retained backups. Python 3.9+ is required; the helpers use only its standard library. For sustained generated browsing, detail, ingest and save/restart validation, run `sh scripts/benchmark.sh --endurance 100 5`; see [measurement limits](docs/PERFORMANCE.md#session-endurance-checks--2026-11-02).
 
 For UI changes, also open the app and check the affected controls, keyboard shortcuts and window behavior. Test file operations on disposable copies. Add tests for meaningful behavior, especially original-file preservation, interruption and recovery.
 
@@ -53,6 +53,8 @@ Pull requests need passing checks and resolved review conversations before mergi
 - Follow the same review and evidence standards for AI-assisted contributions. [AGENTS.md](AGENTS.md) contains the additional handoff instructions for coding agents.
 
 ## Releases
+
+Create local app/DMG candidates from a pinned commit using the [packaging guide](docs/DISTRIBUTION.md#build-a-local-installation-package). No signing credentials are required for this local-only foundation. Packaging does not publish a GitHub Release, notarize software or complete clean-Mac acceptance.
 
 Maintainers publish releases after the [distribution checks](docs/DISTRIBUTION.md) pass. Releases use `vMAJOR.MINOR.PATCH` tags and include release notes, tested platform/camera limits, checksums and license notices. Local ad-hoc builds remain development previews until a signed, notarized release is available.
 

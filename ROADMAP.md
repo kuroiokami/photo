@@ -28,7 +28,7 @@ Prioritize time to the first decision and first verified deliverable alongside t
 
 ### Make Photo easier to install
 
-Add clean, versioned app/DMG packaging, then Developer ID signing, notarization and installation/update checks on a clean Mac. The [distribution plan](docs/DISTRIBUTION.md) tracks the steps. Apple silicon is the current tested development setup; wider macOS and Intel support need verification.
+Clean, versioned local app/DMG packaging and safe local update tooling are implemented. Next: Developer ID signing, notarization and installation/update checks on a clean Mac. The [distribution plan](docs/DISTRIBUTION.md) tracks the steps. Apple silicon is the current tested development setup; wider macOS and Intel support need verification.
 
 ### Improve camera and editor compatibility
 
